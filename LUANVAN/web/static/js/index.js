@@ -32,17 +32,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (closeVoiceGallery) {
         closeVoiceGallery.addEventListener('click', () => {
             voiceGalleryModal.style.display = 'none';
+            voiceGalleryModal.classList.remove('is-active');
         });
     }
     
+    // Close modal on overlay click
+    const modalOverlay = document.querySelector('.modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', () => {
+            voiceGalleryModal.style.display = 'none';
+            voiceGalleryModal.classList.remove('is-active');
+        });
+    }
+    
+    // Legacy: close on modal click (for old style)
     window.addEventListener('click', (e) => {
         if (e.target === voiceGalleryModal) {
             voiceGalleryModal.style.display = 'none';
+            voiceGalleryModal.classList.remove('is-active');
         }
     });
     
-    // Tab switching
-    const tabButtons = document.querySelectorAll('.tab-btn');
+    // Tab switching (support both old and new styles)
+    const tabButtons = document.querySelectorAll('.tab-btn, .tab-btn-modern');
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
@@ -51,11 +63,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             tabButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // Update active tab content
+            // Update active tab content (hide all, show selected)
             document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
                 content.classList.remove('active');
             });
-            document.getElementById(tab + 'Tab').classList.add('active');
+            const targetTab = document.getElementById(tab + 'Tab');
+            if (targetTab) {
+                targetTab.style.display = 'block';
+                targetTab.classList.add('active');
+            }
         });
     });
     

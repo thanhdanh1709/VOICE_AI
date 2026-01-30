@@ -1,273 +1,610 @@
 {% extends "base.html" %}
 
-{% block title %}Trang chủ - TTS System{% endblock %}
+{% block title %}Trang chủ - VoiceAI TTS{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Hero Section */
+.hero-section-modern {
+    text-align: center;
+    padding: var(--space-16) 0 var(--space-12);
+    background: var(--primary-gradient);
+    margin: calc(var(--space-8) * -1) calc(var(--space-4) * -1) var(--space-12);
+    border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+    color: white;
+    animation: fadeIn 0.6s ease-out;
+}
+
+.hero-section-modern h1 {
+    font-size: var(--text-5xl);
+    font-weight: var(--font-extrabold);
+    margin-bottom: var(--space-4);
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hero-section-modern p {
+    font-size: var(--text-xl);
+    opacity: 0.95;
+    margin-bottom: var(--space-8);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-features {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-8);
+    flex-wrap: wrap;
+    margin-top: var(--space-6);
+}
+
+.hero-feature {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+}
+
+.hero-feature-icon {
+    font-size: var(--text-2xl);
+}
+
+/* Main Grid Layout */
+.main-grid-modern {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+    margin-bottom: var(--space-12);
+}
+
+@media (min-width: 1024px) {
+    .main-grid-modern {
+        grid-template-columns: 1.5fr 1fr;
+    }
+}
+
+/* Tabs */
+.tabs-modern {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    padding: var(--space-1);
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+}
+
+.tab-btn-modern {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.tab-btn-modern:hover {
+    color: var(--primary);
+    background-color: var(--bg-primary);
+}
+
+.tab-btn-modern.active {
+    background-color: white;
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Textarea */
+.textarea-modern {
+    width: 100%;
+    min-height: 200px;
+    padding: var(--space-4);
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    resize: vertical;
+    transition: all var(--duration-fast) var(--ease-out);
+    font-family: var(--font-primary);
+}
+
+.textarea-modern:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.char-counter-modern {
+    text-align: right;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+}
+
+/* Quick Stats */
+.quick-stats-modern {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--primary-gradient);
+    border-radius: var(--radius-xl);
+    color: white;
+    margin-bottom: var(--space-6);
+}
+
+.quick-stat-item-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.stat-icon-modern {
+    font-size: var(--text-4xl);
+    opacity: 0.9;
+}
+
+.stat-content-modern {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value-modern {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    line-height: 1;
+}
+
+.stat-label-modern {
+    font-size: var(--text-sm);
+    opacity: 0.9;
+    margin-top: var(--space-1);
+}
+
+.quick-stat-divider-modern {
+    width: 2px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Output States */
+.output-state {
+    text-align: center;
+    padding: var(--space-12) var(--space-6);
+}
+
+.output-state-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.output-state-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.output-state-subtitle {
+    color: var(--text-tertiary);
+}
+
+/* Audio Player */
+.audio-player-modern {
+    text-align: center;
+}
+
+.audio-success-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-radius: var(--radius-full);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-4);
+}
+
+.audio-player-modern audio {
+    width: 100%;
+    margin: var(--space-6) 0;
+    border-radius: var(--radius-lg);
+}
+
+.audio-actions-modern {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+/* Tips Card */
+.tips-list-modern {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tips-list-modern li {
+    padding: var(--space-3) 0;
+    padding-left: var(--space-8);
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tips-list-modern li:last-child {
+    border-bottom: none;
+}
+
+.tips-list-modern li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success);
+    font-weight: var(--font-bold);
+    font-size: var(--text-lg);
+}
+
+/* Voice Slider Value Display */
+.slider-value-display {
+    display: inline-block;
+    min-width: 50px;
+    padding: var(--space-1) var(--space-3);
+    background-color: var(--bg-tertiary);
+    color: var(--primary);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+/* Preset Buttons Grid */
+.preset-buttons-modern {
+    margin-top: var(--space-6);
+}
+
+.preset-label-modern {
+    font-weight: var(--font-medium);
+    margin-bottom: var(--space-3);
+    color: var(--text-secondary);
+}
+
+.preset-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-3);
+}
+
+.btn-preset-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background-color: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn-preset-modern:hover {
+    border-color: var(--primary);
+    background-color: var(--bg-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.preset-icon-modern {
+    font-size: var(--text-2xl);
+}
+
+.preset-name-modern {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+}
+
+.btn-preset-modern:hover .preset-name-modern {
+    color: var(--primary);
+}
+
+/* Voice Gallery Grid */
+.voice-gallery-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-4);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: var(--space-2);
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container">
     <!-- Hero Section -->
-    <div class="hero-section">
-        <h1>Chuyển văn bản thành giọng nói</h1>
-        <p>Công nghệ AI hiện đại, giọng nói tự nhiên, chất lượng cao</p>
+    <div class="hero-section-modern animate-fadeIn">
+        <h1>🎤 Chuyển văn bản thành giọng nói</h1>
+        <p>Công nghệ AI tiên tiến • Giọng nói tự nhiên • Chất lượng cao</p>
+        <div class="hero-features">
+            <div class="hero-feature">
+                <span class="hero-feature-icon">⚡</span>
+                <span>Xử lý nhanh</span>
+            </div>
+            <div class="hero-feature">
+                <span class="hero-feature-icon">🎯</span>
+                <span>Chính xác cao</span>
+            </div>
+            <div class="hero-feature">
+                <span class="hero-feature-icon">🌟</span>
+                <span>Dễ sử dụng</span>
+            </div>
+        </div>
     </div>
 
     <!-- Main Grid Layout: 2 Columns -->
-    <div class="main-grid">
+    <div class="main-grid-modern">
         <!-- Left Column: Input Area -->
-        <div class="main-col-left">
+        <div class="main-col-left animate-slideUp">
             <!-- Input Card -->
-            <div class="input-card card-elevated">
+            <div class="card card-elevated">
                 <div class="card-header">
-                    <h2>Nội dung chuyển đổi</h2>
+                    <h3 class="card-title">✍️ Nội dung chuyển đổi</h3>
                 </div>
                 <div class="card-body">
-                    <div class="tabs">
-                        <button class="tab-btn active" data-tab="text">Nhập văn bản</button>
-                        <button class="tab-btn" data-tab="file">Tải file lên</button>
+                    <div class="tabs-modern">
+                        <button class="tab-btn-modern active" data-tab="text">📝 Nhập văn bản</button>
+                        <button class="tab-btn-modern" data-tab="file">📄 Tải file lên</button>
                     </div>
 
                     <div class="tab-content active" id="textTab">
-                        <textarea id="textInput" placeholder="Nhập hoặc dán văn bản của bạn tại đây..." rows="10"></textarea>
-                        <div class="char-counter">
+                        <textarea id="textInput" class="textarea-modern" placeholder="Nhập hoặc dán văn bản của bạn tại đây...
+
+Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng nói bằng AI." rows="10"></textarea>
+                        <div class="char-counter-modern">
                             <span id="charCount">0</span> ký tự
                         </div>
                     </div>
 
-                    <div class="tab-content" id="fileTab">
-                        <div class="file-upload-zone">
-                            <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
-                            <label for="fileInput" class="file-upload-label">
-                                <div class="upload-icon">📄</div>
-                                <p class="upload-text">Kéo thả file hoặc click để chọn</p>
-                                <p class="upload-hint">Hỗ trợ: TXT, PDF, DOCX (tối đa 10MB)</p>
+                    <div class="tab-content" id="fileTab" style="display: none;">
+                        <div class="form-file-upload">
+                            <input type="file" id="fileInput" accept=".txt,.pdf,.docx" style="display: none;">
+                            <label for="fileInput" style="cursor: pointer; text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+                                <p style="font-size: 1.125rem; font-weight: 500; margin-bottom: 0.5rem;">Kéo thả file hoặc click để chọn</p>
+                                <p style="font-size: 0.875rem; color: var(--text-tertiary);">Hỗ trợ: TXT, PDF, DOCX (tối đa 10MB)</p>
                             </label>
-                            <div id="fileName" class="file-name-display"></div>
+                            <div id="fileName" style="margin-top: 1rem; font-weight: 500; color: var(--primary);"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Voice Selection Card -->
-            <div class="voice-card card-elevated">
+            <div class="card card-elevated">
                 <div class="card-header">
-                    <h2>Chọn giọng đọc</h2>
+                    <h3 class="card-title">🎙️ Chọn giọng đọc</h3>
                 </div>
                 <div class="card-body">
-                    <div class="voice-select-group">
-                        <select id="voiceSelect" class="voice-select-modern">
+                    <div class="form-group">
+                        <label class="form-label">Giọng nói</label>
+                        <select id="voiceSelect" class="form-select">
                             <option value="">Đang tải danh sách giọng...</option>
                         </select>
-                        <button type="button" id="voiceGalleryBtn" class="btn-voice-preview">
-                            Nghe thử giọng
-                        </button>
                     </div>
+                    <button type="button" id="voiceGalleryBtn" class="btn btn-outline btn-md" style="width: 100%;">
+                        <span>🎵</span>
+                        <span>Nghe thử tất cả giọng</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Action Button -->
-            <button id="convertBtn" class="btn-convert-main">
-                <span class="btn-icon">▶</span>
+            <button id="convertBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: var(--space-6);">
+                <span class="btn-icon">▶️</span>
                 <span class="btn-text">Chuyển đổi ngay</span>
             </button>
         </div>
 
         <!-- Right Column: Output & Stats Area -->
-        <div class="main-col-right">
+        <div class="main-col-right animate-slideUp" style="animation-delay: 0.1s;">
             <!-- Quick Stats -->
-            <div class="quick-stats-card card-elevated">
-                <div class="quick-stat-item">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="totalConversions">0</div>
-                        <div class="stat-label">Lần chuyển đổi</div>
+            <div class="quick-stats-modern">
+                <div class="quick-stat-item-modern">
+                    <div class="stat-icon-modern">🎯</div>
+                    <div class="stat-content-modern">
+                        <div class="stat-value-modern" id="totalConversions">0</div>
+                        <div class="stat-label-modern">Lần chuyển đổi</div>
                     </div>
                 </div>
-                <div class="quick-stat-divider"></div>
-                <div class="quick-stat-item">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-content">
-                        <div class="stat-value" id="totalCharacters">0</div>
-                        <div class="stat-label">Ký tự đã dùng</div>
+                <div class="quick-stat-divider-modern"></div>
+                <div class="quick-stat-item-modern">
+                    <div class="stat-icon-modern">📝</div>
+                    <div class="stat-content-modern">
+                        <div class="stat-value-modern" id="totalCharacters">0</div>
+                        <div class="stat-label-modern">Ký tự đã dùng</div>
                     </div>
                 </div>
             </div>
 
             <!-- Output Card -->
-            <div class="output-card card-elevated">
+            <div class="card card-elevated">
                 <div class="card-header">
-                    <h2>Kết quả</h2>
+                    <h3 class="card-title">🎵 Kết quả</h3>
                 </div>
                 <div class="card-body">
                     <!-- Loading State -->
-                    <div id="loadingIndicator" class="output-loading" style="display: none;">
-                        <div class="loading-spinner"></div>
-                        <p class="loading-text">Đang xử lý âm thanh...</p>
-                        <p class="loading-subtext">Vui lòng đợi trong giây lát</p>
+                    <div id="loadingIndicator" class="output-state" style="display: none;">
+                        <div class="spinner spinner-lg" style="margin: 0 auto var(--space-4);"></div>
+                        <p class="output-state-title">Đang xử lý âm thanh...</p>
+                        <p class="output-state-subtitle">Vui lòng đợi trong giây lát</p>
                     </div>
                     
                     <!-- Empty State -->
-                    <div id="emptyState" class="output-empty">
-                        <div class="empty-icon">🎵</div>
-                        <p class="empty-title">Chưa có kết quả</p>
-                        <p class="empty-subtitle">Nhập văn bản và nhấn "Chuyển đổi" để bắt đầu</p>
+                    <div id="emptyState" class="output-state">
+                        <div class="output-state-icon">🎵</div>
+                        <p class="output-state-title">Chưa có kết quả</p>
+                        <p class="output-state-subtitle">Nhập văn bản và nhấn "Chuyển đổi" để bắt đầu</p>
                     </div>
 
                     <!-- Audio Player -->
-                    <div id="audioPlayer" class="output-audio" style="display: none;">
-                        <div class="audio-success-badge">✓ Chuyển đổi thành công</div>
-                        <audio id="audioElement" controls></audio>
-                        <div class="audio-actions-grid">
-                            <a id="downloadBtn" class="btn-action-secondary" download>
-                                <span>💾</span> Tải xuống
+                    <div id="audioPlayer" class="audio-player-modern" style="display: none;">
+                        <div class="audio-success-badge-modern">
+                            <span>✓</span>
+                            <span>Chuyển đổi thành công</span>
+                        </div>
+                        <audio id="audioElement" controls style="width: 100%; margin: var(--space-6) 0;"></audio>
+                        <div class="audio-actions-modern">
+                            <a id="downloadBtn" class="btn btn-secondary btn-md" download>
+                                <span>💾</span>
+                                <span>Tải xuống</span>
                             </a>
-                            <button class="btn-action-secondary" onclick="document.getElementById('audioElement').currentTime=0">
-                                <span>↺</span> Phát lại
+                            <button class="btn btn-ghost btn-md" onclick="document.getElementById('audioElement').currentTime=0">
+                                <span>↺</span>
+                                <span>Phát lại</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Error State -->
-                    <div id="errorMessage" class="output-error" style="display: none;"></div>
+                    <div id="errorMessage" class="alert alert-error" style="display: none;"></div>
                 </div>
             </div>
 
             <!-- Voice Adjustment Panel (NEW) -->
-            <div id="voiceAdjustmentPanel" class="voice-adjustment-panel card-elevated" style="display: none;">
+            <div id="voiceAdjustmentPanel" class="card card-elevated" style="display: none;">
                 <div class="card-header">
-                    <h2>🎛️ Điều chỉnh giọng nói</h2>
-                    <p class="adjustment-subtitle">Tinh chỉnh cao độ và tone giọng theo ý muốn</p>
+                    <h3 class="card-title">🎛️ Điều chỉnh giọng nói</h3>
+                    <p class="form-hint" style="margin: 0;">Tinh chỉnh cao độ và tone giọng theo ý muốn</p>
                 </div>
                 <div class="card-body">
                     <!-- Pitch Control -->
-                    <div class="slider-control">
-                        <div class="slider-label-row">
-                            <label for="pitchSlider">Cao độ (Pitch)</label>
-                            <span class="slider-value" id="pitchValue">0</span>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="pitchSlider" class="form-label">Cao độ (Pitch)</label>
+                            <span class="slider-value-display" id="pitchValue">0</span>
                         </div>
-                        <input type="range" id="pitchSlider" class="voice-slider" 
+                        <input type="range" id="pitchSlider" class="form-range" 
                                min="-12" max="12" value="0" step="1">
-                        <div class="slider-markers">
-                            <span class="marker-label">-12</span>
-                            <span class="marker-label">-6</span>
-                            <span class="marker-label center">0</span>
-                            <span class="marker-label">+6</span>
-                            <span class="marker-label">+12</span>
-                        </div>
-                        <p class="slider-hint">Âm thấp hơn ← | → Âm cao hơn</p>
+                        <p class="form-hint">Âm thấp hơn ← | → Âm cao hơn</p>
                     </div>
 
                     <!-- Index Rate Control -->
-                    <div class="slider-control">
-                        <div class="slider-label-row">
-                            <label for="indexSlider">Độ pha trộn (Index Rate)</label>
-                            <span class="slider-value" id="indexValue">0.75</span>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="indexSlider" class="form-label">Độ pha trộn (Index Rate)</label>
+                            <span class="slider-value-display" id="indexValue">0.75</span>
                         </div>
-                        <input type="range" id="indexSlider" class="voice-slider" 
+                        <input type="range" id="indexSlider" class="form-range" 
                                min="0" max="1" value="0.75" step="0.05">
-                        <div class="slider-markers">
-                            <span class="marker-label">0</span>
-                            <span class="marker-label">0.25</span>
-                            <span class="marker-label center">0.5</span>
-                            <span class="marker-label">0.75</span>
-                            <span class="marker-label">1.0</span>
-                        </div>
-                        <p class="slider-hint">Giọng gốc ← | → Giọng đích</p>
+                        <p class="form-hint">Giọng gốc ← | → Giọng đích</p>
                     </div>
 
                     <!-- Protect Control -->
-                    <div class="slider-control">
-                        <div class="slider-label-row">
-                            <label for="protectSlider">Bảo vệ phụ âm (Protect)</label>
-                            <span class="slider-value" id="protectValue">0.33</span>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="protectSlider" class="form-label">Bảo vệ phụ âm (Protect)</label>
+                            <span class="slider-value-display" id="protectValue">0.33</span>
                         </div>
-                        <input type="range" id="protectSlider" class="voice-slider" 
+                        <input type="range" id="protectSlider" class="form-range" 
                                min="0" max="0.5" value="0.33" step="0.01">
-                        <div class="slider-markers">
-                            <span class="marker-label">0</span>
-                            <span class="marker-label">0.125</span>
-                            <span class="marker-label center">0.25</span>
-                            <span class="marker-label">0.375</span>
-                            <span class="marker-label">0.5</span>
-                        </div>
-                        <p class="slider-hint">Ít bảo vệ ← | → Nhiều bảo vệ</p>
+                        <p class="form-hint">Ít bảo vệ ← | → Nhiều bảo vệ</p>
                     </div>
 
                     <!-- Preset Buttons -->
-                    <div class="preset-buttons">
-                        <div class="preset-label">Cài đặt nhanh:</div>
-                        <div class="preset-grid">
-                            <button class="btn-preset" data-preset="male-to-female">
-                                <span class="preset-icon">🎭</span>
-                                <span class="preset-name">Nam → Nữ</span>
+                    <div class="preset-buttons-modern">
+                        <div class="preset-label-modern">⚡ Cài đặt nhanh:</div>
+                        <div class="preset-grid-modern">
+                            <button class="btn-preset-modern" data-preset="male-to-female">
+                                <span class="preset-icon-modern">🎭</span>
+                                <span class="preset-name-modern">Nam → Nữ</span>
                             </button>
-                            <button class="btn-preset" data-preset="female-to-male">
-                                <span class="preset-icon">🎭</span>
-                                <span class="preset-name">Nữ → Nam</span>
+                            <button class="btn-preset-modern" data-preset="female-to-male">
+                                <span class="preset-icon-modern">🎭</span>
+                                <span class="preset-name-modern">Nữ → Nam</span>
                             </button>
-                            <button class="btn-preset" data-preset="higher">
-                                <span class="preset-icon">🎵</span>
-                                <span class="preset-name">Cao hơn</span>
+                            <button class="btn-preset-modern" data-preset="higher">
+                                <span class="preset-icon-modern">🎵</span>
+                                <span class="preset-name-modern">Cao hơn</span>
                             </button>
-                            <button class="btn-preset" data-preset="lower">
-                                <span class="preset-icon">🎵</span>
-                                <span class="preset-name">Thấp hơn</span>
+                            <button class="btn-preset-modern" data-preset="lower">
+                                <span class="preset-icon-modern">🎵</span>
+                                <span class="preset-name-modern">Thấp hơn</span>
                             </button>
-                            <button class="btn-preset" data-preset="reset">
-                                <span class="preset-icon">↺</span>
-                                <span class="preset-name">Gốc</span>
+                            <button class="btn-preset-modern" data-preset="reset">
+                                <span class="preset-icon-modern">↺</span>
+                                <span class="preset-name-modern">Gốc</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Apply Button -->
-                    <button id="applyVoiceEffectBtn" class="btn-apply-effect">
+                    <button id="applyVoiceEffectBtn" class="btn btn-primary btn-md" style="width: 100%; margin-top: var(--space-4);">
                         <span class="btn-icon">✨</span>
                         <span class="btn-text">Áp dụng hiệu ứng</span>
                     </button>
 
                     <!-- Processing State -->
-                    <div id="effectProcessing" class="effect-processing" style="display: none;">
-                        <div class="processing-spinner"></div>
-                        <span>Đang xử lý...</span>
+                    <div id="effectProcessing" style="display: none; text-align: center; margin-top: var(--space-4);">
+                        <div class="spinner" style="margin: 0 auto;"></div>
+                        <span style="display: block; margin-top: var(--space-2); color: var(--text-secondary);">Đang xử lý...</span>
                     </div>
 
                     <!-- Effect Success -->
-                    <div id="effectSuccess" class="effect-message success" style="display: none;">
-                        <span class="message-icon">✓</span>
-                        <span class="message-text">Đã áp dụng hiệu ứng thành công!</span>
+                    <div id="effectSuccess" class="alert alert-success" style="display: none; margin-top: var(--space-4);">
+                        <span>✓</span>
+                        <span>Đã áp dụng hiệu ứng thành công!</span>
                     </div>
 
                     <!-- Effect Error -->
-                    <div id="effectError" class="effect-message error" style="display: none;">
-                        <span class="message-icon">✕</span>
-                        <span class="message-text"></span>
+                    <div id="effectError" class="alert alert-error" style="display: none; margin-top: var(--space-4);">
+                        <span>✕</span>
+                        <span></span>
                     </div>
                 </div>
             </div>
 
             <!-- Tips Card -->
-            <div class="tips-card card-subtle">
-                <div class="tips-header">💡 Mẹo sử dụng</div>
-                <ul class="tips-list">
-                    <li>Sử dụng dấu câu để giọng đọc tự nhiên hơn</li>
-                    <li>Nghe thử các giọng để chọn phù hợp</li>
-                    <li>File lớn sẽ được xử lý lâu hơn</li>
-                </ul>
+            <div class="card card-outlined">
+                <div class="card-header">
+                    <h3 class="card-title">💡 Mẹo sử dụng</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="tips-list-modern">
+                        <li>Sử dụng dấu câu để giọng đọc tự nhiên hơn</li>
+                        <li>Nghe thử các giọng để chọn phù hợp nhất</li>
+                        <li>File lớn sẽ được xử lý lâu hơn</li>
+                        <li>Điều chỉnh pitch để thay đổi cao độ giọng</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Voice Gallery Modal -->
-<div id="voiceGalleryModal" class="modal" style="display: none;">
-    <div class="modal-content voice-gallery-modal">
+<div id="voiceGalleryModal" class="modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
         <div class="modal-header">
-            <h2>Thư viện giọng đọc</h2>
-            <span class="close-voice-gallery">&times;</span>
+            <h2>🎙️ Thư viện giọng đọc</h2>
+            <button class="modal-close close-voice-gallery">&times;</button>
         </div>
         <div class="modal-body">
-            <p class="modal-description">Nghe thử và chọn giọng đọc phù hợp với nội dung của bạn</p>
-            <div id="voiceGalleryGrid" class="voice-gallery-grid">
-                <div class="loading-text">Đang tải danh sách giọng...</div>
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-6);">Nghe thử và chọn giọng đọc phù hợp với nội dung của bạn</p>
+            <div id="voiceGalleryGrid" class="voice-gallery-grid-modern">
+                <div style="text-align: center; padding: var(--space-8); color: var(--text-tertiary);">
+                    <div class="spinner" style="margin: 0 auto var(--space-4);"></div>
+                    <p>Đang tải danh sách giọng...</p>
+                </div>
             </div>
         </div>
     </div>

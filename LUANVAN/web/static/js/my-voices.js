@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Start polling progress for voices being trained
  */
 function startProgressPolling() {
-    const processingVoices = document.querySelectorAll('.voice-card[data-status="processing"]');
+    const processingVoices = document.querySelectorAll('.voice-card[data-status="processing"], .voice-card-modern[data-status="processing"]');
     
     processingVoices.forEach(card => {
         const voiceId = card.dataset.voiceId;
@@ -73,27 +73,35 @@ function pollProgress(voiceId) {
  * Update voice card with progress data
  */
 function updateVoiceCard(voiceId, data) {
-    const card = document.querySelector(`.voice-card[data-voice-id="${voiceId}"]`);
+    const card = document.querySelector(`.voice-card[data-voice-id="${voiceId}"], .voice-card-modern[data-voice-id="${voiceId}"]`);
     if (!card) return;
     
-    const statusElement = card.querySelector('.status-badge');
+    // Update progress bar (both old and new styles)
     const progressBar = card.querySelector('.progress-bar');
-    const progressText = card.querySelector('.progress-text');
+    const progressFill = card.querySelector('.progress-fill-modern');
+    const progressText = card.querySelector('.progress-text, .progress-text-modern');
     
-    if (data.status === 'processing' && progressBar) {
-        progressBar.style.width = `${data.progress}%`;
+    if (data.status === 'processing') {
+        if (progressBar) {
+            progressBar.style.width = `${data.progress}%`;
+        }
+        if (progressFill) {
+            progressFill.style.width = `${data.progress}%`;
+        }
         if (progressText) {
             progressText.textContent = `${data.progress}%`;
         }
     }
     
+    // Update status badge (both old and new styles)
+    const statusElement = card.querySelector('.status-badge, .badge');
     if (statusElement) {
         if (data.status === 'completed') {
             statusElement.innerHTML = '✅ Đã sẵn sàng';
-            statusElement.className = 'status-badge status-completed';
+            statusElement.className = 'badge badge-success';
         } else if (data.status === 'failed') {
             statusElement.innerHTML = '❌ Thất bại';
-            statusElement.className = 'status-badge status-failed';
+            statusElement.className = 'badge badge-error';
         }
     }
     
@@ -105,7 +113,7 @@ function updateVoiceCard(voiceId, data) {
  * Check for processing voices (for auto-refresh)
  */
 async function checkProcessingVoices() {
-    const processingVoices = document.querySelectorAll('.voice-card[data-status="processing"]');
+    const processingVoices = document.querySelectorAll('.voice-card[data-status="processing"], .voice-card-modern[data-status="processing"]');
     
     if (processingVoices.length > 0) {
         console.log('[MY VOICES] Checking processing voices...');
@@ -144,9 +152,16 @@ async function refreshProgress(voiceId) {
 function testVoice(voiceId) {
     currentTestVoiceId = voiceId;
     
+    // Reset modal state
+    document.getElementById('testResult').style.display = 'none';
+    document.getElementById('testLoading').style.display = 'none';
+    const testError = document.getElementById('testError');
+    if (testError) testError.style.display = 'none';
+    
     // Show modal
     const modal = document.getElementById('testVoiceModal');
     modal.style.display = 'flex';
+    modal.classList.add('is-active');
     
     // Reset
     document.getElementById('testResult').style.display = 'none';
@@ -158,6 +173,7 @@ function testVoice(voiceId) {
 function closeTestModal() {
     const modal = document.getElementById('testVoiceModal');
     modal.style.display = 'none';
+    modal.classList.remove('is-active');
     currentTestVoiceId = null;
 }
 
@@ -165,42 +181,89 @@ function closeTestModal() {
  * Run test with sample text
  */
 async function runTest() {
-    if (!currentTestVoiceId) return;
+    console.log('[MY VOICES] runTest() called');
+    console.log('[MY VOICES] currentTestVoiceId:', currentTestVoiceId);
     
-    const text = document.getElementById('testText').value.trim();
-    
-    if (!text) {
-        showNotification('error', 'Vui lòng nhập văn bản để test');
+    if (!currentTestVoiceId) {
+        console.error('[MY VOICES] No voice ID selected!');
+        showTestError('Không tìm thấy ID giọng nói. Vui lòng đóng và mở lại modal.');
         return;
     }
     
+    const textElement = document.getElementById('testText');
+    if (!textElement) {
+        console.error('[MY VOICES] testText element not found!');
+        showTestError('Không tìm thấy textbox. Vui lòng refresh trang.');
+        return;
+    }
+    
+    const text = textElement.value.trim();
+    console.log('[MY VOICES] Test text:', text);
+    
+    if (!text) {
+        showTestError('Vui lòng nhập văn bản để test');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('testResult').style.display = 'none';
+    document.getElementById('testError').style.display = 'none';
+    document.getElementById('testLoading').style.display = 'block';
+    
     try {
+        console.log('[MY VOICES] Sending request to:', `/api/custom-voice/${currentTestVoiceId}/test`);
+        
         const response = await fetch(`/api/custom-voice/${currentTestVoiceId}/test`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ test_text: text })
         });
         
+        console.log('[MY VOICES] Response status:', response.status);
         const data = await response.json();
+        console.log('[MY VOICES] Response data:', data);
         
-        if (response.ok) {
-            showNotification('success', data.message || 'Test thành công!');
-            
+        // Hide loading
+        document.getElementById('testLoading').style.display = 'none';
+        
+        if (response.ok && data.success) {
             // Show audio player (if audio URL is provided)
             if (data.audio_url && data.audio_url !== '#') {
                 const resultDiv = document.getElementById('testResult');
                 const audioElement = document.getElementById('testAudio');
-                audioElement.src = data.audio_url;
-                resultDiv.style.display = 'block';
+                if (audioElement && resultDiv) {
+                    audioElement.src = data.audio_url;
+                    resultDiv.style.display = 'block';
+                    console.log('[MY VOICES] Audio player shown with URL:', data.audio_url);
+                }
+            } else {
+                showTestError('Test thành công nhưng không có audio URL');
             }
         } else {
-            showNotification('error', data.error || 'Test thất bại');
+            showTestError(data.error || 'Test thất bại');
         }
     } catch (error) {
         console.error('[MY VOICES] Error testing voice:', error);
-        showNotification('error', 'Lỗi kết nối');
+        document.getElementById('testLoading').style.display = 'none';
+        showTestError('Lỗi kết nối: ' + error.message);
+    }
+}
+
+/**
+ * Show test error message
+ */
+function showTestError(message) {
+    const testError = document.getElementById('testError');
+    if (testError) {
+        testError.innerHTML = `
+            <div class="alert alert-error">
+                <span>❌</span>
+                <span>${message}</span>
+            </div>
+        `;
+        testError.style.display = 'block';
     }
 }
 

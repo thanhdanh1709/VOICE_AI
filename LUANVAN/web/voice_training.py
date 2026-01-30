@@ -111,8 +111,6 @@ class VoiceTrainingService:
                 raise Exception("Feature extraction failed")
             
             # Step 3: Train RVC model (60%)
-            # NOTE: For now, we'll use a simplified approach
-            # In production, you'd integrate with full RVC training pipeline
             logger.info(f"[TRAINING] Step 3/5: Training model...")
             self._update_progress(voice_id, 60)
             
@@ -173,9 +171,6 @@ class VoiceTrainingService:
         Simplified RVC training
         NOTE: This is a placeholder. In production, integrate with full RVC training
         """
-        # For now, we'll just copy the processed audio as a "model"
-        # In production, this would call actual RVC training code
-        
         model_dir = os.path.join(self.models_dir, f"user_{user_id}")
         os.makedirs(model_dir, exist_ok=True)
         
@@ -351,6 +346,7 @@ class VoiceTrainingService:
         except Exception as e:
             logger.error(f"Error adding to queue: {e}")
             raise
+    
 
 
 # Singleton instance

@@ -1,66 +1,197 @@
 {% extends "base.html" %}
 
-{% block title %}Lịch sử chuyển đổi - TTS System{% endblock %}
+{% block title %}Lịch sử chuyển đổi - VoiceAI TTS{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Table Styles */
+.history-table-modern {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.history-table-modern thead {
+    background-color: var(--bg-secondary);
+}
+
+.history-table-modern th {
+    padding: var(--space-4);
+    text-align: left;
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.history-table-modern tbody tr {
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.history-table-modern tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.history-table-modern td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+    font-size: var(--text-sm);
+}
+
+.text-preview-cell {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-loading-modern {
+    text-align: center;
+    padding: var(--space-12) !important;
+}
+
+/* Empty State */
+.empty-history-modern {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+}
+
+.empty-history-modern .empty-icon {
+    font-size: 5rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+}
+
+.empty-history-modern .empty-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-2);
+}
+
+.empty-history-modern .empty-subtitle {
+    color: var(--text-secondary);
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.btn-table-action {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn-table-action:hover {
+    transform: translateY(-2px);
+}
+
+.btn-play {
+    background-color: var(--success);
+    color: white;
+}
+
+.btn-download {
+    background-color: var(--info);
+    color: white;
+}
+
+.btn-delete-table {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.btn-delete-table:hover {
+    background-color: var(--error);
+    color: white;
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+    .history-table-modern {
+        font-size: var(--text-xs);
+    }
+    
+    .history-table-modern th,
+    .history-table-modern td {
+        padding: var(--space-3);
+    }
+    
+    .text-preview-cell {
+        max-width: 150px;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container">
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <h1>Lịch sử chuyển đổi</h1>
-        <p>Xem lại và quản lý các file âm thanh đã tạo</p>
-    </div>
-
-    <!-- Search & Filter Card -->
-    <div class="history-controls card-elevated">
-        <div class="search-bar-wrapper">
-            <div class="search-icon">🔍</div>
-            <input type="text" id="searchInput" class="search-input-modern" placeholder="Tìm kiếm theo nội dung văn bản...">
-            <button id="searchBtn" class="btn-search">Tìm kiếm</button>
+    <div class="main-content">
+        <!-- Hero Section -->
+        <div style="margin-bottom: var(--space-8); text-align: center;">
+            <h1 class="gradient-text">📜 Lịch sử chuyển đổi</h1>
+            <p style="color: var(--text-secondary); font-size: var(--text-lg);">Xem lại và quản lý các file âm thanh đã tạo</p>
         </div>
-    </div>
 
-    <!-- History Table Card -->
-    <div class="history-table-card card-elevated">
-        <div class="table-header">
-            <h2>Danh sách lịch sử</h2>
-            <div class="table-count">
-                Tổng: <span id="totalRecords">0</span> bản ghi
+        <!-- Search Card -->
+        <div class="card card-elevated animate-fadeIn" style="margin-bottom: var(--space-6);">
+            <div class="form-group" style="margin: 0;">
+                <div style="display: flex; gap: var(--space-2);">
+                    <input type="text" id="searchInput" class="form-input" placeholder="🔍 Tìm kiếm theo nội dung văn bản..." style="flex: 1;">
+                    <button id="searchBtn" class="btn btn-primary btn-md">Tìm kiếm</button>
+                </div>
             </div>
         </div>
-        <div class="table-wrapper">
-            <table class="history-table-modern">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Văn bản</th>
-                        <th>Giọng đọc</th>
-                        <th>Trạng thái</th>
-                        <th>Thời gian</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="historyTableBody">
-                    <tr>
-                        <td colspan="6" class="table-loading">
-                            <div class="loading-spinner-small"></div>
-                            <p>Đang tải dữ liệu...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Empty State -->
-        <div id="emptyHistoryState" class="empty-history-state" style="display: none;">
-            <div class="empty-icon">📋</div>
-            <p class="empty-title">Chưa có lịch sử</p>
-            <p class="empty-subtitle">Các lần chuyển đổi của bạn sẽ xuất hiện ở đây</p>
-        </div>
-    </div>
 
-    <!-- Pagination -->
-    <div class="pagination-wrapper">
-        <div class="pagination" id="pagination"></div>
+        <!-- History Table Card -->
+        <div class="card card-elevated animate-slideUp">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
+                <h2 style="margin: 0;">📊 Danh sách lịch sử</h2>
+                <div class="badge badge-primary">
+                    Tổng: <strong id="totalRecords">0</strong> bản ghi
+                </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="history-table-modern">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Văn bản</th>
+                            <th>Giọng đọc</th>
+                            <th>Trạng thái</th>
+                            <th>Thời gian</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="6" class="table-loading-modern">
+                                <div class="spinner" style="margin: 0 auto var(--space-3);"></div>
+                                <p style="color: var(--text-secondary);">Đang tải dữ liệu...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyHistoryState" class="empty-history-modern" style="display: none;">
+                <div class="empty-icon">📋</div>
+                <p class="empty-title">Chưa có lịch sử</p>
+                <p class="empty-subtitle">Các lần chuyển đổi của bạn sẽ xuất hiện ở đây</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div style="margin-top: var(--space-8);">
+            <div class="pagination-modern" id="pagination"></div>
+        </div>
     </div>
 </div>
 {% endblock %}

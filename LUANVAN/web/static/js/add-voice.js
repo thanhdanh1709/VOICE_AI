@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setupUploadArea();
     setupForm();
+    setupAdjustmentSliders();
 });
 
 /**
@@ -156,6 +157,44 @@ function removeFile() {
 }
 
 /**
+ * Setup adjustment sliders
+ */
+function setupAdjustmentSliders() {
+    // Pitch slider
+    const pitchSlider = document.getElementById('pitchAdjustment');
+    const pitchValue = document.getElementById('pitchValue');
+    
+    if (pitchSlider && pitchValue) {
+        pitchSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            pitchValue.textContent = value > 0 ? `+${value}` : value;
+        });
+    }
+    
+    // Speed slider
+    const speedSlider = document.getElementById('speedAdjustment');
+    const speedValue = document.getElementById('speedValue');
+    
+    if (speedSlider && speedValue) {
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            speedValue.textContent = `${value.toFixed(1)}x`;
+        });
+    }
+    
+    // Energy slider
+    const energySlider = document.getElementById('energyAdjustment');
+    const energyValue = document.getElementById('energyValue');
+    
+    if (energySlider && energyValue) {
+        energySlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            energyValue.textContent = `${value.toFixed(1)}x`;
+        });
+    }
+}
+
+/**
  * Setup form submission
  */
 function setupForm() {
@@ -195,6 +234,25 @@ async function handleSubmit() {
         formData.append('voice_name', voiceName);
         formData.append('description', description);
         
+        // V2: Add base voice and adjustments
+        const baseVoice = document.getElementById('baseVoice').value;
+        const pitchAdjustment = document.getElementById('pitchAdjustment').value;
+        const speedAdjustment = document.getElementById('speedAdjustment').value;
+        const energyAdjustment = document.getElementById('energyAdjustment').value;
+        
+        formData.append('base_voice_id', baseVoice);
+        formData.append('pitch_adjustment', pitchAdjustment);
+        formData.append('speed_adjustment', speedAdjustment);
+        formData.append('energy_adjustment', energyAdjustment);
+        
+        console.log('[ADD VOICE] Submitting with:', {
+            voice_name: voiceName,
+            base_voice_id: baseVoice,
+            pitch_adjustment: pitchAdjustment,
+            speed_adjustment: speedAdjustment,
+            energy_adjustment: energyAdjustment
+        });
+        
         // Upload and start training
         const response = await fetch('/api/custom-voice/upload', {
             method: 'POST',
@@ -216,8 +274,8 @@ async function handleSubmit() {
         updateProgressSubtitle(data);
         
         // Start polling progress
-        if (data.training_mode === 'realtime') {
-            // Realtime mode - poll progress
+        if (data.training_mode === 'realtime' || data.training_mode === 'instant') {
+            // Realtime/Instant mode - poll progress (should complete immediately for V2)
             pollTrainingProgress(currentVoiceId);
         } else {
             // Background mode - show info

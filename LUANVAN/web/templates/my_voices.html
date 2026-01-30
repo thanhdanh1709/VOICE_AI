@@ -1,131 +1,428 @@
 {% extends "base.html" %}
 
-{% block title %}Giọng của tôi - TTS System{% endblock %}
+{% block title %}Giọng của tôi - VoiceAI TTS{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Page Container */
+.custom-voices-container {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Page Header */
+.page-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-6);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.header-content-modern h1 {
+    margin-bottom: var(--space-2);
+}
+
+.header-content-modern .subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
+    margin: 0;
+}
+
+/* Voices Grid */
+.voices-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-12);
+}
+
+/* Voice Card */
+.voice-card-modern {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-md);
+    transition: all var(--duration-base) var(--ease-out);
+    border: 2px solid transparent;
+}
+
+.voice-card-modern:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-light);
+}
+
+.voice-card-modern[data-status="completed"] {
+    border-left: 4px solid var(--success);
+}
+
+.voice-card-modern[data-status="processing"] {
+    border-left: 4px solid var(--info);
+}
+
+.voice-card-modern[data-status="failed"] {
+    border-left: 4px solid var(--error);
+}
+
+.voice-card-modern[data-status="pending"] {
+    border-left: 4px solid var(--warning);
+}
+
+/* Voice Card Header */
+.voice-card-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.voice-name-modern {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.voice-description-modern {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: var(--leading-relaxed);
+}
+
+/* Quality Badge */
+.quality-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+}
+
+/* Voice Meta */
+.voice-meta-modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin: var(--space-4) 0;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.meta-item-modern {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.meta-icon-modern {
+    font-size: var(--text-lg);
+}
+
+/* Progress Bar */
+.progress-container-modern {
+    margin: var(--space-3) 0;
+}
+
+.progress-bar-modern {
+    width: 100%;
+    height: 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill-modern {
+    height: 100%;
+    background: var(--primary-gradient);
+    border-radius: var(--radius-full);
+    transition: width var(--duration-slow) var(--ease-out);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: var(--space-2);
+}
+
+.progress-text-modern {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: white;
+}
+
+.status-note-modern {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+    font-style: italic;
+}
+
+/* Voice Actions */
+.voice-actions-modern {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.btn-action-modern {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-md);
+    transition: all var(--duration-fast) var(--ease-out);
+    cursor: pointer;
+    border: none;
+}
+
+.btn-action-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-test-modern {
+    background-color: var(--info);
+    color: white;
+}
+
+.btn-test-modern:hover {
+    background-color: #2563eb;
+}
+
+.btn-use-modern {
+    background-color: var(--success);
+    color: white;
+}
+
+.btn-use-modern:hover {
+    background-color: #059669;
+}
+
+.btn-refresh-modern {
+    background-color: var(--info);
+    color: white;
+}
+
+.btn-refresh-modern:hover {
+    background-color: #2563eb;
+}
+
+.btn-retry-modern {
+    background-color: var(--warning);
+    color: white;
+}
+
+.btn-retry-modern:hover {
+    background-color: #d97706;
+}
+
+.btn-delete-modern {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    flex: 0 0 auto;
+}
+
+.btn-delete-modern:hover {
+    background-color: var(--error);
+    color: white;
+}
+
+/* Empty State */
+.empty-state-modern {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+}
+
+.empty-state-modern .empty-icon {
+    font-size: 6rem;
+    margin-bottom: var(--space-6);
+    opacity: 0.5;
+}
+
+.empty-state-modern h2 {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+}
+
+.empty-state-modern p {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .page-header-modern {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+    
+    .voices-grid-modern {
+        grid-template-columns: 1fr;
+    }
+    
+    .voice-actions-modern {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="custom-voices-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1>🎙️ Giọng của tôi</h1>
-            <p class="subtitle">Quản lý và tạo giọng nói tùy chỉnh của bạn</p>
-        </div>
-        <a href="{{ url_for('add_voice_page') }}" class="btn-add-voice">
-            <span class="btn-icon">➕</span>
-            <span class="btn-text">Thêm giọng mới</span>
-        </a>
-    </div>
-
-    {% if error %}
-    <div class="alert alert-error">
-        <span class="alert-icon">❌</span>
-        <span class="alert-text">{{ error }}</span>
-    </div>
-    {% endif %}
-
-    {% if voices|length == 0 %}
-    <!-- Empty state -->
-    <div class="empty-state">
-        <div class="empty-icon">🎤</div>
-        <h2>Chưa có giọng nào</h2>
-        <p>Tạo giọng nói đầu tiên của bạn bằng cách upload audio sample</p>
-        <a href="{{ url_for('add_voice_page') }}" class="btn-primary-large">
-            ➕ Tạo giọng mới
-        </a>
-    </div>
-    {% else %}
-    <!-- Voices grid -->
-    <div class="voices-grid">
-        {% for voice in voices %}
-        <div class="voice-card" data-voice-id="{{ voice.id }}" data-status="{{ voice.status }}">
-            <div class="voice-card-header">
-                <div class="voice-info">
-                    <h3 class="voice-name">{{ voice.voice_name }}</h3>
-                    {% if voice.description %}
-                    <p class="voice-description">{{ voice.description }}</p>
-                    {% endif %}
+<div class="container">
+    <div class="main-content">
+        <div class="custom-voices-container">
+            <div class="page-header-modern">
+                <div class="header-content-modern">
+                    <h1 class="gradient-text">🎙️ Giọng của tôi</h1>
+                    <p class="subtitle">Quản lý và tạo giọng nói tùy chỉnh của bạn</p>
                 </div>
-                <div class="voice-quality">
-                    {% if voice.quality_score %}
-                    <span class="quality-badge" data-quality="{{ voice.quality_score }}">
-                        ⭐ {{ "%.1f"|format(voice.quality_score) }}/10
-                    </span>
-                    {% endif %}
-                </div>
+                <a href="{{ url_for('add_voice_page') }}" class="btn btn-primary btn-lg">
+                    <span class="btn-icon">✨</span>
+                    <span class="btn-text">Thêm giọng mới</span>
+                </a>
             </div>
 
-            <div class="voice-status">
-                {% if voice.status == 'completed' %}
-                <span class="status-badge status-completed">✅ Đã sẵn sàng</span>
-                {% elif voice.status == 'processing' %}
-                <span class="status-badge status-processing">⏳ Đang train...</span>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: {{ voice.training_progress }}%">
-                        <span class="progress-text">{{ voice.training_progress }}%</span>
+            {% if error %}
+            <div class="alert alert-error">
+                <span>❌</span>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            {% if voices|length == 0 %}
+            <!-- Empty state -->
+            <div class="empty-state-modern animate-fadeIn">
+                <div class="empty-icon">🎤</div>
+                <h2>Chưa có giọng nào</h2>
+                <p>Tạo giọng nói đầu tiên của bạn bằng cách upload audio sample hoặc chọn giọng nền có sẵn</p>
+                <a href="{{ url_for('add_voice_page') }}" class="btn btn-primary btn-lg">
+                    <span>➕</span>
+                    <span>Tạo giọng mới</span>
+                </a>
+            </div>
+            {% else %}
+            <!-- Voices grid -->
+            <div class="voices-grid-modern">
+                {% for voice in voices %}
+                <div class="voice-card-modern animate-slideUp" data-voice-id="{{ voice.id }}" data-status="{{ voice.status }}" style="animation-delay: {{ loop.index0 * 0.05 }}s;">
+                    <div class="voice-card-header-modern">
+                        <div class="voice-info-modern">
+                            <h3 class="voice-name-modern">{{ voice.voice_name }}</h3>
+                            {% if voice.description %}
+                            <p class="voice-description-modern">{{ voice.description }}</p>
+                            {% endif %}
+                        </div>
+                        {% if voice.quality_score %}
+                        <span class="quality-badge-modern">
+                            ⭐ {{ "%.1f"|format(voice.quality_score) }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status Section -->
+                    <div style="margin: var(--space-4) 0;">
+                        {% if voice.status == 'completed' %}
+                        <span class="badge badge-success">✅ Đã sẵn sàng</span>
+                        {% elif voice.status == 'processing' %}
+                        <span class="badge badge-info">⏳ Đang train...</span>
+                        <div class="progress-container-modern">
+                            <div class="progress-bar-modern">
+                                <div class="progress-fill-modern" style="width: {{ voice.training_progress }}%">
+                                    <span class="progress-text-modern">{{ voice.training_progress }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% if voice.training_mode == 'background' %}
+                        <p class="status-note-modern">Training trong background, bạn sẽ nhận thông báo khi xong</p>
+                        {% endif %}
+                        {% elif voice.status == 'pending' %}
+                        <span class="badge badge-warning">⏸️ Đang chờ...</span>
+                        {% elif voice.status == 'failed' %}
+                        <span class="badge badge-error">❌ Thất bại</span>
+                        {% if voice.error_message %}
+                        <div class="alert alert-error" style="margin-top: var(--space-2); font-size: var(--text-sm);">
+                            <span>{{ voice.error_message }}</span>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Meta Information -->
+                    <div class="voice-meta-modern">
+                        <span class="meta-item-modern">
+                            <span class="meta-icon-modern">📅</span>
+                            <span>{{ voice.created_at.strftime('%d/%m/%Y') if voice.created_at else 'N/A' }}</span>
+                        </span>
+                        {% if voice.sample_duration %}
+                        <span class="meta-item-modern">
+                            <span class="meta-icon-modern">⏱️</span>
+                            <span>{{ "%.1f"|format(voice.sample_duration) }}s</span>
+                        </span>
+                        {% endif %}
+                        {% if voice.status == 'completed' %}
+                        <span class="meta-item-modern">
+                            <span class="meta-icon-modern">🔊</span>
+                            <span>{{ voice.usage_count or 0 }} lần</span>
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="voice-actions-modern">
+                        {% if voice.status == 'completed' %}
+                        <button class="btn-action-modern btn-test-modern" onclick="testVoice({{ voice.id }})">
+                            <span>🎧</span>
+                            <span>Test</span>
+                        </button>
+                        <button class="btn-action-modern btn-use-modern" onclick="useVoice({{ voice.id }})">
+                            <span>▶️</span>
+                            <span>Sử dụng</span>
+                        </button>
+                        {% elif voice.status == 'processing' %}
+                        <button class="btn-action-modern btn-refresh-modern" onclick="refreshProgress({{ voice.id }})">
+                            <span>🔄</span>
+                            <span>Refresh</span>
+                        </button>
+                        {% elif voice.status == 'failed' %}
+                        <button class="btn-action-modern btn-retry-modern" onclick="retryTraining({{ voice.id }})">
+                            <span>🔄</span>
+                            <span>Thử lại</span>
+                        </button>
+                        {% endif %}
+                        <button class="btn-action-modern btn-delete-modern" onclick="deleteVoice({{ voice.id }}, '{{ voice.voice_name }}')">
+                            <span>🗑️</span>
+                        </button>
                     </div>
                 </div>
-                {% if voice.training_mode == 'background' %}
-                <p class="status-note">Training trong background, bạn sẽ nhận thông báo khi xong</p>
-                {% endif %}
-                {% elif voice.status == 'pending' %}
-                <span class="status-badge status-pending">⏸️ Đang chờ...</span>
-                {% elif voice.status == 'failed' %}
-                <span class="status-badge status-failed">❌ Thất bại</span>
-                {% if voice.error_message %}
-                <p class="error-message">{{ voice.error_message }}</p>
-                {% endif %}
-                {% endif %}
+                {% endfor %}
             </div>
-
-            <div class="voice-meta">
-                <span class="meta-item">
-                    📅 {{ voice.created_at.strftime('%d/%m/%Y') if voice.created_at else 'N/A' }}
-                </span>
-                {% if voice.sample_duration %}
-                <span class="meta-item">
-                    ⏱️ {{ "%.1f"|format(voice.sample_duration) }}s
-                </span>
-                {% endif %}
-                {% if voice.status == 'completed' %}
-                <span class="meta-item">
-                    🔊 Đã dùng {{ voice.usage_count or 0 }} lần
-                </span>
-                {% endif %}
-            </div>
-
-            <div class="voice-actions">
-                {% if voice.status == 'completed' %}
-                <button class="btn-action btn-test" onclick="testVoice({{ voice.id }})">
-                    <span class="btn-icon">🎧</span>
-                    <span class="btn-text">Test</span>
-                </button>
-                <button class="btn-action btn-use" onclick="useVoice({{ voice.id }})">
-                    <span class="btn-icon">▶️</span>
-                    <span class="btn-text">Sử dụng</span>
-                </button>
-                {% elif voice.status == 'processing' %}
-                <button class="btn-action btn-refresh" onclick="refreshProgress({{ voice.id }})">
-                    <span class="btn-icon">🔄</span>
-                    <span class="btn-text">Refresh</span>
-                </button>
-                {% elif voice.status == 'failed' %}
-                <button class="btn-action btn-retry" onclick="retryTraining({{ voice.id }})">
-                    <span class="btn-icon">🔄</span>
-                    <span class="btn-text">Thử lại</span>
-                </button>
-                {% endif %}
-                <button class="btn-action btn-delete" onclick="deleteVoice({{ voice.id }}, '{{ voice.voice_name }}')">
-                    <span class="btn-icon">🗑️</span>
-                    <span class="btn-text">Xóa</span>
-                </button>
-            </div>
+            {% endif %}
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
 </div>
 
 <!-- Test Voice Modal -->
-<div id="testVoiceModal" class="modal" style="display: none;">
+<div id="testVoiceModal" class="modal">
+    <div class="modal-overlay" onclick="closeTestModal()"></div>
     <div class="modal-content">
         <div class="modal-header">
             <h2>🎧 Test giọng nói</h2>
@@ -133,16 +430,29 @@
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label for="testText">Nhập văn bản để test:</label>
-                <textarea id="testText" class="form-control" rows="3" placeholder="Xin chào, đây là giọng custom của tôi...">Xin chào, đây là giọng custom của tôi. Tôi có thể đọc bất kỳ văn bản nào bạn muốn.</textarea>
+                <label for="testText" class="form-label">Nhập văn bản để test:</label>
+                <textarea id="testText" class="form-textarea" rows="4" placeholder="Xin chào, đây là giọng custom của tôi...">Xin chào, đây là giọng custom của tôi. Tôi có thể đọc bất kỳ văn bản nào bạn muốn.</textarea>
+                <span class="form-hint">Nhập câu văn mẫu để nghe thử giọng nói</span>
             </div>
-            <div id="testResult" style="display: none;">
-                <audio id="testAudio" controls style="width: 100%; margin-top: 1rem;"></audio>
+            <div id="testResult" style="display: none; margin-top: var(--space-4);">
+                <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+                    <span>✓</span>
+                    <span>Test thành công! Nghe audio bên dưới:</span>
+                </div>
+                <audio id="testAudio" controls style="width: 100%; border-radius: var(--radius-md);"></audio>
             </div>
+            <div id="testLoading" style="display: none; text-align: center; margin-top: var(--space-4);">
+                <div class="spinner" style="margin: 0 auto var(--space-3);"></div>
+                <p style="color: var(--text-secondary);">Đang tạo audio test...</p>
+            </div>
+            <div id="testError" style="display: none; margin-top: var(--space-4);"></div>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeTestModal()">Đóng</button>
-            <button class="btn-primary" onclick="runTest()">Test ngay</button>
+            <button class="btn btn-ghost btn-md" onclick="closeTestModal()">Đóng</button>
+            <button class="btn btn-primary btn-md" onclick="runTest()">
+                <span>🎧</span>
+                <span>Test ngay</span>
+            </button>
         </div>
     </div>
 </div>

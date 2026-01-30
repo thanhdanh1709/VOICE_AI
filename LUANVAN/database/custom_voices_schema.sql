@@ -2,7 +2,7 @@
 -- CUSTOM VOICES DATABASE SCHEMA
 -- Voice Cloning/Custom Voice Feature
 -- ===================================================
-
+USE tts_system;
 -- Table 1: Custom Voices
 -- Stores information about user-created custom voices
 CREATE TABLE IF NOT EXISTS custom_voices (

@@ -139,6 +139,17 @@ def is_admin():
     """Kiểm tra người dùng có phải admin không"""
     return session.get('user_role') == 'admin'
 
+# Login required decorator
+def login_required(f):
+    """Decorator to require login for routes"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_logged_in():
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def get_user_characters_limit(user_id):
     """Lấy giới hạn ký tự của user"""
     conn = get_db_connection()
@@ -446,6 +457,58 @@ def convert_text_to_speech():
         text = data.get('text', '').strip()
         voice_id = data.get('voice_id', 'Binh')
         
+        # V2: Check if custom voice
+        is_custom_voice = voice_id.startswith('custom_')
+        custom_voice_data = None
+        base_voice_id = voice_id
+        pitch_adjustment = 0
+        speed_adjustment = 1.0
+        
+        if is_custom_voice:
+            # Extract custom voice ID
+            try:
+                custom_voice_id = int(voice_id.replace('custom_', ''))
+                
+                # Fetch custom voice details
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        SELECT base_voice_id, pitch_adjustment, speed_adjustment, 
+                               energy_adjustment, voice_name
+                        FROM custom_voices 
+                        WHERE id = %s AND user_id = %s AND status = 'completed'
+                    """, (custom_voice_id, session['user_id']))
+                    custom_voice_data = cursor.fetchone()
+                    conn.close()
+                    
+                    if custom_voice_data:
+                        base_voice_id = custom_voice_data['base_voice_id']
+                        pitch_adjustment = custom_voice_data.get('pitch_adjustment', 0)
+                        speed_adjustment = custom_voice_data.get('speed_adjustment', 1.0)
+                        print(f"[CONVERT V2] Using custom voice: {custom_voice_data['voice_name']}")
+                        print(f"[CONVERT V2] Base voice from DB: {base_voice_id}, Pitch: {pitch_adjustment}, Speed: {speed_adjustment}")
+                        
+                        # Remove 'HM' suffix if present (TTS doesn't use it)
+                        tts_voice_id = base_voice_id
+                        if tts_voice_id and tts_voice_id.endswith('HM'):
+                            tts_voice_id = tts_voice_id[:-2]  # Remove 'HM' suffix
+                        
+                        # Capitalize first letter (e.g., 'ly' -> 'Ly', 'LyHM' -> 'Ly')
+                        if tts_voice_id:
+                            tts_voice_id = tts_voice_id.capitalize()
+                        
+                        print(f"[CONVERT V2] TTS voice ID: {tts_voice_id}")
+                        
+                        # Use TTS voice ID
+                        voice_id = tts_voice_id
+                    else:
+                        print(f"[WARNING] Custom voice {custom_voice_id} not found, using default")
+                        voice_id = 'BinhHM'
+            except Exception as e:
+                print(f"[ERROR] Error loading custom voice: {e}")
+                voice_id = 'BinhHM'
+        
         if not text:
             return jsonify({'success': False, 'message': 'Vui lòng nhập văn bản'}), 400
         
@@ -498,6 +561,7 @@ def convert_text_to_speech():
         
         print(f"[CONVERT] Converting text to speech (length: {len(text)} chars)...")
         try:
+            # Generate audio with TTS (without speed parameter)
             audio = tts.infer(text=text, voice=voice_data if voice_data else None)
             
             # Calculate duration from audio shape
@@ -530,6 +594,55 @@ def convert_text_to_speech():
             
             tts.save(audio, str(output_path))
             print(f"[CONVERT] Audio saved successfully")
+            
+            # V2: Apply speed adjustment if custom voice (before pitch)
+            if is_custom_voice and speed_adjustment != 1.0:
+                try:
+                    import librosa
+                    import soundfile as sf
+                    print(f"[CONVERT V2] Applying speed adjustment: {speed_adjustment}x")
+                    
+                    # Load audio
+                    audio_data, sr = librosa.load(str(output_path), sr=None)
+                    
+                    # Change speed
+                    audio_adjusted = librosa.effects.time_stretch(audio_data, rate=speed_adjustment)
+                    
+                    # Save adjusted audio
+                    sf.write(str(output_path), audio_adjusted, sr)
+                    print(f"[CONVERT V2] Speed adjustment applied successfully")
+                except Exception as speed_error:
+                    print(f"[WARNING] Could not apply speed adjustment: {speed_error}")
+            
+            # V2: Apply pitch adjustment if custom voice
+            if is_custom_voice and pitch_adjustment != 0:
+                try:
+                    print(f"[CONVERT V2] Applying pitch adjustment: {pitch_adjustment}")
+                    rvc_processor = get_rvc_processor()
+                    if rvc_processor.is_available():
+                        adjusted_filename = f"{uuid.uuid4()}_adjusted.wav"
+                        adjusted_path = AUDIO_OUTPUT_DIR / adjusted_filename
+                        
+                        success, msg, result_path = rvc_processor.adjust_voice(
+                            str(output_path), 
+                            str(adjusted_path), 
+                            pitch=pitch_adjustment
+                        )
+                        
+                        if success and result_path:
+                            # Delete original, use adjusted
+                            os.remove(output_path)
+                            output_path = Path(adjusted_path)
+                            filename = adjusted_filename
+                            print(f"[CONVERT V2] Pitch adjustment applied successfully")
+                        else:
+                            print(f"[WARNING] Pitch adjustment failed: {msg}")
+                    else:
+                        print(f"[WARNING] RVC not available for pitch adjustment")
+                except Exception as pitch_error:
+                    print(f"[WARNING] Could not apply pitch adjustment: {pitch_error}")
+                    # Continue with original audio
+                
         except Exception as save_error:
             error_trace = traceback.format_exc()
             print(f"[ERROR] Failed to save audio: {save_error}")
@@ -558,10 +671,14 @@ def convert_text_to_speech():
         if conn:
             try:
                 with conn.cursor() as cursor:
-                    cursor.execute("SELECT voice_name FROM voices WHERE voice_id = %s", (voice_id,))
-                    result = cursor.fetchone()
-                    if result:
-                        voice_name = result['voice_name']
+                    if is_custom_voice and custom_voice_data:
+                        # Use custom voice name
+                        voice_name = custom_voice_data['voice_name']
+                    else:
+                        cursor.execute("SELECT voice_name FROM voices WHERE voice_id = %s", (voice_id,))
+                        result = cursor.fetchone()
+                        if result:
+                            voice_name = result['voice_name']
             except Exception as e:
                 print(f"[ERROR] Error getting voice name: {e}")
         
@@ -581,6 +698,30 @@ def convert_text_to_speech():
                     
                     # Cập nhật số ký tự đã sử dụng
                     update_characters_used(session['user_id'], text_length)
+                    
+                    # V2: Log custom voice usage
+                    if is_custom_voice and custom_voice_data:
+                        try:
+                            # Extract custom_voice_id from original voice_id passed in
+                            original_voice_id = data.get('voice_id', '')
+                            custom_voice_id = int(original_voice_id.replace('custom_', ''))
+                            cursor.execute("""
+                                INSERT INTO voice_usage_logs 
+                                (custom_voice_id, user_id, text_input, text_length, audio_duration)
+                                VALUES (%s, %s, %s, %s, %s)
+                            """, (custom_voice_id, session['user_id'], text[:500], text_length, duration_seconds))
+                            
+                            # Update usage count
+                            cursor.execute("""
+                                UPDATE custom_voices 
+                                SET usage_count = usage_count + 1 
+                                WHERE id = %s
+                            """, (custom_voice_id,))
+                            conn.commit()
+                            print(f"[CONVERT V2] Logged custom voice usage: ID={custom_voice_id}")
+                        except Exception as log_error:
+                            print(f"[WARNING] Could not log custom voice usage: {log_error}")
+                            
             except Exception as e:
                 print(f"[ERROR] Error updating conversion: {e}")
         
@@ -2070,6 +2211,16 @@ def upload_custom_voice():
         voice_name = request.form.get('voice_name', 'Untitled Voice')
         description = request.form.get('description', '')
         
+        # V2: Get base voice and adjustments (with defaults)
+        base_voice_id = request.form.get('base_voice_id', 'ly')
+        pitch_adjustment = int(request.form.get('pitch_adjustment', 0))
+        speed_adjustment = float(request.form.get('speed_adjustment', 1.0))
+        energy_adjustment = float(request.form.get('energy_adjustment', 1.0))
+        
+        # Capitalize first letter (e.g., 'ly' -> 'Ly', 'binh' -> 'Binh')
+        if base_voice_id:
+            base_voice_id = base_voice_id.capitalize()
+        
         # Validate file
         if not audio_file.filename:
             return jsonify({'success': False, 'error': 'No file selected'}), 400
@@ -2105,9 +2256,11 @@ def upload_custom_voice():
         cursor.execute("""
             INSERT INTO custom_voices 
             (user_id, voice_name, description, sample_audio_path, sample_duration, 
-             sample_file_size, quality_score, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
-        """, (user_id, voice_name, description, audio_path, int(duration), file_size, quality_score))
+             sample_file_size, quality_score, status, base_voice_id, pitch_adjustment, 
+             speed_adjustment, energy_adjustment)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s, %s)
+        """, (user_id, voice_name, description, audio_path, int(duration), file_size, 
+              quality_score, base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment))
         conn.commit()
         custom_voice_id = cursor.lastrowid
         conn.close()
@@ -2182,7 +2335,8 @@ def test_custom_voice(voice_id):
         
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT model_file_path, status, voice_name
+            SELECT model_file_path, status, voice_name, sample_audio_path,
+                   base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment
             FROM custom_voices 
             WHERE id = %s AND user_id = %s
         """, (voice_id, user_id))
@@ -2195,14 +2349,107 @@ def test_custom_voice(voice_id):
         if voice['status'] != 'completed':
             return jsonify({'error': 'Voice is not ready yet'}), 400
         
-        # TODO: Integrate with TTS to generate audio
-        # For now, return success
+        # V2: Test = Play sample audio + Generate with base voice + adjustments
+        test_text = request.json.get('test_text', '')
         
-        return jsonify({
-            'success': True,
-            'message': f'Test thành công với giọng: {voice["voice_name"]}',
-            'audio_url': '#'  # TODO: Generate actual audio
-        })
+        if not test_text:
+            # No test text provided, just return sample audio URL
+            sample_audio_path = voice.get('sample_audio_path', '')
+            if sample_audio_path and os.path.exists(sample_audio_path):
+                # Return relative path for serving
+                audio_url = '/' + sample_audio_path.replace('\\', '/')
+                return jsonify({
+                    'success': True,
+                    'message': f'Đây là sample audio gốc của giọng: {voice["voice_name"]}',
+                    'audio_url': audio_url,
+                    'is_sample': True
+                })
+            else:
+                return jsonify({'error': 'Sample audio not found'}), 404
+        
+        # Generate test audio with base voice + adjustments
+        try:
+            base_voice_id = voice.get('base_voice_id', 'ly')
+            pitch_adj = voice.get('pitch_adjustment', 0)
+            speed_adj = voice.get('speed_adjustment', 1.0)
+            
+            # Remove 'HM' suffix if present (TTS doesn't use it)
+            tts_voice_id = base_voice_id
+            if tts_voice_id and tts_voice_id.endswith('HM'):
+                tts_voice_id = tts_voice_id[:-2]  # Remove 'HM' suffix
+            
+            # Capitalize first letter (e.g., 'ly' -> 'Ly', 'LyHM' -> 'Ly')
+            if tts_voice_id:
+                tts_voice_id = tts_voice_id.capitalize()
+            
+            print(f"[TEST VOICE] base_voice_id from DB: {base_voice_id}")
+            print(f"[TEST VOICE] tts_voice_id for TTS: {tts_voice_id}")
+            
+            # Generate using TTS with base voice
+            tts = get_tts_instance()
+            if not tts:
+                return jsonify({'error': 'TTS model not loaded'}), 500
+            
+            # Get voice data
+            voice_data = tts.get_preset_voice(tts_voice_id) if tts_voice_id else None
+            
+            # Generate audio
+            audio_filename = f"{uuid.uuid4()}_test.wav"
+            audio_path = os.path.join(AUDIO_OUTPUT_DIR, audio_filename)
+            
+            # Synthesize speech with base voice
+            audio = tts.infer(text=test_text, voice=voice_data)
+            tts.save(audio, str(audio_path))
+            
+            # Apply speed adjustment if needed
+            if speed_adj != 1.0:
+                try:
+                    import librosa
+                    import soundfile as sf
+                    print(f"[TEST VOICE] Applying speed adjustment: {speed_adj}x")
+                    
+                    # Load audio
+                    audio_data, sr = librosa.load(audio_path, sr=None)
+                    
+                    # Change speed
+                    audio_adjusted = librosa.effects.time_stretch(audio_data, rate=speed_adj)
+                    
+                    # Save adjusted audio
+                    sf.write(audio_path, audio_adjusted, sr)
+                    print(f"[TEST VOICE] Speed adjustment applied successfully")
+                except Exception as e:
+                    print(f"[WARNING] Could not apply speed adjustment: {e}")
+            
+            # Apply pitch adjustment if needed
+            if pitch_adj != 0:
+                try:
+                    rvc_processor = get_rvc_processor()
+                    if rvc_processor.is_available():
+                        adjusted_path = audio_path.replace('.wav', '_adjusted.wav')
+                        success, msg, output_path = rvc_processor.adjust_voice(
+                            audio_path, adjusted_path, pitch=pitch_adj
+                        )
+                        if success and output_path:
+                            os.remove(audio_path)
+                            audio_path = output_path
+                            audio_filename = os.path.basename(audio_path)
+                except Exception as e:
+                    print(f"[WARNING] Could not apply pitch adjustment: {e}")
+            
+            audio_url = url_for('get_audio', filename=audio_filename)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Test thành công với giọng: {voice["voice_name"]}',
+                'audio_url': audio_url,
+                'is_sample': False
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Test voice generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f'Lỗi tạo audio test: {str(e)}'}), 500
         
     except Exception as e:
         print(f"[ERROR] Test custom voice failed: {e}")
@@ -2311,10 +2558,16 @@ def worker_status():
         print(f"[ERROR] Get worker status failed: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Start background worker when app starts
-@app.before_first_request
-def start_background_worker():
-    """Start background worker for training queue"""
+# ==================== END CUSTOM VOICE ROUTES ====================
+
+if __name__ == '__main__':
+    print("=" * 60)
+    print("[TTS] TTS Web Application dang khoi dong...")
+    print("[TTS] URL: http://localhost:5000")
+    print("[TTS] Port: 5000")
+    print("=" * 60)
+    
+    # Start background worker for custom voice training
     try:
         if CUSTOM_VOICE_AVAILABLE:
             from background_worker import start_worker
@@ -2325,15 +2578,6 @@ def start_background_worker():
                 print("[WORKER] ⚠️ Worker already running")
     except Exception as e:
         print(f"[WORKER] ❌ Failed to start worker: {e}")
-
-# ==================== END CUSTOM VOICE ROUTES ====================
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("[TTS] TTS Web Application dang khoi dong...")
-    print("[TTS] URL: http://localhost:5000")
-    print("[TTS] Port: 5000")
-    print("=" * 60)
     
     # Không pre-initialize TTS để khởi động nhanh hơn
     # TTS sẽ được khởi tạo lazy khi có request đầu tiên cần dùng
