@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Giọng của tôi - TTS System{% endblock %}
+
+{% block content %}
+<div class="custom-voices-container">
+    <div class="page-header">
+        <div class="header-content">
+            <h1>🎙️ Giọng của tôi</h1>
+            <p class="subtitle">Quản lý và tạo giọng nói tùy chỉnh của bạn</p>
+        </div>
+        <a href="{{ url_for('add_voice_page') }}" class="btn-add-voice">
+            <span class="btn-icon">➕</span>
+            <span class="btn-text">Thêm giọng mới</span>
+        </a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <span class="alert-icon">❌</span>
+        <span class="alert-text">{{ error }}</span>
+    </div>
+    {% endif %}
+
+    {% if voices|length == 0 %}
+    <!-- Empty state -->
+    <div class="empty-state">
+        <div class="empty-icon">🎤</div>
+        <h2>Chưa có giọng nào</h2>
+        <p>Tạo giọng nói đầu tiên của bạn bằng cách upload audio sample</p>
+        <a href="{{ url_for('add_voice_page') }}" class="btn-primary-large">
+            ➕ Tạo giọng mới
+        </a>
+    </div>
+    {% else %}
+    <!-- Voices grid -->
+    <div class="voices-grid">
+        {% for voice in voices %}
+        <div class="voice-card" data-voice-id="{{ voice.id }}" data-status="{{ voice.status }}">
+            <div class="voice-card-header">
+                <div class="voice-info">
+                    <h3 class="voice-name">{{ voice.voice_name }}</h3>
+                    {% if voice.description %}
+                    <p class="voice-description">{{ voice.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="voice-quality">
+                    {% if voice.quality_score %}
+                    <span class="quality-badge" data-quality="{{ voice.quality_score }}">
+                        ⭐ {{ "%.1f"|format(voice.quality_score) }}/10
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="voice-status">
+                {% if voice.status == 'completed' %}
+                <span class="status-badge status-completed">✅ Đã sẵn sàng</span>
+                {% elif voice.status == 'processing' %}
+                <span class="status-badge status-processing">⏳ Đang train...</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ voice.training_progress }}%">
+                        <span class="progress-text">{{ voice.training_progress }}%</span>
+                    </div>
+                </div>
+                {% if voice.training_mode == 'background' %}
+                <p class="status-note">Training trong background, bạn sẽ nhận thông báo khi xong</p>
+                {% endif %}
+                {% elif voice.status == 'pending' %}
+                <span class="status-badge status-pending">⏸️ Đang chờ...</span>
+                {% elif voice.status == 'failed' %}
+                <span class="status-badge status-failed">❌ Thất bại</span>
+                {% if voice.error_message %}
+                <p class="error-message">{{ voice.error_message }}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <div class="voice-meta">
+                <span class="meta-item">
+                    📅 {{ voice.created_at.strftime('%d/%m/%Y') if voice.created_at else 'N/A' }}
+                </span>
+                {% if voice.sample_duration %}
+                <span class="meta-item">
+                    ⏱️ {{ "%.1f"|format(voice.sample_duration) }}s
+                </span>
+                {% endif %}
+                {% if voice.status == 'completed' %}
+                <span class="meta-item">
+                    🔊 Đã dùng {{ voice.usage_count or 0 }} lần
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="voice-actions">
+                {% if voice.status == 'completed' %}
+                <button class="btn-action btn-test" onclick="testVoice({{ voice.id }})">
+                    <span class="btn-icon">🎧</span>
+                    <span class="btn-text">Test</span>
+                </button>
+                <button class="btn-action btn-use" onclick="useVoice({{ voice.id }})">
+                    <span class="btn-icon">▶️</span>
+                    <span class="btn-text">Sử dụng</span>
+                </button>
+                {% elif voice.status == 'processing' %}
+                <button class="btn-action btn-refresh" onclick="refreshProgress({{ voice.id }})">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Refresh</span>
+                </button>
+                {% elif voice.status == 'failed' %}
+                <button class="btn-action btn-retry" onclick="retryTraining({{ voice.id }})">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Thử lại</span>
+                </button>
+                {% endif %}
+                <button class="btn-action btn-delete" onclick="deleteVoice({{ voice.id }}, '{{ voice.voice_name }}')">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Xóa</span>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Test Voice Modal -->
+<div id="testVoiceModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🎧 Test giọng nói</h2>
+            <button class="modal-close" onclick="closeTestModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="testText">Nhập văn bản để test:</label>
+                <textarea id="testText" class="form-control" rows="3" placeholder="Xin chào, đây là giọng custom của tôi...">Xin chào, đây là giọng custom của tôi. Tôi có thể đọc bất kỳ văn bản nào bạn muốn.</textarea>
+            </div>
+            <div id="testResult" style="display: none;">
+                <audio id="testAudio" controls style="width: 100%; margin-top: 1rem;"></audio>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeTestModal()">Đóng</button>
+            <button class="btn-primary" onclick="runTest()">Test ngay</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/my-voices.js') }}"></script>
+{% endblock %}

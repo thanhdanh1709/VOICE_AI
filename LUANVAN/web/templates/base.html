@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hệ thống TTS - Chuyển văn bản thành giọng nói{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>TTS System</h1>
+            </div>
+            <ul class="nav-menu">
+                {% if session.user_id %}
+                <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
+                <li><a href="{{ url_for('audio_library') }}">Thư viện</a></li>
+                <li><a href="{{ url_for('history') }}">Lịch sử</a></li>
+                <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
+                <li><a href="{{ url_for('pricing') }}">Thanh toán</a></li>
+                <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                {% if session.user_role == 'admin' %}
+                <li><a href="{{ url_for('admin') }}">Quản trị</a></li>
+                {% endif %}
+                <li class="user-info">
+                    <span>Xin chào, {{ session.full_name or session.username }}</span>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
+                </li>
+                <li>
+                    <button id="themeToggle" class="theme-toggle" title="Chuyển đổi chế độ sáng/tối">
+                        <span class="theme-icon sun">☀️</span>
+                        <span class="theme-icon moon">🌙</span>
+                    </button>
+                </li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
+                <li><a href="{{ url_for('register') }}">Đăng ký</a></li>
+                <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                <li>
+                    <button id="themeToggle" class="theme-toggle" title="Chuyển đổi chế độ sáng/tối">
+                        <span class="theme-icon sun">☀️</span>
+                        <span class="theme-icon moon">🌙</span>
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 TTS System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch sử chuyển đổi - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>Lịch sử chuyển đổi</h1>
+        <p>Xem lại và quản lý các file âm thanh đã tạo</p>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="history-controls card-elevated">
+        <div class="search-bar-wrapper">
+            <div class="search-icon">🔍</div>
+            <input type="text" id="searchInput" class="search-input-modern" placeholder="Tìm kiếm theo nội dung văn bản...">
+            <button id="searchBtn" class="btn-search">Tìm kiếm</button>
+        </div>
+    </div>
+
+    <!-- History Table Card -->
+    <div class="history-table-card card-elevated">
+        <div class="table-header">
+            <h2>Danh sách lịch sử</h2>
+            <div class="table-count">
+                Tổng: <span id="totalRecords">0</span> bản ghi
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="history-table-modern">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Văn bản</th>
+                        <th>Giọng đọc</th>
+                        <th>Trạng thái</th>
+                        <th>Thời gian</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="6" class="table-loading">
+                            <div class="loading-spinner-small"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyHistoryState" class="empty-history-state" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <p class="empty-title">Chưa có lịch sử</p>
+            <p class="empty-subtitle">Các lần chuyển đổi của bạn sẽ xuất hiện ở đây</p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-wrapper">
+        <div class="pagination" id="pagination"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

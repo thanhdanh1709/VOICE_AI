@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VieNeu SDK Stream</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦜</text></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        primary: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        },
+                        violet: {
+                            500: '#8b5cf6',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Scrollbar Styles -->
+    <style>
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+
+    <!-- Import Map for React -->
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+
+    <!-- Babel Standalone for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <!-- MAIN APPLICATION SCRIPT -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useRef, useEffect } from 'react';
+        import ReactDOM from 'react-dom/client';
+
+        // ==========================================
+        // CONSTANTS (Replaces TS Enums)
+        // ==========================================
+        const StreamStatus = {
+            IDLE: 'IDLE',
+            CONNECTING: 'CONNECTING',
+            PLAYING: 'PLAYING',
+            COMPLETED: 'COMPLETED',
+            ERROR: 'ERROR'
+        };
+
+        // ==========================================
+        // ICONS
+        // ==========================================
+        const Mic2 = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
+                <circle cx="17" cy="7" r="5" />
+            </svg>
+        );
+
+        const Play = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+        );
+
+        const StopCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="10" />
+                <rect width="6" height="6" x="9" y="9" />
+            </svg>
+        );
+
+        const Loader2 = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+        );
+
+        const Zap = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+        );
+
+        const Activity = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+        );
+
+        // ==========================================
+        // VISUALIZER COMPONENT
+        // ==========================================
+        const Visualizer = ({ audioElementRef, isPlaying, externalContext, externalSource }) => {
+            const canvasRef = useRef(null);
+            const audioContextRef = useRef(null);
+            const analyserRef = useRef(null);
+            const animationFrameRef = useRef(0);
+
+            useEffect(() => {
+                if (isPlaying) {
+                    // MODE A: External Web Audio API (Ultra Low Latency)
+                    if (externalContext && externalContext.state !== 'closed') {
+                        try {
+                            // Reuse existing context
+                            audioContextRef.current = externalContext;
+
+                            if (!analyserRef.current) {
+                                const analyser = externalContext.createAnalyser();
+                                analyser.fftSize = 256;
+                                analyserRef.current = analyser;
+
+                                // HACK: To visualize, we need to connect the SOURCE to this analyser.
+                                // But the source (buffers) are created dynamically in the loop.
+                                // So we rely on the parent to connect the destination to a global analyser node if possible, 
+                                // OR we create a "tap" node.
+                                // BETTER APPROACH: The parent creates the Analyser and passes it down.
+                            }
+                        } catch (e) { console.error(e); }
+                    }
+                    // MODE B: Standard Audio Element
+                    else if (!audioContextRef.current && audioElementRef.current) {
+                        try {
+                            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                            const ctx = new AudioContextClass();
+                            const analyser = ctx.createAnalyser();
+                            analyser.fftSize = 256;
+
+                            const source = ctx.createMediaElementSource(audioElementRef.current);
+                            source.connect(analyser);
+                            analyser.connect(ctx.destination);
+
+                            audioContextRef.current = ctx;
+                            analyserRef.current = analyser;
+                        } catch (e) {
+                            console.error("Audio Context initialization failed", e);
+                        }
+                    }
+
+                    if (audioContextRef.current?.state === 'suspended') {
+                        audioContextRef.current.resume();
+                    }
+                }
+            }, [isPlaying, audioElementRef, externalContext]);
+
+            // Re-render logic is mostly same, just needs 'analyserRef' to be populated
+            useEffect(() => {
+                const renderFrame = () => {
+                    const canvas = canvasRef.current;
+                    // If parent provided an analyser directly (Mode A variant), use it
+                    const analyser = externalSource || analyserRef.current;
+
+                    if (!canvas || !analyser) {
+                        // Simulate if no analyser but playing
+                        if (isPlaying && canvas) {
+                            // ... simulation code ...
+                        }
+                        return;
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    const bufferLength = analyser.frequencyBinCount;
+                    const dataArray = new Uint8Array(bufferLength);
+                    analyser.getByteFrequencyData(dataArray);
+
+                    const width = canvas.width;
+                    const height = canvas.height;
+
+                    ctx.clearRect(0, 0, width, height);
+
+                    const barWidth = (width / bufferLength) * 2.5;
+                    let barHeight;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        barHeight = (dataArray[i] / 255) * height;
+
+                        const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+                        gradient.addColorStop(0, '#3b82f6');
+                        gradient.addColorStop(1, '#a855f7');
+
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.roundRect(x, height - barHeight, barWidth, barHeight, 4);
+                        ctx.fill();
+
+                        x += barWidth + 2;
+                    }
+
+                    animationFrameRef.current = requestAnimationFrame(renderFrame);
+                };
+
+                if (isPlaying) {
+                    renderFrame();
+                } else {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    const canvas = canvasRef.current;
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+                return () => cancelAnimationFrame(animationFrameRef.current);
+            }, [isPlaying, externalSource]); // Depend on externalSource (analyser)
+
+            return (
+                <div className="w-full h-24 bg-slate-900/50 rounded-lg border border-slate-800 backdrop-blur-sm overflow-hidden flex items-end justify-center px-4 py-2 relative">
+                    <div className="absolute top-2 left-2 text-[10px] text-slate-500 font-mono tracking-widest uppercase">
+                        Frequency Visualizer
+                    </div>
+                    <canvas
+                        ref={canvasRef}
+                        width={600}
+                        height={100}
+                        className="w-full h-full"
+                    />
+                </div>
+            );
+        };
+
+        // ==========================================
+        // MAIN TTS INTERFACE
+        // ==========================================
+        const API_URL = '';
+
+        const TtsInterface = () => {
+            const [text, setText] = useState(`Sức Mạnh Của Sự Thích Nghi Trong Kỷ Nguyên Số
+Chúng ta đang sống trong một thời đại mà sự thay đổi không còn tính bằng thập kỷ, mà bằng từng ngày, thậm chí từng giờ. Cuộc cách mạng công nghiệp lần thứ tư đã xóa nhòa ranh giới giữa thế giới thực và thế giới ảo, đặt con người trước những cơ hội khổng lồ nhưng cũng không ít thách thức nghiệt ngã. Trong bối cảnh đó, kỹ năng quan trọng nhất để một cá nhân có thể tồn tại và phát triển không phải là kiến thức chuyên môn thuần túy, mà chính là khả năng thích nghi.
+
+Thích nghi không có nghĩa là đánh mất bản sắc hay buông xuôi theo dòng chảy của số phận. Ngược lại, đó là một quá trình chủ động học hỏi, điều chỉnh tư duy và hành động để phù hợp với hoàn cảnh mới. Hãy nhìn vào cách chúng ta giao tiếp: từ những lá thư tay mất hàng tuần để chuyển đi, giờ đây chỉ cần một cú chạm nhẹ trên màn hình điện thoại, thông tin đã có thể đi vòng quanh thế giới. Nếu một doanh nghiệp vẫn khăng khăng giữ phương thức quản lý truyền thống, từ chối chuyển đổi số, họ sẽ sớm bị đào thải. Tương tự, nếu một cá nhân ngừng cập nhật kỹ năng công nghệ, họ sẽ tự thấy mình trở nên lạc hậu trong chính môi trường làm việc của mình.
+
+Tuy nhiên, sự thích nghi thực sự nằm ở tư duy mở (growth mindset). Thay vì sợ hãi trước những trí tuệ nhân tạo hay robot hóa, người có khả năng thích nghi cao sẽ nhìn thấy ở đó những công cụ để giải phóng sức lao động và kích thích sự sáng tạo. Họ coi những khó khăn, biến động là những bài kiểm tra cho bản lĩnh của mình. Lịch sử nhân loại đã chứng minh rằng, giống loài tồn tại mạnh mẽ nhất không phải là giống loài khỏe nhất hay thông minh nhất, mà là giống loài có khả năng thích ứng tốt nhất với sự thay đổi của môi trường.
+
+Bên cạnh đó, trong thế giới số đầy biến động, việc giữ vững những giá trị cốt lõi như đạo đức và sự tử tế cũng là một phần của sự thích nghi thông minh. Công nghệ có thể thay đổi, nhưng nhu cầu về sự kết nối thực sự giữa người với người thì luôn hiện hữu. Chúng ta thích nghi với công cụ mới nhưng không được để mình trở thành nô lệ của chúng. Sự cân bằng giữa trí tuệ nhân tạo và trí tuệ cảm xúc chính là chìa khóa để con người không bị hòa tan trong dòng chảy cơ khí hóa.
+
+Tóm lại, thế giới ngày mai thuộc về những người sẵn sàng bước ra khỏi vùng an toàn. Đừng sợ hãi sự thay đổi, hãy chào đón nó như một phần tất yếu của cuộc sống. Khi chúng ta giữ cho mình một tâm thế sẵn sàng học lại từ đầu (re-learn), chúng ta sẽ thấy rằng mọi sự chuyển dịch đều mang trong mình những hạt mầm của sự tiến bộ. Hãy nhớ rằng, cánh cửa của tương lai chỉ mở ra cho những ai biết linh hoạt xoay chuyển theo nhịp đập của thời đại.`);
+            const [status, setStatus] = useState(StreamStatus.IDLE);
+            const [metrics, setMetrics] = useState({ latencyMs: null, startTime: null });
+            const [voices, setVoices] = useState([]);
+            const [selectedVoice, setSelectedVoice] = useState("");
+
+            const [models, setModels] = useState([]);
+            const [currentModel, setCurrentModel] = useState(null);
+            const [isModelLoading, setIsModelLoading] = useState(false);
+
+            const [audioBlob, setAudioBlob] = useState(null);
+
+            const audioRef = useRef(null);
+
+            // Web Audio API Refs
+            const ctxRef = useRef(null);
+            const isPlayingRef = useRef(false);
+            const globalAnalyserRef = useRef(null);
+            const abortControllerRef = useRef(null);
+
+            // Audio Recording Refs
+            const recordedChunksRef = useRef([]);
+
+            const fetchVoices = async () => {
+                try {
+                    const res = await fetch(`${API_URL}/voices`);
+                    const data = await res.json();
+                    setVoices(data);
+                    if (data.length > 0) {
+                        // Keep current selection if still available, otherwise first one
+                        if (!data.find(v => v.id === selectedVoice)) {
+                            setSelectedVoice(data[0].id);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to load voices", e);
+                }
+            };
+
+            // Load data on mount
+            useEffect(() => {
+                // Models
+                fetch(`${API_URL}/models`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setModels(data);
+                        const active = data.find(m => m.active);
+                        if (active) setCurrentModel(active.key);
+                    })
+                    .catch(e => console.warn("Models API not found"));
+
+                fetchVoices();
+            }, []);
+
+            const handleModelChange = async (key) => {
+                if (key === currentModel) return;
+                setIsModelLoading(true);
+                try {
+                    const res = await fetch(`${API_URL}/set_model`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ model_key: key })
+                    });
+                    const data = await res.json();
+                    if (data.status === "ok") {
+                        setCurrentModel(key);
+                        // Refresh voices for new model
+                        await fetchVoices();
+                    } else {
+                        alert("Error switching model: " + data.message);
+                    }
+                } catch (e) {
+                    alert("Network error switching model");
+                } finally {
+                    setIsModelLoading(false);
+                }
+            };
+
+            const handleGenerate = async () => {
+                if (!text.trim()) return;
+
+                handleStop(); // Ensure clean state
+
+                setStatus(StreamStatus.CONNECTING);
+                const sessionStartTime = Date.now();
+                setMetrics({ startTime: sessionStartTime, latencyMs: null });
+                setAudioBlob(null); // Clear previous recording
+                recordedChunksRef.current = []; // Reset recorder buffer
+
+                isPlayingRef.current = true;
+
+                // Init AbortController
+                abortControllerRef.current = new AbortController();
+                const signal = abortControllerRef.current.signal;
+
+                // 1. Init Web Audio
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioContextClass({ sampleRate: 24000 });
+                ctxRef.current = ctx;
+
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 256;
+                globalAnalyserRef.current = analyser;
+                analyser.connect(ctx.destination);
+
+                try {
+                    const encodedText = encodeURIComponent(text);
+                    const voiceParam = selectedVoice ? `&voice_id=${selectedVoice}` : "";
+
+                    const response = await fetch(`${API_URL}/stream?text=${encodedText}${voiceParam}`, { signal });
+
+                    if (!response.body) return;
+                    const reader = response.body.getReader();
+
+                    let nextTime = ctx.currentTime + 0.1;
+                    let headerSkipped = false;
+                    let firstChunkPlayed = false;
+
+                    const processStream = async () => {
+                        try {
+                            while (isPlayingRef.current) {
+                                const { done, value } = await reader.read();
+                                if (done) break;
+
+                                let audioData = value;
+
+                                // Helper to create WAV later: Save raw PCM data
+                                // Note: We save ALL data including header for simplicity or skip header?
+                                // If we want clean WAV later, better to collect raw PCM and prepend own header.
+                                // We will strip header from first chunk for saving too to have clean PCM stream.
+
+                                let pcmData = audioData;
+
+                                if (!headerSkipped) {
+                                    if (audioData.length > 44) {
+                                        audioData = audioData.slice(44);
+                                        pcmData = audioData; // Only save PCM part
+                                        headerSkipped = true;
+                                    } else {
+                                        // Chunk too small (just header?), skip it entirely
+                                        continue;
+                                    }
+                                }
+
+                                // Save for download
+                                recordedChunksRef.current.push(pcmData);
+
+                                const int16 = new Int16Array(audioData.buffer, audioData.byteOffset, audioData.byteLength / 2);
+                                const float32 = new Float32Array(int16.length);
+                                for (let i = 0; i < int16.length; i++) {
+                                    float32[i] = int16[i] / 32768.0;
+                                }
+
+                                const buffer = ctx.createBuffer(1, float32.length, 24000);
+                                buffer.getChannelData(0).set(float32);
+
+                                const source = ctx.createBufferSource();
+                                source.buffer = buffer;
+                                source.connect(analyser);
+
+                                if (nextTime < ctx.currentTime) nextTime = ctx.currentTime;
+                                source.start(nextTime);
+
+                                nextTime += buffer.duration;
+
+                                if (!firstChunkPlayed) {
+                                    const latency = Date.now() - sessionStartTime;
+                                    setMetrics(prev => ({ ...prev, latencyMs: latency }));
+                                    setStatus(StreamStatus.PLAYING);
+                                    firstChunkPlayed = true;
+                                }
+                            }
+                        } catch (err) {
+                            if (err.name === 'AbortError') {
+                                console.log('Stream aborted by user');
+                            } else {
+                                throw err;
+                            }
+                        }
+
+                        if (isPlayingRef.current) {
+                            // Wait logic
+                            const remainingTime = nextTime - ctx.currentTime;
+                            if (remainingTime > 0) {
+                                await new Promise(r => setTimeout(r, remainingTime * 1000));
+                            }
+
+                            if (isPlayingRef.current) {
+                                setStatus(StreamStatus.COMPLETED);
+                                finalizeRecording(); // Create download link
+                                setTimeout(() => setStatus(StreamStatus.IDLE), 2000);
+                            }
+                        }
+                    };
+
+                    processStream();
+
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        console.error("Stream Error", e);
+                        setStatus(StreamStatus.ERROR);
+                    }
+                }
+            };
+
+            const handleStop = () => {
+                isPlayingRef.current = false;
+
+                // 1. Abort Fetch
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                    abortControllerRef.current = null;
+                }
+
+                // 2. Close Audio Context
+                if (ctxRef.current) {
+                    ctxRef.current.close();
+                    ctxRef.current = null;
+                }
+                globalAnalyserRef.current = null;
+                setStatus(StreamStatus.IDLE);
+            };
+
+            const finalizeRecording = () => {
+                if (recordedChunksRef.current.length === 0) return;
+
+                // 1. Calculate total length
+                let totalLength = 0;
+                for (const chunk of recordedChunksRef.current) {
+                    totalLength += chunk.length;
+                }
+
+                // 2. Create WAV Header
+                const buffer = new ArrayBuffer(44 + totalLength);
+                const view = new DataView(buffer);
+
+                // RIFF chunk descriptor
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + totalLength, true);
+                writeString(view, 8, 'WAVE');
+                // fmt sub-chunk
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true); // PCM
+                view.setUint16(22, 1, true); // Mono
+                view.setUint32(24, 24000, true); // 24kHz
+                view.setUint32(28, 24000 * 2, true); // ByteRate
+                view.setUint16(32, 2, true); // BlockAlign
+                view.setUint16(34, 16, true); // BitsPerSample
+                // data sub-chunk
+                writeString(view, 36, 'data');
+                view.setUint32(40, totalLength, true);
+
+                // 3. Write PCM data
+                let offset = 44;
+                const bytes = new Uint8Array(buffer);
+                for (const chunk of recordedChunksRef.current) {
+                    bytes.set(chunk, offset);
+                    offset += chunk.length;
+                }
+
+                const blob = new Blob([buffer], { type: 'audio/wav' });
+                setAudioBlob(blob);
+            };
+
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            const handleDownload = () => {
+                if (!audioBlob) return;
+                const url = URL.createObjectURL(audioBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vienau_tts_${Date.now()}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            // Remove unused audio element handlers
+            const onPlay = () => { };
+            const onEnded = () => { };
+            const onError = () => { };
+
+            return (
+                <div className="w-full">
+                    {/* Header Section */}
+                    <div className="text-center mb-8 space-y-2">
+                        <h1 className="text-4xl font-bold tracking-tight text-white">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400">🦜 VieNeu</span> Stream
+                        </h1>
+                        <p className="text-slate-400 max-w-sm mx-auto text-sm font-medium">
+                            High-fidelity neural text-to-speech with ultra-low latency streaming capability.
+                        </p>
+                    </div>
+
+                    <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-6 shadow-2xl shadow-black/50 border border-slate-700/50 relative overflow-hidden">
+
+                        {isModelLoading && (
+                            <div className="absolute inset-0 bg-slate-900/80 z-50 flex flex-col items-center justify-center space-y-3 backdrop-blur-sm">
+                                <svg className="animate-spin h-10 w-10 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span className="text-blue-400 font-semibold animate-pulse">Switching Model...</span>
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 mb-4 items-end">
+                            {/* Model Selection */}
+                            <div className="flex-[2] space-y-2">
+                                <label className="block text-slate-400 text-xs font-semibold uppercase tracking-wider ml-1">
+                                    Model
+                                    <span className="text-[10px] text-yellow-500/80 normal-case ml-2 border border-yellow-500/30 px-1.5 py-0.5 rounded bg-yellow-900/10">
+                                        ⚡ Demo này tối ưu hóa tốc độ streaming trên CPU - Không sử dụng GPU
+                                    </span>
+                                </label>
+                                <div className="flex gap-2">
+                                    <select
+                                        className="flex-1 bg-slate-900/50 border border-slate-700 text-slate-200 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-3 appearance-none truncate"
+                                        value={currentModel || "q4"}
+                                        onChange={(e) => handleModelChange(e.target.value)}
+                                        disabled={status !== StreamStatus.IDLE && status !== StreamStatus.COMPLETED}
+                                    >
+                                        {models.map(m => (
+                                            <option key={m.key} value={m.key}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Voice Selection */}
+                            <div className="flex-1 space-y-2">
+                                <label className="block text-slate-400 text-xs font-semibold uppercase tracking-wider ml-1">Voice</label>
+                                <select
+                                    className={`w-full text-sm rounded-xl border p-3 appearance-none ${voices.length > 0 && voices[0].id.startsWith('error')
+                                        ? 'bg-red-900/20 border-red-500/50 text-red-300'
+                                        : 'bg-slate-900/50 border-slate-700 text-slate-200 focus:ring-blue-500'
+                                        }`}
+                                    value={selectedVoice}
+                                    onChange={(e) => setSelectedVoice(e.target.value)}
+                                    disabled={
+                                        (status !== StreamStatus.IDLE && status !== StreamStatus.COMPLETED) ||
+                                        (voices.length > 0 && voices[0].id.startsWith('error'))
+                                    }
+                                >
+                                    {voices.length === 0 && <option>Loading voices...</option>}
+                                    {voices.map(v => (
+                                        <option key={v.id} value={v.id}>{v.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="relative group mb-6">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                            <textarea
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                placeholder="Enter text to synthesize..."
+                                className="relative w-full min-h-[300px] h-[500px] bg-slate-900/90 text-slate-100 p-8 rounded-xl border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-y transition-all placeholder:text-slate-600 font-medium leading-relaxed text-lg shadow-inner"
+                                spellCheck="false"
+                            />
+                        </div>
+
+                        {/* Controls & Status - Flex Row */}
+                        <div className="flex items-center justify-between gap-4 mb-6">
+                            <div className="flex items-center gap-3">
+                                {status === StreamStatus.CONNECTING || status === StreamStatus.PLAYING ? (
+                                    <button
+                                        onClick={handleStop}
+                                        className="group relative inline-flex items-center justify-center px-6 py-3 font-semibold text-white transition-all duration-200 bg-red-500/10 border border-red-500/50 rounded-xl hover:bg-red-500 hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                                    >
+                                        <span className="mr-2">⏹</span> Stop Stream
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleGenerate}
+                                        disabled={status !== StreamStatus.IDLE && status !== StreamStatus.COMPLETED}
+                                        className="group relative inline-flex items-center justify-center px-6 py-3 font-bold text-white transition-all duration-200 bg-blue-600 border border-transparent rounded-xl hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20"
+                                    >
+                                        <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></span>
+                                        <span className="relative flex items-center">
+                                            {status === StreamStatus.CONNECTING ? (
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            ) : (
+                                                <span className="mr-2">🦜</span>
+                                            )}
+                                            {status === StreamStatus.CONNECTING ? 'Connecting...' : 'Generate Stream'}
+                                        </span>
+                                    </button>
+                                )}
+
+                                {audioBlob && status !== StreamStatus.PLAYING && status !== StreamStatus.CONNECTING && (
+                                    <button
+                                        onClick={handleDownload}
+                                        className="inline-flex items-center justify-center px-4 py-3 font-semibold text-slate-300 transition-all duration-200 bg-slate-700/50 border border-slate-600 rounded-xl hover:bg-slate-700 hover:text-white"
+                                        title="Download Wav"
+                                    >
+                                        ⬇️
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Metrics Badge */}
+                            <div className="flex flex-col items-end">
+                                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border ${status === StreamStatus.ERROR ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                    status === StreamStatus.PLAYING ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                        'bg-slate-800 border-slate-700 text-slate-400'
+                                    }`}>
+                                    <div className={`w-2 h-2 rounded-full ${status === StreamStatus.PLAYING ? 'bg-emerald-400 animate-pulse' :
+                                        status === StreamStatus.ERROR ? 'bg-red-400' : 'bg-slate-500'
+                                        }`}></div>
+                                    <span className="text-xs font-mono font-medium">
+                                        {status === StreamStatus.IDLE ? 'READY' :
+                                            status === StreamStatus.CONNECTING ? 'BUFFERING' :
+                                                status === StreamStatus.PLAYING ? 'STREAMING' :
+                                                    status === StreamStatus.COMPLETED ? 'COMPLETED' : 'ERROR'}
+                                    </span>
+                                </div>
+                                {metrics.latencyMs && (
+                                    <span className="text-[10px] font-mono text-slate-500 mt-1">
+                                        Head Latency: <span className="text-blue-400">{metrics.latencyMs}ms</span>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {/* Hidden Audio Element */}
+                        <audio
+                            ref={audioRef}
+                            onPlay={onPlay}
+                            onEnded={onEnded}
+                            onError={onError}
+                            className="hidden"
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // APP ENTRY
+        // ==========================================
+        const App = () => {
+            return (
+                <div className="min-h-screen w-full bg-[#020617] relative overflow-hidden flex items-center justify-center p-4">
+                    {/* Ambient Background Effects */}
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-500/10 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+                    <div className="relative z-10 w-full max-w-4xl">
+                        <TtsInterface />
+                    </div>
+
+                    <footer className="absolute bottom-4 text-slate-500 text-xs text-center w-full">
+                        Powered by VieNeu SDK & React
+                    </footer>
+                </div>
+            );
+        };
+
+        // Mount to Root
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            const root = ReactDOM.createRoot(rootElement);
+            root.render(<App />);
+        }
+    </script>
+</body>
+
+</html>

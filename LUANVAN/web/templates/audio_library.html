@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Thư viện Audio - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>Thư viện Audio</h1>
+        <p>Quản lý và tìm kiếm các file âm thanh đã tạo</p>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="library-filter-card card-elevated">
+        <div class="filter-header">
+            <h3>🔍 Tìm kiếm & Lọc</h3>
+            <button id="resetBtn" class="btn-filter-reset">
+                Đặt lại
+            </button>
+        </div>
+        
+        <!-- Search Bar - Full Width -->
+        <div class="filter-search-row">
+            <div class="search-bar-library">
+                <span class="search-icon-lib">🔍</span>
+                <input type="search" id="searchInput" placeholder="Tìm kiếm theo nội dung văn bản..." class="search-input-lib">
+                <button id="filterBtn" class="btn-search-lib">Tìm kiếm</button>
+            </div>
+        </div>
+
+        <!-- Filters Grid - 3 Columns -->
+        <div class="filter-grid">
+            <div class="filter-item">
+                <label class="filter-label">
+                    <span class="filter-icon">🎤</span>
+                    Giọng đọc
+                </label>
+                <select id="voiceFilter" class="filter-select-modern">
+                    <option value="">Tất cả giọng đọc</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label class="filter-label">
+                    <span class="filter-icon">📅</span>
+                    Từ ngày
+                </label>
+                <input type="date" id="dateFrom" class="filter-date-modern">
+            </div>
+
+            <div class="filter-item">
+                <label class="filter-label">
+                    <span class="filter-icon">📅</span>
+                    Đến ngày
+                </label>
+                <input type="date" id="dateTo" class="filter-date-modern">
+            </div>
+
+            <div class="filter-item">
+                <label class="filter-label">
+                    <span class="filter-icon">📊</span>
+                    Sắp xếp theo
+                </label>
+                <select id="sortBy" class="filter-select-modern">
+                    <option value="newest">Mới nhất</option>
+                    <option value="oldest">Cũ nhất</option>
+                    <option value="duration">Thời lượng</option>
+                    <option value="size">Kích thước</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Controls -->
+    <div class="library-controls">
+        <div class="view-toggle-modern">
+            <button class="view-btn-modern active" data-view="grid">
+                <span class="view-icon">⊞</span>
+                <span>Lưới</span>
+            </button>
+            <button class="view-btn-modern" data-view="list">
+                <span class="view-icon">☰</span>
+                <span>Danh sách</span>
+            </button>
+        </div>
+        <div class="audio-count-badge" id="audioCount">
+            <span class="count-icon">📁</span>
+            Tổng: <strong>0</strong> audio
+        </div>
+    </div>
+
+    <!-- Audio Container -->
+    <div id="audioContainer" class="audio-grid-modern">
+        <div class="loading-library">
+            <div class="loading-spinner-small"></div>
+            <p>Đang tải thư viện...</p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-modern" id="pagination" style="display: none;">
+        <button id="prevBtn" class="btn-page" disabled>
+            <span>←</span> Trước
+        </button>
+        <span class="page-info-modern" id="pageInfo">Trang 1 / 1</span>
+        <button id="nextBtn" class="btn-page" disabled>
+            Sau <span>→</span>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/audio-library.js') }}"></script>
+{% endblock %}

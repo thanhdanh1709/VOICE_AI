@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>Chuyển văn bản thành giọng nói</h1>
+        <p>Công nghệ AI hiện đại, giọng nói tự nhiên, chất lượng cao</p>
+    </div>
+
+    <!-- Main Grid Layout: 2 Columns -->
+    <div class="main-grid">
+        <!-- Left Column: Input Area -->
+        <div class="main-col-left">
+            <!-- Input Card -->
+            <div class="input-card card-elevated">
+                <div class="card-header">
+                    <h2>Nội dung chuyển đổi</h2>
+                </div>
+                <div class="card-body">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="text">Nhập văn bản</button>
+                        <button class="tab-btn" data-tab="file">Tải file lên</button>
+                    </div>
+
+                    <div class="tab-content active" id="textTab">
+                        <textarea id="textInput" placeholder="Nhập hoặc dán văn bản của bạn tại đây..." rows="10"></textarea>
+                        <div class="char-counter">
+                            <span id="charCount">0</span> ký tự
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="fileTab">
+                        <div class="file-upload-zone">
+                            <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+                            <label for="fileInput" class="file-upload-label">
+                                <div class="upload-icon">📄</div>
+                                <p class="upload-text">Kéo thả file hoặc click để chọn</p>
+                                <p class="upload-hint">Hỗ trợ: TXT, PDF, DOCX (tối đa 10MB)</p>
+                            </label>
+                            <div id="fileName" class="file-name-display"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Selection Card -->
+            <div class="voice-card card-elevated">
+                <div class="card-header">
+                    <h2>Chọn giọng đọc</h2>
+                </div>
+                <div class="card-body">
+                    <div class="voice-select-group">
+                        <select id="voiceSelect" class="voice-select-modern">
+                            <option value="">Đang tải danh sách giọng...</option>
+                        </select>
+                        <button type="button" id="voiceGalleryBtn" class="btn-voice-preview">
+                            Nghe thử giọng
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button id="convertBtn" class="btn-convert-main">
+                <span class="btn-icon">▶</span>
+                <span class="btn-text">Chuyển đổi ngay</span>
+            </button>
+        </div>
+
+        <!-- Right Column: Output & Stats Area -->
+        <div class="main-col-right">
+            <!-- Quick Stats -->
+            <div class="quick-stats-card card-elevated">
+                <div class="quick-stat-item">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalConversions">0</div>
+                        <div class="stat-label">Lần chuyển đổi</div>
+                    </div>
+                </div>
+                <div class="quick-stat-divider"></div>
+                <div class="quick-stat-item">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalCharacters">0</div>
+                        <div class="stat-label">Ký tự đã dùng</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Card -->
+            <div class="output-card card-elevated">
+                <div class="card-header">
+                    <h2>Kết quả</h2>
+                </div>
+                <div class="card-body">
+                    <!-- Loading State -->
+                    <div id="loadingIndicator" class="output-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">Đang xử lý âm thanh...</p>
+                        <p class="loading-subtext">Vui lòng đợi trong giây lát</p>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="output-empty">
+                        <div class="empty-icon">🎵</div>
+                        <p class="empty-title">Chưa có kết quả</p>
+                        <p class="empty-subtitle">Nhập văn bản và nhấn "Chuyển đổi" để bắt đầu</p>
+                    </div>
+
+                    <!-- Audio Player -->
+                    <div id="audioPlayer" class="output-audio" style="display: none;">
+                        <div class="audio-success-badge">✓ Chuyển đổi thành công</div>
+                        <audio id="audioElement" controls></audio>
+                        <div class="audio-actions-grid">
+                            <a id="downloadBtn" class="btn-action-secondary" download>
+                                <span>💾</span> Tải xuống
+                            </a>
+                            <button class="btn-action-secondary" onclick="document.getElementById('audioElement').currentTime=0">
+                                <span>↺</span> Phát lại
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="errorMessage" class="output-error" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Voice Adjustment Panel (NEW) -->
+            <div id="voiceAdjustmentPanel" class="voice-adjustment-panel card-elevated" style="display: none;">
+                <div class="card-header">
+                    <h2>🎛️ Điều chỉnh giọng nói</h2>
+                    <p class="adjustment-subtitle">Tinh chỉnh cao độ và tone giọng theo ý muốn</p>
+                </div>
+                <div class="card-body">
+                    <!-- Pitch Control -->
+                    <div class="slider-control">
+                        <div class="slider-label-row">
+                            <label for="pitchSlider">Cao độ (Pitch)</label>
+                            <span class="slider-value" id="pitchValue">0</span>
+                        </div>
+                        <input type="range" id="pitchSlider" class="voice-slider" 
+                               min="-12" max="12" value="0" step="1">
+                        <div class="slider-markers">
+                            <span class="marker-label">-12</span>
+                            <span class="marker-label">-6</span>
+                            <span class="marker-label center">0</span>
+                            <span class="marker-label">+6</span>
+                            <span class="marker-label">+12</span>
+                        </div>
+                        <p class="slider-hint">Âm thấp hơn ← | → Âm cao hơn</p>
+                    </div>
+
+                    <!-- Index Rate Control -->
+                    <div class="slider-control">
+                        <div class="slider-label-row">
+                            <label for="indexSlider">Độ pha trộn (Index Rate)</label>
+                            <span class="slider-value" id="indexValue">0.75</span>
+                        </div>
+                        <input type="range" id="indexSlider" class="voice-slider" 
+                               min="0" max="1" value="0.75" step="0.05">
+                        <div class="slider-markers">
+                            <span class="marker-label">0</span>
+                            <span class="marker-label">0.25</span>
+                            <span class="marker-label center">0.5</span>
+                            <span class="marker-label">0.75</span>
+                            <span class="marker-label">1.0</span>
+                        </div>
+                        <p class="slider-hint">Giọng gốc ← | → Giọng đích</p>
+                    </div>
+
+                    <!-- Protect Control -->
+                    <div class="slider-control">
+                        <div class="slider-label-row">
+                            <label for="protectSlider">Bảo vệ phụ âm (Protect)</label>
+                            <span class="slider-value" id="protectValue">0.33</span>
+                        </div>
+                        <input type="range" id="protectSlider" class="voice-slider" 
+                               min="0" max="0.5" value="0.33" step="0.01">
+                        <div class="slider-markers">
+                            <span class="marker-label">0</span>
+                            <span class="marker-label">0.125</span>
+                            <span class="marker-label center">0.25</span>
+                            <span class="marker-label">0.375</span>
+                            <span class="marker-label">0.5</span>
+                        </div>
+                        <p class="slider-hint">Ít bảo vệ ← | → Nhiều bảo vệ</p>
+                    </div>
+
+                    <!-- Preset Buttons -->
+                    <div class="preset-buttons">
+                        <div class="preset-label">Cài đặt nhanh:</div>
+                        <div class="preset-grid">
+                            <button class="btn-preset" data-preset="male-to-female">
+                                <span class="preset-icon">🎭</span>
+                                <span class="preset-name">Nam → Nữ</span>
+                            </button>
+                            <button class="btn-preset" data-preset="female-to-male">
+                                <span class="preset-icon">🎭</span>
+                                <span class="preset-name">Nữ → Nam</span>
+                            </button>
+                            <button class="btn-preset" data-preset="higher">
+                                <span class="preset-icon">🎵</span>
+                                <span class="preset-name">Cao hơn</span>
+                            </button>
+                            <button class="btn-preset" data-preset="lower">
+                                <span class="preset-icon">🎵</span>
+                                <span class="preset-name">Thấp hơn</span>
+                            </button>
+                            <button class="btn-preset" data-preset="reset">
+                                <span class="preset-icon">↺</span>
+                                <span class="preset-name">Gốc</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Apply Button -->
+                    <button id="applyVoiceEffectBtn" class="btn-apply-effect">
+                        <span class="btn-icon">✨</span>
+                        <span class="btn-text">Áp dụng hiệu ứng</span>
+                    </button>
+
+                    <!-- Processing State -->
+                    <div id="effectProcessing" class="effect-processing" style="display: none;">
+                        <div class="processing-spinner"></div>
+                        <span>Đang xử lý...</span>
+                    </div>
+
+                    <!-- Effect Success -->
+                    <div id="effectSuccess" class="effect-message success" style="display: none;">
+                        <span class="message-icon">✓</span>
+                        <span class="message-text">Đã áp dụng hiệu ứng thành công!</span>
+                    </div>
+
+                    <!-- Effect Error -->
+                    <div id="effectError" class="effect-message error" style="display: none;">
+                        <span class="message-icon">✕</span>
+                        <span class="message-text"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="tips-card card-subtle">
+                <div class="tips-header">💡 Mẹo sử dụng</div>
+                <ul class="tips-list">
+                    <li>Sử dụng dấu câu để giọng đọc tự nhiên hơn</li>
+                    <li>Nghe thử các giọng để chọn phù hợp</li>
+                    <li>File lớn sẽ được xử lý lâu hơn</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Voice Gallery Modal -->
+<div id="voiceGalleryModal" class="modal" style="display: none;">
+    <div class="modal-content voice-gallery-modal">
+        <div class="modal-header">
+            <h2>Thư viện giọng đọc</h2>
+            <span class="close-voice-gallery">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p class="modal-description">Nghe thử và chọn giọng đọc phù hợp với nội dung của bạn</p>
+            <div id="voiceGalleryGrid" class="voice-gallery-grid">
+                <div class="loading-text">Đang tải danh sách giọng...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

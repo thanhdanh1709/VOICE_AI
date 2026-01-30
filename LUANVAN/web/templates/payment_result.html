@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Kết quả thanh toán - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="payment-result-card">
+        {% if success %}
+        <div class="result-success">
+            <div class="result-icon">✅</div>
+            <h2>Thanh toán thành công!</h2>
+            <p>{{ message }}</p>
+            <div class="result-actions">
+                <a href="{{ url_for('pricing') }}" class="btn btn-primary">Quay lại trang thanh toán</a>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Về trang chủ</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="result-error">
+            <div class="result-icon">❌</div>
+            <h2>Thanh toán thất bại</h2>
+            <p>{{ message }}</p>
+            <div class="result-actions">
+                <a href="{{ url_for('pricing') }}" class="btn btn-primary">Thử lại</a>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Về trang chủ</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.payment-result-card {
+    max-width: 600px;
+    margin: 5rem auto;
+    background: white;
+    padding: 3rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.result-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+}
+
+.result-success h2 {
+    color: #28a745;
+    margin-bottom: 1rem;
+}
+
+.result-error h2 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+}
+
+.result-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+</style>
+{% endblock %}

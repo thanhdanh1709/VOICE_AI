@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Quản trị - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Trang quản trị</h1>
+        <div class="admin-actions">
+            <button id="generateSamplesBtn" class="btn btn-primary">
+                🎵 Tạo file mẫu giọng đọc
+            </button>
+        </div>
+    </div>
+
+    <!-- Thống kê tổng quan -->
+    <div class="admin-stats">
+        <h2>Thống kê hệ thống</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <h3 id="totalUsers">0</h3>
+                <p>Tổng số người dùng</p>
+                <small id="activeUsers">0 hoạt động</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <h3 id="totalConversions">0</h3>
+                <p>Tổng số chuyển đổi</p>
+                <small id="successRate">0% thành công</small>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎤</div>
+                <h3 id="totalVoices">0</h3>
+                <p>Số giọng đọc</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <h3 id="totalCharacters">0</h3>
+                <p>Tổng ký tự</p>
+                <small id="avgTextLength">TB: 0 ký tự</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê theo thời gian -->
+    <div class="admin-section">
+        <h2>Thống kê theo thời gian</h2>
+        <div class="time-stats-grid">
+            <div class="time-stat-card">
+                <h4>Hôm nay</h4>
+                <div class="time-stat-content">
+                    <div><strong id="todayConversions">0</strong> chuyển đổi</div>
+                    <div><strong id="todayCharacters">0</strong> ký tự</div>
+                </div>
+            </div>
+            <div class="time-stat-card">
+                <h4>Tuần này</h4>
+                <div class="time-stat-content">
+                    <div><strong id="weekConversions">0</strong> chuyển đổi</div>
+                    <div><strong id="weekCharacters">0</strong> ký tự</div>
+                </div>
+            </div>
+            <div class="time-stat-card">
+                <h4>Tháng này</h4>
+                <div class="time-stat-content">
+                    <div><strong id="monthConversions">0</strong> chuyển đổi</div>
+                    <div><strong id="monthCharacters">0</strong> ký tự</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Biểu đồ xu hướng 7 ngày -->
+        <div class="chart-container">
+            <h4>Xu hướng 7 ngày qua</h4>
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Rankings -->
+    <div class="admin-section">
+        <h2>Top Rankings</h2>
+        <div class="rankings-grid">
+            <div class="ranking-card">
+                <h3>Top 5 Người dùng</h3>
+                <div id="topUsersList" class="ranking-list">
+                    <div class="loading-text">Đang tải...</div>
+                </div>
+            </div>
+            <div class="ranking-card">
+                <h3>Top 5 Giọng đọc</h3>
+                <div id="topVoicesList" class="ranking-list">
+                    <div class="loading-text">Đang tải...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Biểu đồ phân bổ giọng đọc -->
+        <div class="chart-container">
+            <h4>Phân bổ giọng đọc</h4>
+            <canvas id="voiceDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h2>Quản lý người dùng</h2>
+        <div class="admin-controls">
+            <button id="refreshUsersBtn" class="btn btn-primary">🔄 Làm mới</button>
+        </div>
+        <div class="admin-table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Số chuyển đổi</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="8" class="loading-text">Đang tải...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

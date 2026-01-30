@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm giọng mới - TTS System{% endblock %}
+
+{% block content %}
+<div class="add-voice-container">
+    <div class="page-header">
+        <div class="header-content">
+            <a href="{{ url_for('my_voices') }}" class="btn-back">← Quay lại</a>
+            <h1>🎙️ Thêm giọng mới</h1>
+            <p class="subtitle">Upload audio sample để tạo giọng nói tùy chỉnh</p>
+        </div>
+    </div>
+
+    <div class="add-voice-form card-elevated">
+        <form id="addVoiceForm" enctype="multipart/form-data">
+            <!-- Step 1: Upload Audio -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span class="step-number">1</span>
+                    Upload Audio Sample
+                </h2>
+                <p class="section-description">
+                    Upload file audio chứa giọng nói của bạn. Audio càng sạch, chất lượng càng tốt.
+                </p>
+
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="audioFile" name="audio_file" accept="audio/*,.wav,.mp3,.m4a" style="display: none;">
+                    <div class="upload-content">
+                        <div class="upload-icon">📁</div>
+                        <h3>Kéo thả file hoặc click để chọn</h3>
+                        <p class="upload-specs">
+                            <strong>Hỗ trợ:</strong> WAV, MP3, M4A<br>
+                            <strong>Độ dài:</strong> 30 giây - 15 phút<br>
+                            <strong>Chất lượng:</strong> Không noise, không echo
+                        </p>
+                    </div>
+                </div>
+
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <div class="file-icon">🎵</div>
+                    <div class="file-details">
+                        <h4 id="fileName"></h4>
+                        <p id="fileSize"></p>
+                        <p id="fileDuration"></p>
+                    </div>
+                    <button type="button" class="btn-remove" onclick="removeFile()">
+                        <span>✕</span>
+                    </button>
+                </div>
+
+                <div id="qualityCheck" class="quality-check" style="display: none;">
+                    <h4>📊 Đánh giá chất lượng audio:</h4>
+                    <div class="quality-result">
+                        <div class="quality-score" id="qualityScore"></div>
+                        <p class="quality-message" id="qualityMessage"></p>
+                    </div>
+                </div>
+
+                <!-- Recording option (optional future feature) -->
+                <!--
+                <div class="divider">
+                    <span>hoặc</span>
+                </div>
+                <button type="button" class="btn-record" onclick="startRecording()">
+                    🎤 Thu âm trực tiếp
+                </button>
+                -->
+            </div>
+
+            <!-- Step 2: Voice Details -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <span class="step-number">2</span>
+                    Thông tin giọng nói
+                </h2>
+
+                <div class="form-group">
+                    <label for="voiceName">Tên giọng <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="voiceName" 
+                        name="voice_name" 
+                        class="form-control" 
+                        placeholder="VD: Giọng của tôi, Giọng đọc sách, ..."
+                        required
+                        maxlength="255"
+                    >
+                    <small class="form-hint">Đặt tên dễ nhớ để phân biệt các giọng</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="voiceDescription">Mô tả (tuỳ chọn)</label>
+                    <textarea 
+                        id="voiceDescription" 
+                        name="description" 
+                        class="form-control" 
+                        rows="3"
+                        placeholder="VD: Giọng ấm áp, phù hợp đọc truyện..."
+                        maxlength="500"
+                    ></textarea>
+                    <small class="form-hint">Mô tả đặc điểm hoặc mục đích sử dụng giọng này</small>
+                </div>
+            </div>
+
+            <!-- Training Info -->
+            <div class="training-info card-info">
+                <h4>⏱️ Thời gian training</h4>
+                <ul>
+                    <li><strong>Audio < 5 phút:</strong> Training realtime (~30-60 giây)</li>
+                    <li><strong>Audio > 5 phút:</strong> Training background (~2-3 giờ)</li>
+                </ul>
+                <p class="info-note">
+                    💡 <strong>Tip:</strong> Audio càng dài, chất lượng giọng AI càng tốt, nhưng mất nhiều thời gian training hơn.
+                </p>
+            </div>
+
+            <!-- Submit -->
+            <div class="form-actions">
+                <a href="{{ url_for('my_voices') }}" class="btn-secondary">
+                    Huỷ
+                </a>
+                <button type="submit" class="btn-primary" id="submitBtn" disabled>
+                    <span class="btn-icon">✨</span>
+                    <span class="btn-text">Bắt đầu training</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Progress -->
+        <div id="trainingProgress" class="training-progress" style="display: none;">
+            <div class="progress-header">
+                <h3>⚙️ Đang training giọng nói...</h3>
+                <p class="progress-subtitle" id="progressSubtitle">Đang xử lý audio...</p>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%">
+                    <span class="progress-text" id="progressText">0%</span>
+                </div>
+            </div>
+            <p class="progress-note" id="progressNote"></p>
+        </div>
+
+        <!-- Success -->
+        <div id="trainingSuccess" class="training-result success" style="display: none;">
+            <div class="result-icon">✅</div>
+            <h3>Training hoàn tất!</h3>
+            <p id="successMessage"></p>
+            <div class="result-actions">
+                <a href="{{ url_for('my_voices') }}" class="btn-primary">
+                    Xem giọng của tôi
+                </a>
+                <button type="button" class="btn-secondary" onclick="location.reload()">
+                    Tạo giọng mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="trainingError" class="training-result error" style="display: none;">
+            <div class="result-icon">❌</div>
+            <h3>Training thất bại</h3>
+            <p id="errorMessage"></p>
+            <button type="button" class="btn-primary" onclick="location.reload()">
+                Thử lại
+            </button>
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="tips-card card-elevated">
+        <h3>💡 Tips để có giọng AI chất lượng cao:</h3>
+        <ul class="tips-list">
+            <li>
+                <span class="tip-icon">🎤</span>
+                <div>
+                    <strong>Mic chất lượng:</strong> Dùng mic tốt, cách miệng ~15cm
+                </div>
+            </li>
+            <li>
+                <span class="tip-icon">🔇</span>
+                <div>
+                    <strong>Môi trường yên tĩnh:</strong> Thu trong phòng kín, không tiếng ồn
+                </div>
+            </li>
+            <li>
+                <span class="tip-icon">📝</span>
+                <div>
+                    <strong>Đa dạng nội dung:</strong> Đọc nhiều loại câu (hỏi, khẳng định, cảm xúc)
+                </div>
+            </li>
+            <li>
+                <span class="tip-icon">🗣️</span>
+                <div>
+                    <strong>Giọng tự nhiên:</strong> Đọc rõ ràng, tự nhiên, không cố làm giọng
+                </div>
+            </li>
+            <li>
+                <span class="tip-icon">⏱️</span>
+                <div>
+                    <strong>Độ dài phù hợp:</strong> 5-10 phút là tối ưu (đủ data, không quá lâu)
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/add-voice.js') }}"></script>
+{% endblock %}

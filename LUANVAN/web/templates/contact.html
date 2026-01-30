@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Liên hệ - TTS System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <h1>Liên hệ với chúng tôi</h1>
+        <p>Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7</p>
+    </div>
+
+    <!-- Contact Info Bar - 4 Cards Ngang -->
+    <div class="contact-info-bar">
+        <div class="contact-info-item">
+            <div class="contact-icon-circle email-circle">
+                <span>📧</span>
+            </div>
+            <div class="contact-item-content">
+                <h3>Email</h3>
+                <p>danhvt388@gmail.com</p>
+                <a href="mailto:danhvt388@gmail.com" class="contact-quick-link">Gửi email →</a>
+            </div>
+        </div>
+
+        <div class="contact-info-item">
+            <div class="contact-icon-circle phone-circle">
+                <span>📞</span>
+            </div>
+            <div class="contact-item-content">
+                <h3>Điện thoại</h3>
+                <p>0866005541</p>
+                <a href="tel:0866005541" class="contact-quick-link">Gọi ngay →</a>
+            </div>
+        </div>
+
+        <div class="contact-info-item">
+            <div class="contact-icon-circle location-circle">
+                <span>📍</span>
+            </div>
+            <div class="contact-item-content">
+                <h3>Địa chỉ</h3>
+                <p>146/MO, Long Tuyền<br>Bình Thủy, Cần Thơ</p>
+                <a href="https://maps.google.com/?q=146/MO,Long+Tuyền,Bình+Thủy,Cần+Thơ" target="_blank" class="contact-quick-link">Bản đồ →</a>
+            </div>
+        </div>
+
+        <div class="contact-info-item">
+            <div class="contact-icon-circle time-circle">
+                <span>⏰</span>
+            </div>
+            <div class="contact-item-content">
+                <h3>Giờ làm việc</h3>
+                <p>T2 - T6: 9:00 - 18:00<br>T7: 9:00 - 12:00</p>
+                <span class="contact-status-badge">Đang hoạt động</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Form - Centered -->
+    <div class="contact-form-wrapper">
+        <div class="contact-form-card card-elevated">
+            <div class="form-header-centered">
+                <span class="form-header-icon">💬</span>
+                <h2>Gửi tin nhắn cho chúng tôi</h2>
+                <p>Điền thông tin bên dưới và chúng tôi sẽ phản hồi sớm nhất</p>
+            </div>
+            
+            <form id="contactForm" class="contact-form">
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label for="contactName" class="form-label-icon">
+                            <span class="label-icon">👤</span>
+                            Họ và tên
+                        </label>
+                        <input type="text" id="contactName" class="form-input-modern" placeholder="Nguyễn Văn A" required>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label for="contactEmail" class="form-label-icon">
+                            <span class="label-icon">📧</span>
+                            Email
+                        </label>
+                        <input type="email" id="contactEmail" class="form-input-modern" placeholder="email@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label for="contactSubject" class="form-label-icon">
+                        <span class="label-icon">📝</span>
+                        Chủ đề
+                    </label>
+                    <select id="contactSubject" class="form-input-modern" required>
+                        <option value="">Chọn chủ đề...</option>
+                        <option value="support">🔧 Hỗ trợ kỹ thuật</option>
+                        <option value="pricing">💳 Câu hỏi về giá</option>
+                        <option value="feature">✨ Yêu cầu tính năng</option>
+                        <option value="bug">🐛 Báo lỗi</option>
+                        <option value="partnership">🤝 Hợp tác</option>
+                        <option value="other">📋 Khác</option>
+                    </select>
+                </div>
+
+                <div class="form-group-modern">
+                    <label for="contactMessage" class="form-label-icon">
+                        <span class="label-icon">💬</span>
+                        Nội dung tin nhắn
+                    </label>
+                    <textarea id="contactMessage" class="form-textarea-modern" rows="6" placeholder="Nhập nội dung chi tiết tin nhắn của bạn..." required></textarea>
+                    <div class="char-counter-contact">
+                        <span id="messageCharCount">0</span> / 1000 ký tự
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit-contact" id="submitContactBtn">
+                    <span class="btn-icon">📤</span>
+                    <span class="btn-text">Gửi tin nhắn ngay</span>
+                </button>
+
+                <!-- Status Messages -->
+                <div id="contactSuccess" class="alert-success-contact" style="display: none;">
+                    <span class="alert-icon">✓</span>
+                    <span class="alert-text"></span>
+                </div>
+                <div id="contactError" class="alert-error-contact" style="display: none;">
+                    <span class="alert-icon">✕</span>
+                    <span class="alert-text"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="faq-section">
+        <div class="section-header-centered">
+            <span class="section-icon">❓</span>
+            <h2 class="section-title">Câu hỏi thường gặp</h2>
+            <p class="section-subtitle">Tìm câu trả lời nhanh cho các thắc mắc phổ biến</p>
+        </div>
+        
+        <div class="faq-grid">
+            <div class="faq-card card-subtle">
+                <div class="faq-icon">🚀</div>
+                <h4>Làm sao để bắt đầu sử dụng?</h4>
+                <p>Bạn chỉ cần đăng ký tài khoản miễn phí, sau đó có thể bắt đầu chuyển đổi văn bản thành giọng nói ngay lập tức với gói Free.</p>
+            </div>
+
+            <div class="faq-card card-subtle">
+                <div class="faq-icon">💳</div>
+                <h4>Phương thức thanh toán nào được hỗ trợ?</h4>
+                <p>Chúng tôi hỗ trợ thanh toán qua chuyển khoản ngân hàng với QR code tiện lợi, nhanh chóng và bảo mật.</p>
+            </div>
+
+            <div class="faq-card card-subtle">
+                <div class="faq-icon">🎤</div>
+                <h4>Có bao nhiêu giọng đọc?</h4>
+                <p>Hệ thống có đa dạng giọng đọc tiếng Việt miền Nam, Bắc, Trung với chất lượng tự nhiên, cảm xúc phong phú.</p>
+            </div>
+
+            <div class="faq-card card-subtle">
+                <div class="faq-icon">📱</div>
+                <h4>Có ứng dụng mobile không?</h4>
+                <p>Website được tối ưu responsive hoàn hảo cho mọi thiết bị, bạn có thể sử dụng mượt mà trên điện thoại, tablet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Media -->
+    <div class="social-section card-subtle">
+        <div class="social-header">
+            <span class="social-emoji">🌐</span>
+            <h3>Kết nối với chúng tôi</h3>
+            <p>Theo dõi để cập nhật tin tức và tính năng mới nhất</p>
+        </div>
+        <div class="social-links">
+            <a href="#" class="social-btn facebook" title="Facebook">
+                <span class="social-icon">f</span>
+                <span>Facebook</span>
+            </a>
+            <a href="#" class="social-btn twitter" title="Twitter">
+                <span class="social-icon">🐦</span>
+                <span>Twitter</span>
+            </a>
+            <a href="#" class="social-btn linkedin" title="LinkedIn">
+                <span class="social-icon">in</span>
+                <span>LinkedIn</span>
+            </a>
+            <a href="#" class="social-btn youtube" title="YouTube">
+                <span class="social-icon">▶</span>
+                <span>YouTube</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/contact.js') }}"></script>
+{% endblock %}
