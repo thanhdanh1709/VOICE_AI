@@ -4,6 +4,7 @@ werkzeug==3.0.1
 python-docx==1.1.0
 PyPDF2==3.0.1
 qrcode[pil]==7.4.2
+requests>=2.31.0
 
 # Audio processing for voice conversion
 # Dùng phiên bản mới hơn có sẵn pre-built wheels cho Python 3.13

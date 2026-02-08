@@ -157,6 +157,11 @@ async function showQRPayment(packageId) {
         if (data.success && data.qr_code) {
             currentPaymentId = data.payment_id;
             
+            // Bắt đầu tracking payment với PaymentTracker
+            if (window.paymentTracker && data.package_info) {
+                window.paymentTracker.trackPayment(data);
+            }
+            
             // Hiển thị QR code
             const qrImg = document.getElementById('qrCodeImage');
             qrImg.src = data.qr_code;
@@ -177,6 +182,16 @@ async function showQRPayment(packageId) {
                 document.getElementById('content').textContent = data.bank_info.content;
                 document.getElementById('bankInfo').style.display = 'block';
                 document.getElementById('verifySection').style.display = 'block';
+                
+                // Store transaction ID for verify function
+                document.getElementById('verifyBtn').dataset.transactionId = data.transaction_id;
+            }
+            
+            // Hiển thị thông báo payment type
+            if (data.payment_type === 'sepay') {
+                console.log('[Payment] Using SePay integration');
+            } else if (data.fallback) {
+                console.log('[Payment] SePay fallback to bank transfer');
             }
         } else {
             alert(`Lỗi: ${data.message || 'Không thể tạo QR code'}`);
@@ -190,42 +205,27 @@ async function showQRPayment(packageId) {
 }
 
 async function verifyBankTransfer() {
-    const transactionProof = document.getElementById('transactionProof').value.trim();
+    const verifyBtn = document.getElementById('verifyBtn');
+    const transactionId = verifyBtn.dataset.transactionId;
     
-    if (!transactionProof) {
-        alert('Vui lòng nhập số tham chiếu giao dịch');
+    if (!transactionId) {
+        alert('Lỗi: Không tìm thấy mã giao dịch');
         return;
     }
     
-    if (!currentPaymentId) {
-        alert('Lỗi: Không tìm thấy thông tin thanh toán');
-        return;
+    // Sử dụng PaymentTracker để verify
+    if (window.paymentTracker) {
+        await window.paymentTracker.verifyPayment(transactionId);
+    } else {
+        console.error('PaymentTracker not available');
+        alert('Lỗi: Hệ thống xác minh không khả dụng');
     }
-    
-    try {
-        const response = await fetch('/payment/bank/verify', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                payment_id: currentPaymentId,
-                transaction_proof: transactionProof
-            })
-        });
-        
-        const data = await response.json();
+}
         
         if (data.success) {
             alert(data.message);
             document.getElementById('qrPaymentModal').style.display = 'none';
             // Reload subscription status
             loadSubscriptionStatus();
-        } else {
-            alert(`Lỗi: ${data.message}`);
-        }
-    } catch (error) {
-        console.error('Error verifying bank transfer:', error);
-        alert(`Lỗi: ${error.message}`);
-    }
+
 }

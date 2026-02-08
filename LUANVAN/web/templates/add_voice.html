@@ -390,10 +390,39 @@
 
                     </div>
 
-                    <!-- Step 2: Choose Base Voice -->
+                    <!-- Step 2: Voice mode (RVC vs Zero-shot) -->
                     <div class="form-section-modern">
                         <h2 class="section-title-modern">
                             <span class="step-number-modern">2</span>
+                            <span>Chế độ tạo giọng</span>
+                        </h2>
+                        <p class="section-description-modern">
+                            <strong>RVC:</strong> Train model từ audio (mất vài phút). <strong>Zero-shot:</strong> Clone giọng ngay từ mẫu (cần nhập transcript).
+                        </p>
+                        <div class="form-group">
+                            <label class="form-label">Chế độ</label>
+                            <div style="display: flex; gap: var(--space-6); flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                                    <input type="radio" name="voice_type" value="rvc" id="voiceTypeRvc" checked>
+                                    <span>RVC (training)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                                    <input type="radio" name="voice_type" value="zero_shot" id="voiceTypeZeroShot">
+                                    <span>Zero-shot (clone từ mẫu)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="refTranscriptBlock" class="form-group" style="display: none;">
+                            <label for="refTranscript" class="form-label">Transcript (nội dung nói trong file mẫu) <span class="required" style="color: var(--error);">*</span></label>
+                            <textarea id="refTranscript" name="ref_transcript" class="form-input" rows="4" placeholder="Nhập chính xác nội dung mà người nói đọc trong file audio mẫu..."></textarea>
+                            <small class="form-hint">Zero-shot cần transcript khớp với audio để clone giọng chính xác.</small>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Choose Base Voice (RVC only) -->
+                    <div class="form-section-modern" id="baseVoiceSection">
+                        <h2 class="section-title-modern">
+                            <span class="step-number-modern">3</span>
                             <span>Chọn giọng nền</span>
                         </h2>
                         <p class="section-description-modern">
@@ -422,10 +451,10 @@
                         </div>
                     </div>
 
-                    <!-- Step 3: Adjustments -->
-                    <div class="form-section-modern">
+                    <!-- Step 4: Adjustments (RVC only) -->
+                    <div class="form-section-modern" id="adjustmentsSection">
                         <h2 class="section-title-modern">
-                            <span class="step-number-modern">3</span>
+                            <span class="step-number-modern">4</span>
                             <span>Điều chỉnh giọng</span>
                         </h2>
                         <p class="section-description-modern">
@@ -490,10 +519,10 @@
                         </div>
                     </div>
 
-                    <!-- Step 4: Voice Details -->
+                    <!-- Step 5: Voice Details -->
                     <div class="form-section-modern">
                         <h2 class="section-title-modern">
-                            <span class="step-number-modern">4</span>
+                            <span class="step-number-modern">5</span>
                             <span>Thông tin giọng nói</span>
                         </h2>
 

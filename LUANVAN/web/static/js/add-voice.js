@@ -12,7 +12,32 @@ document.addEventListener('DOMContentLoaded', function() {
     setupUploadArea();
     setupForm();
     setupAdjustmentSliders();
+    setupVoiceTypeToggle();
 });
+
+/**
+ * Toggle Zero-shot vs RVC: show/hide ref_transcript and base voice sections
+ */
+function setupVoiceTypeToggle() {
+    const voiceTypeRvc = document.getElementById('voiceTypeRvc');
+    const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
+    const refTranscriptBlock = document.getElementById('refTranscriptBlock');
+    const baseVoiceSection = document.getElementById('baseVoiceSection');
+    const adjustmentsSection = document.getElementById('adjustmentsSection');
+    
+    function updateVisibility() {
+        const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
+        if (refTranscriptBlock) refTranscriptBlock.style.display = isZeroShot ? 'block' : 'none';
+        if (baseVoiceSection) baseVoiceSection.style.display = isZeroShot ? 'none' : 'block';
+        if (adjustmentsSection) adjustmentsSection.style.display = isZeroShot ? 'none' : 'block';
+        const refInput = document.getElementById('refTranscript');
+        if (refInput) refInput.required = !!isZeroShot;
+    }
+    
+    if (voiceTypeRvc) voiceTypeRvc.addEventListener('change', updateVisibility);
+    if (voiceTypeZeroShot) voiceTypeZeroShot.addEventListener('change', updateVisibility);
+    updateVisibility();
+}
 
 /**
  * Setup upload area (drag & drop)
@@ -222,6 +247,14 @@ async function handleSubmit() {
         return;
     }
     
+    const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
+    const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
+    const refTranscript = document.getElementById('refTranscript') ? document.getElementById('refTranscript').value.trim() : '';
+    if (isZeroShot && !refTranscript) {
+        showNotification('error', 'Zero-shot cần nhập transcript (nội dung nói trong file mẫu)');
+        return;
+    }
+    
     const description = document.getElementById('voiceDescription').value.trim();
     
     // Show progress
@@ -233,8 +266,10 @@ async function handleSubmit() {
         formData.append('audio_file', selectedFile);
         formData.append('voice_name', voiceName);
         formData.append('description', description);
+        formData.append('voice_type', isZeroShot ? 'zero_shot' : 'rvc');
+        if (isZeroShot) formData.append('ref_transcript', refTranscript);
         
-        // V2: Add base voice and adjustments
+        // V2: Add base voice and adjustments (RVC only)
         const baseVoice = document.getElementById('baseVoice').value;
         const pitchAdjustment = document.getElementById('pitchAdjustment').value;
         const speedAdjustment = document.getElementById('speedAdjustment').value;
@@ -247,13 +282,15 @@ async function handleSubmit() {
         
         console.log('[ADD VOICE] Submitting with:', {
             voice_name: voiceName,
+            voice_type: isZeroShot ? 'zero_shot' : 'rvc',
+            ref_transcript: isZeroShot ? refTranscript : '(none)',
             base_voice_id: baseVoice,
             pitch_adjustment: pitchAdjustment,
             speed_adjustment: speedAdjustment,
             energy_adjustment: energyAdjustment
         });
         
-        // Upload and start training
+        // Upload and start training (or zero-shot: done immediately)
         const response = await fetch('/api/custom-voice/upload', {
             method: 'POST',
             body: formData
@@ -267,6 +304,12 @@ async function handleSubmit() {
         
         console.log('[ADD VOICE] Upload successful:', data);
         
+        // Zero-shot: no training, show success immediately
+        if (data.voice_type === 'zero_shot') {
+            showTrainingSuccess(data.message || 'Giọng Zero-shot đã sẵn sàng. Bạn có thể dùng ngay.');
+            return;
+        }
+        
         // Store voice ID for progress tracking
         currentVoiceId = data.custom_voice_id;
         
@@ -275,10 +318,8 @@ async function handleSubmit() {
         
         // Start polling progress
         if (data.training_mode === 'realtime' || data.training_mode === 'instant') {
-            // Realtime/Instant mode - poll progress (should complete immediately for V2)
             pollTrainingProgress(currentVoiceId);
         } else {
-            // Background mode - show info
             showBackgroundInfo(data);
         }
         

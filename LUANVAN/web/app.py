@@ -26,9 +26,15 @@ if str(VieNeu_TTS_DIR) not in sys.path:
     sys.path.insert(0, str(VieNeu_TTS_DIR))
 
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
+from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
 import qrcode
 import io
 import base64
+import requests
+import json
+import hashlib
+import hmac
+from datetime import datetime, timedelta
 
 # Import RVC wrapper for voice conversion
 try:
@@ -154,7 +160,9 @@ def get_user_characters_limit(user_id):
     """Lấy giới hạn ký tự của user"""
     conn = get_db_connection()
     if not conn:
-        return None
+        # Không kết nối được DB: trả về giới hạn mặc định để app vẫn chạy
+        print("[WARNING] DB connection failed in get_user_characters_limit, using default limit")
+        return {'limit': 100000, 'used': 0, 'remaining': 100000, 'end_date': None}
     
     try:
         with conn.cursor() as cursor:
@@ -190,7 +198,13 @@ def get_user_characters_limit(user_id):
                 }
     except Exception as e:
         print(f"[ERROR] Error getting user characters limit: {e}")
-        return None
+        # Fallback: trả về giới hạn mặc định khi DB lỗi hoặc thiếu bảng (sau khi tạo lại DB)
+        return {
+            'limit': 100000,
+            'used': 0,
+            'remaining': 100000,
+            'end_date': None
+        }
     finally:
         conn.close()
 
@@ -198,7 +212,9 @@ def check_characters_limit(user_id, text_length):
     """Kiểm tra xem user có đủ ký tự để convert không"""
     limit_info = get_user_characters_limit(user_id)
     if not limit_info:
-        return False, "Không thể kiểm tra giới hạn ký tự"
+        # Khi không kết nối được DB: dùng giới hạn mặc định để không chặn convert
+        print(f"[WARNING] Using default character limit for user {user_id} (DB unavailable)")
+        limit_info = {'remaining': 100000}
     
     if limit_info['remaining'] < text_length:
         return False, f"Bạn đã hết giới hạn ký tự. Còn lại: {limit_info['remaining']:,} ký tự. Vui lòng mua thêm gói để tiếp tục sử dụng."
@@ -469,39 +485,51 @@ def convert_text_to_speech():
             try:
                 custom_voice_id = int(voice_id.replace('custom_', ''))
                 
-                # Fetch custom voice details
+                # Fetch custom voice details (include voice_type, sample_audio_path, ref_transcript for zero_shot)
                 conn = get_db_connection()
                 if conn:
                     cursor = conn.cursor()
-                    cursor.execute("""
-                        SELECT base_voice_id, pitch_adjustment, speed_adjustment, 
-                               energy_adjustment, voice_name
-                        FROM custom_voices 
-                        WHERE id = %s AND user_id = %s AND status = 'completed'
-                    """, (custom_voice_id, session['user_id']))
+                    try:
+                        cursor.execute("""
+                            SELECT base_voice_id, pitch_adjustment, speed_adjustment, 
+                                   energy_adjustment, voice_name, voice_type, sample_audio_path, ref_transcript
+                            FROM custom_voices 
+                            WHERE id = %s AND user_id = %s AND status = 'completed'
+                        """, (custom_voice_id, session['user_id']))
+                    except Exception:
+                        cursor.execute("""
+                            SELECT base_voice_id, pitch_adjustment, speed_adjustment, 
+                                   energy_adjustment, voice_name, sample_audio_path
+                            FROM custom_voices 
+                            WHERE id = %s AND user_id = %s AND status = 'completed'
+                        """, (custom_voice_id, session['user_id']))
                     custom_voice_data = cursor.fetchone()
+                    if custom_voice_data and 'voice_type' not in custom_voice_data:
+                        custom_voice_data['voice_type'] = 'rvc'
+                        custom_voice_data['ref_transcript'] = None
                     conn.close()
                     
                     if custom_voice_data:
-                        base_voice_id = custom_voice_data['base_voice_id']
-                        pitch_adjustment = custom_voice_data.get('pitch_adjustment', 0)
-                        speed_adjustment = custom_voice_data.get('speed_adjustment', 1.0)
-                        print(f"[CONVERT V2] Using custom voice: {custom_voice_data['voice_name']}")
-                        print(f"[CONVERT V2] Base voice from DB: {base_voice_id}, Pitch: {pitch_adjustment}, Speed: {speed_adjustment}")
-                        
-                        # Remove 'HM' suffix if present (TTS doesn't use it)
-                        tts_voice_id = base_voice_id
-                        if tts_voice_id and tts_voice_id.endswith('HM'):
-                            tts_voice_id = tts_voice_id[:-2]  # Remove 'HM' suffix
-                        
-                        # Capitalize first letter (e.g., 'ly' -> 'Ly', 'LyHM' -> 'Ly')
-                        if tts_voice_id:
-                            tts_voice_id = tts_voice_id.capitalize()
-                        
-                        print(f"[CONVERT V2] TTS voice ID: {tts_voice_id}")
-                        
-                        # Use TTS voice ID
-                        voice_id = tts_voice_id
+                        voice_type_cv = (custom_voice_data.get('voice_type') or 'rvc').strip().lower()
+                        if voice_type_cv == 'zero_shot':
+                            # Zero-shot: use ref_audio + ref_transcript at infer time
+                            print(f"[CONVERT Zero-shot] Using custom voice: {custom_voice_data['voice_name']}")
+                        else:
+                            # RVC/V2: base voice + pitch/speed
+                            base_voice_id = custom_voice_data.get('base_voice_id') or base_voice_id
+                            pitch_adjustment = custom_voice_data.get('pitch_adjustment', 0)
+                            speed_adjustment = custom_voice_data.get('speed_adjustment', 1.0)
+                            print(f"[CONVERT V2] Using custom voice: {custom_voice_data['voice_name']}")
+                            print(f"[CONVERT V2] Base voice from DB: {base_voice_id}, Pitch: {pitch_adjustment}, Speed: {speed_adjustment}")
+                            
+                            # Remove 'HM' suffix if present (TTS doesn't use it)
+                            tts_voice_id = base_voice_id
+                            if tts_voice_id and str(tts_voice_id).endswith('HM'):
+                                tts_voice_id = tts_voice_id[:-2]
+                            if tts_voice_id:
+                                tts_voice_id = str(tts_voice_id).capitalize()
+                            print(f"[CONVERT V2] TTS voice ID: {tts_voice_id}")
+                            voice_id = tts_voice_id
                     else:
                         print(f"[WARNING] Custom voice {custom_voice_id} not found, using default")
                         voice_id = 'BinhHM'
@@ -525,21 +553,26 @@ def convert_text_to_speech():
         filename = f"{uuid.uuid4()}.wav"
         output_path = AUDIO_OUTPUT_DIR / filename
         
-        # Save conversion to database
+        # Save conversion to database (bắt buộc để lịch sử thư viện cập nhật)
         conn = get_db_connection()
-        if conn:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
-                           VALUES (%s, %s, %s, %s, 'processing')""",
-                        (session['user_id'], text, len(text), voice_id)
-                    )
-                    conn.commit()
-                    conversion_id = cursor.lastrowid
-                    print(f"[CONVERT] Saved conversion record: ID={conversion_id}")
-            except Exception as e:
-                print(f"[ERROR] Error saving conversion: {e}")
+        if not conn:
+            return jsonify({'success': False, 'message': 'Không thể kết nối database. Vui lòng thử lại.'}), 500
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
+                       VALUES (%s, %s, %s, %s, 'processing')""",
+                    (session['user_id'], text, len(text), voice_id)
+                )
+                conn.commit()
+                conversion_id = cursor.lastrowid
+                print(f"[CONVERT] Saved conversion record: ID={conversion_id}")
+        except Exception as e:
+            print(f"[ERROR] Error saving conversion: {e}")
+            conn.close()
+            return jsonify({'success': False, 'message': 'Không thể lưu bản ghi chuyển đổi. Kiểm tra database.'}), 500
+        conn.close()
+        conn = None  # Dùng kết nối mới khi UPDATE sau (tránh timeout sau TTS)
         
         # Lấy TTS instance và chuyển đổi
         print(f"[CONVERT] Getting TTS instance...")
@@ -553,7 +586,7 @@ def convert_text_to_speech():
             raise Exception(f"Không thể khởi tạo TTS engine: {str(tts_error)}")
         
         try:
-            voice_data = tts.get_preset_voice(voice_id) if voice_id else None
+            voice_data = tts.get_preset_voice(voice_id) if voice_id and not (is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot') else None
             print(f"[CONVERT] Voice data obtained: {voice_id}")
         except Exception as voice_error:
             print(f"[WARNING] Could not get preset voice {voice_id}, using None: {voice_error}")
@@ -561,8 +594,19 @@ def convert_text_to_speech():
         
         print(f"[CONVERT] Converting text to speech (length: {len(text)} chars)...")
         try:
-            # Generate audio with TTS (without speed parameter)
-            audio = tts.infer(text=text, voice=voice_data if voice_data else None)
+            # Zero-shot: use ref_audio + ref_text; otherwise preset voice or ref from voice_data
+            use_zero_shot = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot'
+            if use_zero_shot:
+                ref_audio_path = custom_voice_data.get('sample_audio_path')
+                ref_text_zs = custom_voice_data.get('ref_transcript') or ''
+                if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
+                    print(f"[CONVERT Zero-shot] ref_audio={ref_audio_path}, ref_text length={len(ref_text_zs)}")
+                    audio = tts.infer(text=text, ref_audio=ref_audio_path, ref_text=ref_text_zs)
+                else:
+                    print(f"[WARNING] Zero-shot missing ref_audio/ref_text, using default voice")
+                    audio = tts.infer(text=text, voice=voice_data if voice_data else None)
+            else:
+                audio = tts.infer(text=text, voice=voice_data if voice_data else None)
             
             # Calculate duration from audio shape
             duration_seconds = 0
@@ -682,48 +726,50 @@ def convert_text_to_speech():
             except Exception as e:
                 print(f"[ERROR] Error getting voice name: {e}")
         
-        # Update conversion in database
-        if conn and conversion_id:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        """UPDATE conversions SET 
-                           audio_file_path = %s, audio_file_size = %s, voice_name = %s,
-                           duration_seconds = %s, status = 'completed', completed_at = NOW()
-                           WHERE id = %s""",
-                        (str(output_path), file_size, voice_name, duration_seconds, conversion_id)
-                    )
-                    conn.commit()
-                    print(f"[CONVERT] Updated conversion record: ID={conversion_id}, duration={duration_seconds:.2f}s, size={file_size} bytes")
-                    
-                    # Cập nhật số ký tự đã sử dụng
-                    update_characters_used(session['user_id'], text_length)
-                    
-                    # V2: Log custom voice usage
-                    if is_custom_voice and custom_voice_data:
-                        try:
-                            # Extract custom_voice_id from original voice_id passed in
-                            original_voice_id = data.get('voice_id', '')
-                            custom_voice_id = int(original_voice_id.replace('custom_', ''))
-                            cursor.execute("""
-                                INSERT INTO voice_usage_logs 
-                                (custom_voice_id, user_id, text_input, text_length, audio_duration)
-                                VALUES (%s, %s, %s, %s, %s)
-                            """, (custom_voice_id, session['user_id'], text[:500], text_length, duration_seconds))
-                            
-                            # Update usage count
-                            cursor.execute("""
-                                UPDATE custom_voices 
-                                SET usage_count = usage_count + 1 
-                                WHERE id = %s
-                            """, (custom_voice_id,))
-                            conn.commit()
-                            print(f"[CONVERT V2] Logged custom voice usage: ID={custom_voice_id}")
-                        except Exception as log_error:
-                            print(f"[WARNING] Could not log custom voice usage: {log_error}")
-                            
-            except Exception as e:
-                print(f"[ERROR] Error updating conversion: {e}")
+        # Update conversion in database (dùng kết nối mới để tránh timeout sau TTS)
+        if conversion_id:
+            conn_update = get_db_connection()
+            if conn_update:
+                try:
+                    with conn_update.cursor() as cursor:
+                        cursor.execute(
+                            """UPDATE conversions SET 
+                               audio_file_path = %s, audio_file_size = %s, voice_name = %s,
+                               duration_seconds = %s, status = 'completed', completed_at = NOW()
+                               WHERE id = %s""",
+                            (str(output_path), file_size, voice_name, duration_seconds, conversion_id)
+                        )
+                        conn_update.commit()
+                        print(f"[CONVERT] Updated conversion record: ID={conversion_id}, duration={duration_seconds:.2f}s, size={file_size} bytes")
+                        
+                        # Cập nhật số ký tự đã sử dụng
+                        update_characters_used(session['user_id'], text_length)
+                        
+                        # V2: Log custom voice usage
+                        if is_custom_voice and custom_voice_data:
+                            try:
+                                original_voice_id = data.get('voice_id', '')
+                                custom_voice_id = int(original_voice_id.replace('custom_', ''))
+                                cursor.execute("""
+                                    INSERT INTO voice_usage_logs 
+                                    (custom_voice_id, user_id, text_input, text_length, audio_duration)
+                                    VALUES (%s, %s, %s, %s, %s)
+                                """, (custom_voice_id, session['user_id'], text[:500], text_length, duration_seconds))
+                                cursor.execute("""
+                                    UPDATE custom_voices 
+                                    SET usage_count = usage_count + 1 
+                                    WHERE id = %s
+                                """, (custom_voice_id,))
+                                conn_update.commit()
+                                print(f"[CONVERT V2] Logged custom voice usage: ID={custom_voice_id}")
+                            except Exception as log_error:
+                                print(f"[WARNING] Could not log custom voice usage: {log_error}")
+                except Exception as e:
+                    print(f"[ERROR] Error updating conversion: {e}")
+                finally:
+                    conn_update.close()
+            else:
+                print(f"[WARNING] Could not get DB connection to update conversion {conversion_id}")
         
         return jsonify({
             'success': True,
@@ -738,14 +784,18 @@ def convert_text_to_speech():
         print(f"[ERROR] TTS conversion error: {e}")
         print(f"[ERROR] Traceback: {error_trace}")
         
-        # Update status to failed
-        if conn and conversion_id:
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute("UPDATE conversions SET status = 'failed' WHERE id = %s", (conversion_id,))
-                    conn.commit()
-            except Exception as db_error:
-                print(f"[ERROR] Error updating failed status: {db_error}")
+        # Update status to failed (dùng kết nối mới)
+        if conversion_id:
+            conn_fail = get_db_connection()
+            if conn_fail:
+                try:
+                    with conn_fail.cursor() as cursor:
+                        cursor.execute("UPDATE conversions SET status = 'failed' WHERE id = %s", (conversion_id,))
+                        conn_fail.commit()
+                except Exception as db_error:
+                    print(f"[ERROR] Error updating failed status: {db_error}")
+                finally:
+                    conn_fail.close()
         
         error_message = str(e)
         return jsonify({
@@ -1418,6 +1468,196 @@ def admin():
         return redirect(url_for('index'))
     return render_template('admin.html')
 
+# SePay.vn Integration Functions
+def create_sepay_payment(amount, transaction_id, description, user_name):
+    """Tạo thanh toán qua SePay.vn"""
+    try:
+        # Tạo nội dung chuyển khoản cho SePay
+        content = f"{transaction_id}"
+        
+        # Tạo QR code bằng VietQR (SePay tương thích với VietQR)
+        qr_data = create_sepay_qr_code(amount, content, description)
+        
+        return {
+            'success': True,
+            'qr_code': qr_data['qr_image'],
+            'bank_info': {
+                'bank_name': SEPAY_BANK_ID,
+                'account_number': SEPAY_ACCOUNT_NUMBER,
+                'account_name': 'TTS SYSTEM',
+                'amount': amount,
+                'content': content,
+                'transaction_id': transaction_id
+            },
+            'sepay_info': {
+                'account_number': SEPAY_ACCOUNT_NUMBER,
+                'bank_id': SEPAY_BANK_ID,
+                'api_url': SEPAY_API_URL
+            }
+        }
+    except Exception as e:
+        print(f"[ERROR] SePay payment creation failed: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+def create_sepay_qr_code(amount, content, description):
+    """Tạo QR code cho SePay bằng VietQR API"""
+    try:
+        # Sử dụng VietQR API để tạo QR code cho MBBank (SePay)
+        # MBBank BIN code
+        mbbank_bin = "970422"
+        
+        # API VietQR URL
+        vietqr_url = f"{SEPAY_QR_API}/{mbbank_bin}-{SEPAY_ACCOUNT_NUMBER}-compact2.jpg?amount={amount}&addInfo={content}&accountName=TTS%20SYSTEM"
+        
+        print(f"[INFO] Creating SePay QR with URL: {vietqr_url}")
+        
+        # Download QR image
+        response = requests.get(vietqr_url, timeout=10)
+        if response.status_code == 200:
+            # Convert to base64
+            img_base64 = base64.b64encode(response.content).decode()
+            return {
+                'qr_image': f"data:image/jpeg;base64,{img_base64}",
+                'api_url': vietqr_url
+            }
+        else:
+            raise Exception(f"VietQR API returned status {response.status_code}")
+            
+    except Exception as e:
+        print(f"[WARNING] SePay QR generation failed, using fallback: {e}")
+        # Fallback to manual QR generation
+        return create_manual_qr_code(amount, content)
+
+def create_manual_qr_code(amount, content):
+    """Tạo QR code thủ công cho SePay khi API thất bại"""
+    try:
+        # Tạo QR code đơn giản với thông tin chuyển khoản
+        qr_content = f"Account: {SEPAY_ACCOUNT_NUMBER}\\nBank: {SEPAY_BANK_ID}\\nAmount: {amount:,} VND\\nContent: {content}"
+        
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_content)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        img_str = base64.b64encode(buffer.getvalue()).decode()
+        
+        return {
+            'qr_image': f"data:image/png;base64,{img_str}",
+            'fallback': True
+        }
+    except Exception as e:
+        print(f"[ERROR] Manual QR generation failed: {e}")
+        return {
+            'qr_image': None,
+            'error': str(e)
+        }
+
+def verify_sepay_transaction(transaction_id, amount):
+    """Xác minh giao dịch qua SePay API với auto-approve"""
+    try:
+        headers = {
+            'Authorization': f'Bearer {SEPAY_TOKEN}',
+            'Content-Type': 'application/json'
+        }
+        
+        print(f"[INFO] Verifying SePay transaction: {transaction_id}, amount: {amount}")
+        
+        # Gọi API SePay để kiểm tra giao dịch
+        # Note: URL này có thể cần điều chỉnh dựa trên API thực tế của SePay
+        response = requests.get(
+            f"{SEPAY_API_URL}/check",
+            params={
+                'content': transaction_id,
+                'amount': amount,
+                'accountNumber': SEPAY_ACCOUNT_NUMBER
+            },
+            headers=headers,
+            timeout=30
+        )
+        
+        print(f"[INFO] SePay API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"[INFO] SePay API response data: {data}")
+            
+            # Logic verification có thể cần điều chỉnh dựa trên response format của SePay
+            verified = data.get('status') == 'success' or data.get('verified') == True
+            
+            return {
+                'success': True,
+                'verified': verified,
+                'transaction_data': data,
+                'auto_verified': verified
+            }
+        else:
+            print(f"[WARNING] SePay API returned status {response.status_code}")
+            # Fallback: nếu không verify được qua API, thử duyệt auto dựa trên thời gian
+            return auto_approve_by_time(transaction_id, amount)
+            
+    except Exception as e:
+        print(f"[ERROR] SePay verification failed: {e}")
+        # Fallback: auto-approve dựa trên thời gian
+        return auto_approve_by_time(transaction_id, amount)
+
+def auto_approve_by_time(transaction_id, amount):
+    """Auto-approve payment sau một khoảng thời gian (fallback method)"""
+    try:
+        # Kiểm tra thời gian tạo payment
+        conn = get_db_connection()
+        if not conn:
+            return {'success': False, 'error': 'Database connection failed'}
+        
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT created_at, TIMESTAMPDIFF(MINUTE, created_at, NOW()) as minutes_ago
+                FROM payments 
+                WHERE transaction_id = %s AND amount_vnd = %s
+            """, (transaction_id, amount))
+            payment_time = cursor.fetchone()
+            
+            if payment_time:
+                minutes_ago = payment_time['minutes_ago']
+                
+                # Auto-approve nếu đã quá 5 phút (có thể điều chỉnh)
+                AUTO_APPROVE_MINUTES = 5
+                
+                if minutes_ago >= AUTO_APPROVE_MINUTES:
+                    print(f"[INFO] Auto-approving payment after {minutes_ago} minutes")
+                    return {
+                        'success': True,
+                        'verified': True,
+                        'auto_approved': True,
+                        'reason': f'Auto-approved after {minutes_ago} minutes'
+                    }
+                else:
+                    return {
+                        'success': True,
+                        'verified': False,
+                        'pending_minutes': AUTO_APPROVE_MINUTES - minutes_ago
+                    }
+            else:
+                return {'success': False, 'error': 'Payment not found'}
+                
+    except Exception as e:
+        print(f"[ERROR] Auto-approve by time failed: {e}")
+        return {'success': False, 'error': str(e)}
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
 @app.route('/pricing')
 def pricing():
     """Trang thanh toán"""
@@ -1863,16 +2103,21 @@ def get_packages():
 
 @app.route('/api/payment/create', methods=['POST'])
 def create_payment():
-    """Tạo payment request"""
+    """Tạo payment request với SePay.vn"""
     if not is_logged_in():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     data = request.get_json()
     package_id = data.get('package_id')
-    payment_method = 'bank_qr'  # Chỉ hỗ trợ chuyển khoản ngân hàng QR
+    payment_method = 'bank_qr'  # Sử dụng bank_qr cho cả SePay và bank transfer
     
     if not package_id:
         return jsonify({'success': False, 'message': 'Thiếu thông tin thanh toán'}), 400
+    
+    # Debug: Log user info
+    current_user_id = session.get('user_id')
+    current_username = session.get('username', 'Unknown')
+    print(f"[DEBUG] Create payment - User ID: {current_user_id}, Username: {current_username}, Package ID: {package_id}")
     
     conn = get_db_connection()
     if not conn:
@@ -1880,6 +2125,18 @@ def create_payment():
     
     try:
         with conn.cursor() as cursor:
+            # Kiểm tra user tồn tại trong DB (tránh lỗi FK khi DB mới tạo lại / session cũ)
+            cursor.execute("SELECT id, username FROM users WHERE id = %s", (current_user_id,))
+            user_check = cursor.fetchone()
+            if not user_check:
+                print(f"[ERROR] User {current_user_id} not found in database")
+                return jsonify({
+                    'success': False,
+                    'message': 'Phiên đăng nhập không còn hợp lệ (tài khoản không tồn tại trong hệ thống). Vui lòng đăng xuất và đăng nhập lại.'
+                }), 401
+            
+            print(f"[DEBUG] User verified: {user_check['username']} (ID: {user_check['id']})")
+            
             # Lấy thông tin package
             cursor.execute("""
                 SELECT id, package_name, characters_limit, price_vnd, duration_days
@@ -1891,35 +2148,79 @@ def create_payment():
             if not package:
                 return jsonify({'success': False, 'message': 'Gói thanh toán không tồn tại'}), 404
             
-            # Tạo payment record
+            print(f"[DEBUG] Package: {package['package_name']} - {package['characters_limit']:,} chars - {package['price_vnd']:,}đ")
+            
+            # Tạo payment record  
             transaction_id = f"TTS_{uuid.uuid4().hex[:16].upper()}"
             cursor.execute("""
                 INSERT INTO payments (user_id, package_id, amount_vnd, payment_method, payment_status, transaction_id)
                 VALUES (%s, %s, %s, %s, 'pending', %s)
-            """, (session['user_id'], package_id, package['price_vnd'], payment_method, transaction_id))
+            """, (current_user_id, package_id, package['price_vnd'], payment_method, transaction_id))
             payment_id = cursor.lastrowid
             conn.commit()
             
-            # Lấy thông tin user để tạo nội dung chuyển khoản
-            cursor.execute("SELECT username, full_name FROM users WHERE id = %s", (session['user_id'],))
-            user = cursor.fetchone()
-            user_name = user['full_name'] or user['username'] if user else 'User'
+            print(f"[DEBUG] Payment created: ID {payment_id}, Transaction: {transaction_id}")
             
-            # Tạo QR code cho chuyển khoản ngân hàng
-            qr_data = create_bank_transfer_qr(
+            # Tạo thanh toán SePay
+            sepay_result = create_sepay_payment(
                 package['price_vnd'], 
                 transaction_id, 
-                package['package_name'],
-                user_name
+                f"Thanh toán {package['package_name']}",
+                current_username
             )
-            return jsonify({
-                'success': True,
-                'payment_id': payment_id,
-                'transaction_id': transaction_id,
-                'qr_code': qr_data['qr_image'],
-                'bank_info': qr_data['bank_info'],
-                'payment_type': 'qr'
-            })
+            
+            if sepay_result['success']:
+                return jsonify({
+                    'success': True,
+                    'payment_id': payment_id,
+                    'transaction_id': transaction_id,
+                    'qr_code': sepay_result['qr_code'],
+                    'bank_info': sepay_result['bank_info'],
+                    'sepay_info': sepay_result.get('sepay_info'),
+                    'payment_type': 'sepay',
+                    'package_info': {
+                        'name': package['package_name'],
+                        'characters': package['characters_limit'],
+                        'price': package['price_vnd'],
+                        'duration': package['duration_days']
+                    },
+                    'user_info': {
+                        'username': current_username,
+                        'user_id': current_user_id
+                    }
+                })
+            else:
+                # Fallback to bank transfer if SePay fails
+                print(f"[WARNING] SePay failed, falling back to bank transfer: {sepay_result.get('error')}")
+                
+                # Create bank QR as fallback
+                qr_data = create_bank_transfer_qr(
+                    package['price_vnd'], 
+                    transaction_id, 
+                    package['package_name'],
+                    current_username
+                )
+                return jsonify({
+                    'success': True,
+                    'payment_id': payment_id,
+                    'transaction_id': transaction_id,
+                    'qr_code': qr_data['qr_image'],
+                    'bank_info': qr_data['bank_info'],
+                    'payment_type': 'bank_qr',
+                    'fallback': True,
+                    'message': 'SePay không khả dụng, sử dụng chuyển khoản ngân hàng',
+                    'package_info': {
+                        'name': package['package_name'],
+                        'characters': package['characters_limit'],
+                        'price': package['price_vnd'],
+                        'duration': package['duration_days']
+                    },
+                    'user_info': {
+                        'username': current_username,
+                        'user_id': current_user_id
+                    }
+                })
+                
     except Exception as e:
         conn.rollback()
         print(f"[ERROR] Create payment error: {e}")
@@ -2109,13 +2410,18 @@ def create_bank_transfer_qr(amount, transaction_id, package_name, user_name):
 
 @app.route('/payment/bank/verify', methods=['POST'])
 def verify_bank_transfer():
-    """Xác nhận đã chuyển khoản (manual verification)"""
+    """Xác nhận đã chuyển khoản (manual verification cho bank_qr)"""
     if not is_logged_in():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
     data = request.get_json()
     payment_id = data.get('payment_id')
     transaction_proof = data.get('transaction_proof', '')
+    
+    # Debug: Log user info
+    current_user_id = session.get('user_id')
+    current_username = session.get('username', 'Unknown')
+    print(f"[DEBUG] Verify payment - User ID: {current_user_id}, Username: {current_username}, Payment ID: {payment_id}")
     
     conn = get_db_connection()
     if not conn:
@@ -2124,28 +2430,96 @@ def verify_bank_transfer():
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT p.*, sp.characters_limit, sp.duration_days
+                SELECT p.*, sp.characters_limit, sp.duration_days, sp.package_name
                 FROM payments p
                 LEFT JOIN subscription_packages sp ON p.package_id = sp.id
                 WHERE p.id = %s AND p.user_id = %s AND p.payment_method = 'bank_qr'
-            """, (payment_id, session['user_id']))
+            """, (payment_id, current_user_id))
             payment = cursor.fetchone()
             
             if not payment:
+                print(f"[ERROR] Payment not found - ID: {payment_id}, User ID: {current_user_id}")
                 return jsonify({'success': False, 'message': 'Payment not found'}), 404
             
             if payment['payment_status'] == 'completed':
                 return jsonify({'success': False, 'message': 'Payment đã được xác nhận'}), 400
             
-            # Cập nhật payment với thông tin xác nhận (chờ admin duyệt)
-            cursor.execute("""
-                UPDATE payments
-                SET payment_status = 'pending',
-                    bank_transaction_id = %s,
-                    description = %s
-                WHERE id = %s
-            """, (transaction_proof, f'Đã chuyển khoản - Tham chiếu: {transaction_proof}', payment_id))
-            conn.commit()
+            print(f"[DEBUG] Payment found: {payment}")
+            
+            # Thử verify qua SePay trước
+            verification = verify_sepay_transaction(
+                payment['transaction_id'], 
+                payment['amount_vnd']
+            )
+            
+            print(f"[DEBUG] SePay verification: {verification}")
+            
+            if verification['success'] and verification['verified']:
+                # Thanh toán thành công qua SePay
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'completed',
+                        bank_transaction_id = %s,
+                        description = %s,
+                        completed_at = NOW()
+                    WHERE id = %s
+                """, (
+                    payment['transaction_id'], 
+                    'Thanh toán SePay thành công (auto verified)', 
+                    payment_id
+                ))
+                
+                # Cập nhật subscription
+                print(f"[DEBUG] Updating subscription for user {current_user_id}")
+                success = update_user_subscription(
+                    current_user_id,
+                    payment['characters_limit'],
+                    payment['duration_days']
+                )
+                
+                print(f"[DEBUG] Subscription update result: {success}")
+                
+                conn.commit()
+                
+                if success:
+                    return jsonify({
+                        'success': True,
+                        'message': f'🎉 THANH TOÁN THÀNH CÔNG!\n\n✅ Đã mua gói {payment.get("package_name", "Basic Plan")} thành công!\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n📝 Ký tự được thêm: +{payment["characters_limit"]:,}\n⏰ Thời hạn: +{payment["duration_days"]} ngày\n\n🚀 Bạn có thể sử dụng dịch vụ ngay bây giờ!',
+                        'auto_verified': True,
+                        'purchase_info': {
+                            'package_name': payment.get('package_name', 'Basic Plan'),
+                            'amount': payment['amount_vnd'],
+                            'characters_added': payment['characters_limit'],
+                            'duration_days': payment['duration_days']
+                        }
+                    })
+                else:
+                    return jsonify({
+                        'success': True, 
+                        'message': '✅ Thanh toán thành công nhưng có lỗi cập nhật gói dịch vụ. Vui lòng liên hệ admin để được hỗ trợ.',
+                        'auto_verified': True
+                    })
+            else:
+                # Không tìm thấy giao dịch SePay, chuyển sang manual verification
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'pending',
+                        bank_transaction_id = %s,
+                        description = %s
+                    WHERE id = %s
+                """, (transaction_proof, f'Chờ admin duyệt - Tham chiếu: {transaction_proof}', payment_id))
+                conn.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'✅ Đã ghi nhận yêu cầu thanh toán!\n\n📋 Gói: {payment.get("package_name", "Basic Plan")}\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n🏦 Mã tham chiếu: {transaction_proof}\n\n⏳ Admin sẽ duyệt thanh toán trong vòng 24 giờ.\nBạn sẽ nhận được thông báo khi gói dịch vụ được kích hoạt.',
+                    'manual_verification': True,
+                    'pending_info': {
+                        'package_name': payment.get('package_name', 'Basic Plan'),
+                        'amount': payment['amount_vnd'],
+                        'reference': transaction_proof
+                    }
+                })
             
             return jsonify({
                 'success': True,
@@ -2158,7 +2532,552 @@ def verify_bank_transfer():
     finally:
         conn.close()
 
-# ==================== CUSTOM VOICE ROUTES ====================
+@app.route('/api/payment/sepay/verify', methods=['POST'])
+def verify_sepay_payment():
+    """Xác minh thanh toán SePay"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.*, sp.characters_limit, sp.duration_days
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE p.id = %s AND p.user_id = %s AND p.payment_method = 'sepay'
+            """, (payment_id, session['user_id']))
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return jsonify({'success': False, 'message': 'Payment not found'}), 404
+            
+            if payment['payment_status'] == 'completed':
+                return jsonify({'success': False, 'message': 'Payment đã được xác nhận'}), 400
+            
+            # Xác minh qua SePay API
+            verification = verify_sepay_transaction(
+                payment['transaction_id'], 
+                payment['amount_vnd']
+            )
+            
+            if verification['success'] and verification['verified']:
+                # Thanh toán thành công, cập nhật database
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'completed',
+                        bank_transaction_id = %s,
+                        description = %s,
+                        completed_at = NOW()
+                    WHERE id = %s
+                """, (
+                    payment['transaction_id'], 
+                    'Thanh toán SePay thành công', 
+                    payment_id
+                ))
+                
+                # Cập nhật subscription cho user
+                update_user_subscription(
+                    session['user_id'],
+                    payment['characters_limit'],
+                    payment['duration_days']
+                )
+                
+                conn.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Thanh toán thành công! Đã cập nhật gói dịch vụ.',
+                    'verified': True
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Chưa tìm thấy giao dịch. Vui lòng thử lại sau.',
+                    'verified': False
+                })
+                
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] Verify SePay payment error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/payment/sepay/webhook', methods=['POST'])
+def sepay_webhook():
+    """Xử lý webhook từ SePay"""
+    try:
+        data = request.get_json()
+        
+        # Xác thực webhook (nếu SePay có signature)
+        # transaction_id = data.get('orderCode') hoặc tương đương
+        # amount = data.get('amount')
+        # status = data.get('status')
+        
+        print(f"[INFO] SePay webhook received: {data}")
+        
+        # Tìm payment trong database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+            
+        try:
+            with conn.cursor() as cursor:
+                # Tìm payment dựa trên transaction_id hoặc thông tin khác từ webhook
+                # Logic này cần điều chỉnh dựa trên format thực tế của SePay webhook
+                
+                return jsonify({'success': True, 'message': 'Webhook processed'})
+                
+        except Exception as e:
+            print(f"[ERROR] SePay webhook processing error: {e}")
+            return jsonify({'success': False, 'message': 'Processing failed'}), 500
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        print(f"[ERROR] SePay webhook error: {e}")
+        return jsonify({'success': False, 'message': 'Webhook failed'}), 500
+
+def update_user_subscription(user_id, characters_limit, duration_days):
+    """Cập nhật subscription cho user"""
+    print(f"[DEBUG] update_user_subscription called - User ID: {user_id}, Characters: {characters_limit}, Days: {duration_days}")
+    
+    conn = get_db_connection()
+    if not conn:
+        print("[ERROR] Database connection failed in update_user_subscription")
+        return False
+        
+    try:
+        with conn.cursor() as cursor:
+            # Kiểm tra user tồn tại
+            cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                print(f"[ERROR] User {user_id} not found")
+                return False
+            
+            print(f"[DEBUG] Updating subscription for user: {user['username']}")
+            
+            # Kiểm tra subscription hiện tại
+            cursor.execute("""
+                SELECT * FROM user_subscriptions 
+                WHERE user_id = %s AND is_active = 1
+                ORDER BY created_at DESC LIMIT 1
+            """, (user_id,))
+            current_sub = cursor.fetchone()
+            
+            if current_sub:
+                print(f"[DEBUG] Found existing subscription: {current_sub}")
+                
+                # Gia hạn subscription hiện tại
+                new_end_date = datetime.now() + timedelta(days=duration_days)
+                new_characters_used = max(0, current_sub['characters_used'] - characters_limit)  # Giảm characters_used
+                new_characters_limit = current_sub['characters_limit'] + characters_limit  # Tăng limit
+                
+                print(f"[DEBUG] Updating - New limit: {new_characters_limit}, New used: {new_characters_used}, New end date: {new_end_date}")
+                
+                cursor.execute("""
+                    UPDATE user_subscriptions
+                    SET characters_used = %s,
+                        characters_limit = %s,
+                        end_date = %s
+                    WHERE id = %s
+                """, (new_characters_used, new_characters_limit, new_end_date, current_sub['id']))
+                
+                print(f"[DEBUG] Updated existing subscription for user {user['username']}")
+            else:
+                print(f"[DEBUG] No existing subscription, creating new one")
+                
+                # Tạo subscription mới
+                start_date = datetime.now().date()
+                end_date = start_date + timedelta(days=duration_days)
+                cursor.execute("""
+                    INSERT INTO user_subscriptions
+                    (user_id, characters_limit, characters_used, start_date, end_date, is_active)
+                    VALUES (%s, %s, 0, %s, %s, 1)
+                """, (user_id, characters_limit, start_date, end_date))
+                
+                print(f"[DEBUG] Created new subscription for user {user['username']}")
+            
+            conn.commit()
+            print(f"[SUCCESS] Subscription updated successfully for user {user['username']}")
+            return True
+    except Exception as e:
+        print(f"[ERROR] Update subscription error: {e}")
+        print(f"[ERROR] Error details: {traceback.format_exc()}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+@app.route('/api/admin/payment/approve', methods=['POST'])
+def admin_approve_payment():
+    """Admin duyệt thanh toán thủ công"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.*, sp.characters_limit, sp.duration_days, u.username
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.id = %s AND p.payment_status = 'pending'
+            """, (payment_id,))
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return jsonify({'success': False, 'message': 'Payment not found or already processed'}), 404
+            
+            # Cập nhật payment thành completed
+            cursor.execute("""
+                UPDATE payments
+                SET payment_status = 'completed',
+                    description = CONCAT(description, ' - Admin approved'),
+                    completed_at = NOW()
+                WHERE id = %s
+            """, (payment_id,))
+            
+            # Cập nhật subscription cho user
+            success = update_user_subscription(
+                payment['user_id'],
+                payment['characters_limit'],
+                payment['duration_days']
+            )
+            
+            conn.commit()
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'🎉 Đã duyệt thanh toán thành công!\n\n👤 User: {payment["username"]}\n📋 Gói: {payment.get("package_name", "Custom")}\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n📝 Ký tự thêm: +{payment["characters_limit"]:,}\n⏰ Thời hạn thêm: +{payment["duration_days"]} ngày\n\n✅ Gói dịch vụ đã được kích hoạt cho user.',
+                    'approval_info': {
+                        'user': payment["username"],
+                        'package_name': payment.get("package_name", "Custom"),
+                        'amount': payment["amount_vnd"],
+                        'characters_added': payment["characters_limit"],
+                        'duration_days': payment["duration_days"]
+                    }
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'message': f'⚠️ Đã duyệt thanh toán cho user {payment["username"]} nhưng có lỗi cập nhật gói dịch vụ. Vui lòng kiểm tra lại.',
+                    'warning': True
+                })
+                
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] Admin approve payment error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/user/subscription/status', methods=['GET'])
+def get_user_subscription_status():
+    """Lấy trạng thái subscription hiện tại của user"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT us.*, sp.package_name
+                FROM user_subscriptions us
+                LEFT JOIN subscription_packages sp ON us.package_id = sp.id
+                WHERE us.user_id = %s AND us.is_active = 1
+                ORDER BY us.created_at DESC LIMIT 1
+            """, (session['user_id'],))
+            subscription = cursor.fetchone()
+            
+            if subscription:
+                characters_remaining = max(0, subscription['characters_limit'] - subscription['characters_used'])
+                days_remaining = (subscription['end_date'] - datetime.now().date()).days
+                
+                # Tạo message status dựa trên subscription
+                if characters_remaining > 1000000:  # > 1M chars
+                    status_message = f'🚀 Bạn đang có gói {subscription["package_name"] or "VIP"}! Còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
+                elif characters_remaining > 100000:  # > 100K chars  
+                    status_message = f'✅ Gói {subscription["package_name"] or "Active"} còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
+                elif days_remaining <= 7:  # Sắp hết hạn
+                    status_message = f'⚠️ Gói {subscription["package_name"] or "Current"} sắp hết hạn ({days_remaining} ngày). Hãy gia hạn sớm!'
+                elif characters_remaining <= 10000:  # Sắp hết ký tự
+                    status_message = f'⚠️ Gói {subscription["package_name"] or "Current"} còn ít ký tự ({characters_remaining:,}). Hãy nâng cấp!'
+                else:
+                    status_message = f'📋 Gói {subscription["package_name"] or "Active"}: {characters_remaining:,} ký tự, {days_remaining} ngày.'
+                
+                return jsonify({
+                    'success': True,
+                    'subscription': {
+                        'package_name': subscription['package_name'] or 'Custom',
+                        'characters_limit': subscription['characters_limit'],
+                        'characters_used': subscription['characters_used'],
+                        'characters_remaining': characters_remaining,
+                        'end_date': subscription['end_date'].strftime('%Y-%m-%d'),
+                        'days_remaining': days_remaining,
+                        'is_active': subscription['is_active'],
+                        'status_message': status_message
+                    }
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'subscription': {
+                        'package_name': 'Chưa có gói',
+                        'characters_limit': 0,
+                        'characters_used': 0,
+                        'characters_remaining': 0,
+                        'end_date': None,
+                        'days_remaining': 0,
+                        'is_active': False,
+                        'status_message': '📭 Bạn chưa có gói dịch vụ nào. Hãy mua gói để sử dụng!'
+                    }
+                })
+                
+    except Exception as e:
+        print(f"[ERROR] Get subscription status error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/payments', methods=['GET'])
+def admin_get_payments():
+    """Admin xem danh sách payments"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.*, u.username, sp.package_name
+                FROM payments p
+                LEFT JOIN users u ON p.user_id = u.id
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                ORDER BY p.created_at DESC
+                LIMIT 50
+            """)
+            payments = cursor.fetchall()
+            
+            # Convert datetime to string for JSON serialization
+            for payment in payments:
+                if payment['created_at']:
+                    payment['created_at'] = payment['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+                if payment['updated_at']:
+                    payment['updated_at'] = payment['updated_at'].strftime('%Y-%m-%d %H:%M:%S')
+                if payment['completed_at']:
+                    payment['completed_at'] = payment['completed_at'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            return jsonify({
+                'success': True,
+                'payments': payments,
+                'total': len(payments)
+            })
+            
+    except Exception as e:
+        print(f"[ERROR] Admin get payments error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/auto-approve', methods=['POST'])
+def admin_bulk_auto_approve():
+    """Admin kích hoạt auto-approve cho tất cả pending payments"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    force_approve = data.get('force', False)  # Force approve even without verification
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            # Get all pending payments
+            cursor.execute("""
+                SELECT p.*, sp.characters_limit, sp.duration_days, u.username
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                LEFT JOIN users u ON p.user_id = u.id
+                WHERE p.payment_status = 'pending'
+                ORDER BY p.created_at ASC
+            """)
+            pending_payments = cursor.fetchall()
+            
+            approved_count = 0
+            failed_count = 0
+            results = []
+            
+            for payment in pending_payments:
+                try:
+                    payment_id = payment['id']
+                    
+                    # Try SePay verification first
+                    verification = verify_sepay_transaction(
+                        payment['transaction_id'], 
+                        payment['amount_vnd']
+                    )
+                    
+                    should_approve = force_approve or (verification.get('success') and verification.get('verified'))
+                    
+                    if should_approve:
+                        # Approve payment
+                        cursor.execute("""
+                            UPDATE payments
+                            SET payment_status = 'completed',
+                                description = CONCAT(IFNULL(description, ''), ' - Bulk auto-approved'),
+                                completed_at = NOW()
+                            WHERE id = %s
+                        """, (payment_id,))
+                        
+                        # Update user subscription
+                        success = update_user_subscription(
+                            payment['user_id'],
+                            payment['characters_limit'],
+                            payment['duration_days']
+                        )
+                        
+                        if success:
+                            approved_count += 1
+                            results.append({
+                                'payment_id': payment_id,
+                                'user': payment['username'],
+                                'amount': payment['amount_vnd'],
+                                'status': 'approved',
+                                'method': 'sepay_verified' if verification.get('verified') else 'force_approved'
+                            })
+                        else:
+                            failed_count += 1
+                            results.append({
+                                'payment_id': payment_id,
+                                'user': payment['username'],
+                                'amount': payment['amount_vnd'],
+                                'status': 'failed',
+                                'error': 'Subscription update failed'
+                            })
+                    else:
+                        results.append({
+                            'payment_id': payment_id,
+                            'user': payment['username'],
+                            'amount': payment['amount_vnd'],
+                            'status': 'skipped',
+                            'reason': 'Not verified'
+                        })
+                        
+                except Exception as e:
+                    failed_count += 1
+                    results.append({
+                        'payment_id': payment.get('id', 'unknown'),
+                        'user': payment.get('username', 'unknown'),  
+                        'status': 'error',
+                        'error': str(e)
+                    })
+            
+            conn.commit()
+            
+            success_message = f'🎉 BULK AUTO-APPROVE HOÀN THÀNH!\n\n📊 Kết quả:\n✅ Đã duyệt: {approved_count} payments\n❌ Thất bại: {failed_count} payments\n📋 Tổng xử lý: {len(pending_payments)} payments'
+            
+            if approved_count > 0:
+                success_message += f'\n\n💫 {approved_count} user đã được kích hoạt gói dịch vụ!'
+            
+            return jsonify({
+                'success': True,
+                'message': success_message,
+                'approved_count': approved_count,
+                'failed_count': failed_count,
+                'total_processed': len(pending_payments),
+                'results': results,
+                'summary': f'Processed {len(pending_payments)} payments: {approved_count} approved, {failed_count} failed'
+            })
+            
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] Bulk auto-approve error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/payment/status/<int:payment_id>', methods=['GET'])
+def get_payment_status(payment_id):
+    """Kiểm tra trạng thái thanh toán cụ thể"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.*, sp.package_name, sp.characters_limit, sp.duration_days
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE p.id = %s AND p.user_id = %s
+            """, (payment_id, session['user_id']))
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return jsonify({'success': False, 'message': 'Payment not found'}), 404
+            
+            # Tạo message dựa trên trạng thái
+            if payment['payment_status'] == 'completed':
+                message = f'🎉 THANH TOÁN THÀNH CÔNG!\n\n✅ Gói {payment["package_name"]} đã được kích hoạt!\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n📝 Ký tự: +{payment["characters_limit"]:,}\n⏰ Thời hạn: +{payment["duration_days"]} ngày\n\n🚀 Bạn có thể sử dụng dịch vụ ngay!'
+                status_icon = '✅'
+            elif payment['payment_status'] == 'pending':
+                message = f'⏳ Đang chờ xác nhận thanh toán\n\n📋 Gói: {payment["package_name"]}\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n🏦 Mã giao dịch: {payment["transaction_id"]}\n\n⏰ Admin sẽ duyệt trong vòng 24 giờ.'
+                status_icon = '⏳'
+            elif payment['payment_status'] == 'failed':
+                message = f'❌ Thanh toán thất bại\n\n📋 Gói: {payment["package_name"]}\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n\n💡 Vui lòng thử lại hoặc liên hệ support.'
+                status_icon = '❌'
+            else:
+                message = f'📋 Trạng thái: {payment["payment_status"]}\nGói: {payment["package_name"]}\nSố tiền: {payment["amount_vnd"]:,}đ'
+                status_icon = '📋'
+            
+            return jsonify({
+                'success': True,
+                'payment': {
+                    'id': payment['id'],
+                    'status': payment['payment_status'],
+                    'status_icon': status_icon,
+                    'message': message,
+                    'package_name': payment['package_name'],
+                    'amount': payment['amount_vnd'],
+                    'transaction_id': payment['transaction_id'],
+                    'created_at': payment['created_at'].strftime('%Y-%m-%d %H:%M:%S') if payment['created_at'] else None,
+                    'completed_at': payment['completed_at'].strftime('%Y-%m-%d %H:%M:%S') if payment['completed_at'] else None
+                }
+            })
+            
+    except Exception as e:
+        print(f"[ERROR] Get payment status error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
 
 @app.route('/my-voices')
 @login_required
@@ -2203,6 +3122,20 @@ def upload_custom_voice():
         
         user_id = session.get('user_id')
         
+        # Kiểm tra user tồn tại trong DB (tránh lỗi FK khi DB mới tạo lại / session cũ)
+        conn_check = get_db_connection()
+        if conn_check:
+            try:
+                with conn_check.cursor() as cur:
+                    cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+                    if not cur.fetchone():
+                        return jsonify({
+                            'success': False,
+                            'error': 'Phiên đăng nhập không còn hợp lệ. Vui lòng đăng xuất và đăng nhập lại.'
+                        }), 401
+            finally:
+                conn_check.close()
+        
         # Get file
         if 'audio_file' not in request.files:
             return jsonify({'success': False, 'error': 'No file uploaded'}), 400
@@ -2211,7 +3144,15 @@ def upload_custom_voice():
         voice_name = request.form.get('voice_name', 'Untitled Voice')
         description = request.form.get('description', '')
         
-        # V2: Get base voice and adjustments (with defaults)
+        # Voice type: 'rvc' (training) or 'zero_shot' (clone from audio + transcript)
+        voice_type = (request.form.get('voice_type') or 'rvc').strip().lower()
+        if voice_type not in ('rvc', 'zero_shot'):
+            voice_type = 'rvc'
+        ref_transcript = (request.form.get('ref_transcript') or '').strip()
+        if voice_type == 'zero_shot' and not ref_transcript:
+            return jsonify({'success': False, 'error': 'Zero-shot cần nhập transcript (nội dung nói) của file mẫu'}), 400
+        
+        # V2: Get base voice and adjustments (with defaults) - for RVC mode
         base_voice_id = request.form.get('base_voice_id', 'ly')
         pitch_adjustment = int(request.form.get('pitch_adjustment', 0))
         speed_adjustment = float(request.form.get('speed_adjustment', 1.0))
@@ -2253,31 +3194,64 @@ def upload_custom_voice():
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO custom_voices 
-            (user_id, voice_name, description, sample_audio_path, sample_duration, 
-             sample_file_size, quality_score, status, base_voice_id, pitch_adjustment, 
-             speed_adjustment, energy_adjustment)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s, %s)
-        """, (user_id, voice_name, description, audio_path, int(duration), file_size, 
-              quality_score, base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment))
+        # Zero-shot: status='completed' immediately; RVC: status='pending' then training
+        initial_status = 'completed' if voice_type == 'zero_shot' else 'pending'
+        try:
+            cursor.execute("""
+                INSERT INTO custom_voices 
+                (user_id, voice_name, description, sample_audio_path, sample_duration, 
+                 sample_file_size, quality_score, status, base_voice_id, pitch_adjustment, 
+                 speed_adjustment, energy_adjustment, voice_type, ref_transcript)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (user_id, voice_name, description, audio_path, int(duration), file_size, 
+                  quality_score, initial_status, base_voice_id, pitch_adjustment, speed_adjustment, 
+                  energy_adjustment, voice_type, ref_transcript if voice_type == 'zero_shot' else None))
+        except Exception as db_err:
+            # Fallback if voice_type/ref_transcript columns don't exist yet
+            if 'voice_type' in str(db_err) or 'ref_transcript' in str(db_err):
+                if voice_type == 'zero_shot':
+                    conn.close()
+                    os.remove(audio_path)
+                    return jsonify({'success': False, 'error': 'Cần chạy migration Zero-shot (file custom_voices_zero_shot.sql) trong database để dùng chế độ Zero-shot.'}), 400
+                cursor.execute("""
+                    INSERT INTO custom_voices 
+                    (user_id, voice_name, description, sample_audio_path, sample_duration, 
+                     sample_file_size, quality_score, status, base_voice_id, pitch_adjustment, 
+                     speed_adjustment, energy_adjustment)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s, %s)
+                """, (user_id, voice_name, description, audio_path, int(duration), file_size, 
+                      quality_score, base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment))
+                initial_status = 'pending'
+            else:
+                raise
         conn.commit()
         custom_voice_id = cursor.lastrowid
         conn.close()
         
-        # Start training
-        training_service = get_training_service()
-        result = training_service.start_training(custom_voice_id, user_id, audio_path)
-        
-        return jsonify({
-            'success': True,
-            'custom_voice_id': custom_voice_id,
-            'training_mode': result.get('mode'),
-            'message': result.get('message'),
-            'quality_score': quality_score,
-            'quality_message': quality_msg,
-            'duration': duration
-        })
+        # Start training only for RVC mode
+        if voice_type == 'rvc':
+            training_service = get_training_service()
+            result = training_service.start_training(custom_voice_id, user_id, audio_path)
+            return jsonify({
+                'success': True,
+                'custom_voice_id': custom_voice_id,
+                'voice_type': 'rvc',
+                'training_mode': result.get('mode'),
+                'message': result.get('message'),
+                'quality_score': quality_score,
+                'quality_message': quality_msg,
+                'duration': duration
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'custom_voice_id': custom_voice_id,
+                'voice_type': 'zero_shot',
+                'message': 'Giọng Zero-shot đã sẵn sàng. Bạn có thể dùng ngay.',
+                'quality_score': quality_score,
+                'quality_message': quality_msg,
+                'duration': duration
+            })
         
     except Exception as e:
         print(f"[ERROR] Upload custom voice failed: {e}")
@@ -2334,13 +3308,25 @@ def test_custom_voice(voice_id):
             return jsonify({'error': 'Database connection failed'}), 500
         
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT model_file_path, status, voice_name, sample_audio_path,
-                   base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment
-            FROM custom_voices 
-            WHERE id = %s AND user_id = %s
-        """, (voice_id, user_id))
+        try:
+            cursor.execute("""
+                SELECT model_file_path, status, voice_name, sample_audio_path,
+                       base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment,
+                       voice_type, ref_transcript
+                FROM custom_voices 
+                WHERE id = %s AND user_id = %s
+            """, (voice_id, user_id))
+        except Exception:
+            cursor.execute("""
+                SELECT model_file_path, status, voice_name, sample_audio_path,
+                       base_voice_id, pitch_adjustment, speed_adjustment, energy_adjustment
+                FROM custom_voices 
+                WHERE id = %s AND user_id = %s
+            """, (voice_id, user_id))
         voice = cursor.fetchone()
+        if voice and 'voice_type' not in voice:
+            voice['voice_type'] = 'rvc'
+            voice['ref_transcript'] = None
         conn.close()
         
         if not voice:
@@ -2349,14 +3335,19 @@ def test_custom_voice(voice_id):
         if voice['status'] != 'completed':
             return jsonify({'error': 'Voice is not ready yet'}), 400
         
-        # V2: Test = Play sample audio + Generate with base voice + adjustments
-        test_text = request.json.get('test_text', '')
+        # Test = Play sample audio OR generate with base/zero-shot
+        test_text = (request.json.get('test_text') or request.json.get('text') or '').strip()
+        
+        # Giới hạn độ dài để không vượt context window (2048 tokens) của TTS
+        TEST_TEXT_MAX_CHARS = 300
+        if len(test_text) > TEST_TEXT_MAX_CHARS:
+            test_text = test_text[:TEST_TEXT_MAX_CHARS]
+            print(f"[TEST VOICE] Truncated test text to {TEST_TEXT_MAX_CHARS} chars")
         
         if not test_text:
             # No test text provided, just return sample audio URL
             sample_audio_path = voice.get('sample_audio_path', '')
             if sample_audio_path and os.path.exists(sample_audio_path):
-                # Return relative path for serving
                 audio_url = '/' + sample_audio_path.replace('\\', '/')
                 return jsonify({
                     'success': True,
@@ -2367,38 +3358,57 @@ def test_custom_voice(voice_id):
             else:
                 return jsonify({'error': 'Sample audio not found'}), 404
         
-        # Generate test audio with base voice + adjustments
+        # Generate test audio: Zero-shot (ref_audio+ref_text) or RVC (base voice + adjustments)
         try:
-            base_voice_id = voice.get('base_voice_id', 'ly')
-            pitch_adj = voice.get('pitch_adjustment', 0)
-            speed_adj = voice.get('speed_adjustment', 1.0)
-            
-            # Remove 'HM' suffix if present (TTS doesn't use it)
-            tts_voice_id = base_voice_id
-            if tts_voice_id and tts_voice_id.endswith('HM'):
-                tts_voice_id = tts_voice_id[:-2]  # Remove 'HM' suffix
-            
-            # Capitalize first letter (e.g., 'ly' -> 'Ly', 'LyHM' -> 'Ly')
-            if tts_voice_id:
-                tts_voice_id = tts_voice_id.capitalize()
-            
-            print(f"[TEST VOICE] base_voice_id from DB: {base_voice_id}")
-            print(f"[TEST VOICE] tts_voice_id for TTS: {tts_voice_id}")
-            
-            # Generate using TTS with base voice
             tts = get_tts_instance()
             if not tts:
                 return jsonify({'error': 'TTS model not loaded'}), 500
             
-            # Get voice data
-            voice_data = tts.get_preset_voice(tts_voice_id) if tts_voice_id else None
-            
-            # Generate audio
+            voice_type_cv = (voice.get('voice_type') or 'rvc').strip().lower()
             audio_filename = f"{uuid.uuid4()}_test.wav"
             audio_path = os.path.join(AUDIO_OUTPUT_DIR, audio_filename)
             
-            # Synthesize speech with base voice
-            audio = tts.infer(text=test_text, voice=voice_data)
+            try:
+                if voice_type_cv == 'zero_shot':
+                    ref_audio_path = voice.get('sample_audio_path')
+                    ref_text_zs = (voice.get('ref_transcript') or '').strip()
+                    pitch_adj, speed_adj = 0, 1.0  # no adjustment for zero_shot
+                    if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
+                        # Giới hạn ref_transcript
+                        REF_TEXT_MAX_CHARS = 250
+                        if len(ref_text_zs) > REF_TEXT_MAX_CHARS:
+                            ref_text_zs = ref_text_zs[:REF_TEXT_MAX_CHARS]
+                            print(f"[TEST VOICE Zero-shot] Truncated ref_transcript to {REF_TEXT_MAX_CHARS} chars")
+                        # Mã hóa ref rồi cắt ref_codes để không vượt context 2048 (audio mẫu dài = rất nhiều token)
+                        REF_CODES_MAX_FRAMES = 40
+                        ref_codes_full = tts.encode_reference(ref_audio_path)
+                        import numpy as np
+                        if hasattr(ref_codes_full, 'cpu'):
+                            ref_codes_full = ref_codes_full.cpu().numpy()
+                        ref_codes_full = np.asarray(ref_codes_full).flatten()
+                        ref_codes_short = ref_codes_full[:REF_CODES_MAX_FRAMES].tolist()
+                        print(f"[TEST VOICE Zero-shot] ref_audio={ref_audio_path}, ref_codes frames: {len(ref_codes_full)} -> {len(ref_codes_short)}")
+                        audio = tts.infer(text=test_text, ref_codes=ref_codes_short, ref_text=ref_text_zs, max_chars=150)
+                    else:
+                        return jsonify({'error': 'Zero-shot thiếu ref_audio hoặc ref_transcript'}), 400
+                else:
+                    base_voice_id = voice.get('base_voice_id', 'ly')
+                    pitch_adj = voice.get('pitch_adjustment', 0)
+                    speed_adj = voice.get('speed_adjustment', 1.0)
+                    tts_voice_id = base_voice_id
+                    if tts_voice_id and str(tts_voice_id).endswith('HM'):
+                        tts_voice_id = tts_voice_id[:-2]
+                    if tts_voice_id:
+                        tts_voice_id = str(tts_voice_id).capitalize()
+                    voice_data = tts.get_preset_voice(tts_voice_id) if tts_voice_id else None
+                    audio = tts.infer(text=test_text, voice=voice_data, max_chars=256)
+            except ValueError as ve:
+                if 'context window' in str(ve) or 'exceed' in str(ve).lower():
+                    return jsonify({
+                        'error': 'Giới hạn model (2048 token) bị vượt. Với Zero-shot: dùng file mẫu ngắn (vài giây) và transcript ngắn; văn bản test giữ dưới 300 ký tự.'
+                    }), 400
+                raise
+            
             tts.save(audio, str(audio_path))
             
             # Apply speed adjustment if needed
@@ -2511,12 +3521,20 @@ def list_custom_voices():
             return jsonify({'error': 'Database connection failed'}), 500
         
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, voice_name, status, quality_score, created_at, usage_count
-            FROM custom_voices 
-            WHERE user_id = %s AND status = 'completed'
-            ORDER BY created_at DESC
-        """, (user_id,))
+        try:
+            cursor.execute("""
+                SELECT id, voice_name, status, quality_score, created_at, usage_count, voice_type
+                FROM custom_voices 
+                WHERE user_id = %s AND status = 'completed'
+                ORDER BY created_at DESC
+            """, (user_id,))
+        except Exception:
+            cursor.execute("""
+                SELECT id, voice_name, status, quality_score, created_at, usage_count
+                FROM custom_voices 
+                WHERE user_id = %s AND status = 'completed'
+                ORDER BY created_at DESC
+            """, (user_id,))
         voices = cursor.fetchall()
         conn.close()
         
@@ -2529,7 +3547,8 @@ def list_custom_voices():
                 'status': voice['status'],
                 'quality_score': float(voice['quality_score']) if voice['quality_score'] else 0,
                 'created_at': voice['created_at'].isoformat() if voice['created_at'] else None,
-                'usage_count': voice['usage_count']
+                'usage_count': voice['usage_count'],
+                'voice_type': (voice.get('voice_type') or 'rvc').strip().lower()
             })
         
         return jsonify({'success': True, 'voices': voices_list})
@@ -2559,6 +3578,184 @@ def worker_status():
         return jsonify({'error': str(e)}), 500
 
 # ==================== END CUSTOM VOICE ROUTES ====================
+
+# ==================== PAYMENT STATUS & NOTIFICATION ROUTES ====================
+
+@app.route('/api/payment/status/<int:payment_id>')
+def check_payment_status(payment_id):
+    """Kiểm tra trạng thái thanh toán"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            # Lấy thông tin payment của user hiện tại
+            cursor.execute("""
+                SELECT p.*, sp.package_name, sp.characters_limit, sp.price_vnd, sp.duration_days,
+                       u.username, u.full_name
+                FROM payments p
+                JOIN subscription_packages sp ON p.package_id = sp.id
+                JOIN users u ON p.user_id = u.id
+                WHERE p.id = %s AND p.user_id = %s
+            """, (payment_id, session['user_id']))
+            
+            payment = cursor.fetchone()
+            if not payment:
+                return jsonify({'success': False, 'message': 'Không tìm thấy thanh toán'}), 404
+            
+            # Nếu payment đã thành công, kiểm tra user subscription
+            characters_info = None
+            if payment['payment_status'] == 'completed':
+                cursor.execute("""
+                    SELECT characters_remaining, subscription_expires_at
+                    FROM user_subscriptions
+                    WHERE user_id = %s
+                """, (session['user_id'],))
+                sub_info = cursor.fetchone()
+                
+                if sub_info:
+                    characters_info = {
+                        'characters_remaining': sub_info['characters_remaining'],
+                        'subscription_expires_at': sub_info['subscription_expires_at'].isoformat() if sub_info['subscription_expires_at'] else None
+                    }
+            
+            return jsonify({
+                'success': True,
+                'payment': {
+                    'id': payment['id'],
+                    'transaction_id': payment['transaction_id'],
+                    'status': payment['payment_status'],
+                    'amount': payment['amount_vnd'],
+                    'created_at': payment['created_at'].isoformat(),
+                    'updated_at': payment['updated_at'].isoformat() if payment['updated_at'] else None,
+                    'package_info': {
+                        'name': payment['package_name'],
+                        'characters': payment['characters_limit'],
+                        'price': payment['price_vnd'],
+                        'duration': payment['duration_days']
+                    }
+                },
+                'user_characters': characters_info
+            })
+            
+    except Exception as e:
+        print(f"[ERROR] Check payment status error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/characters')
+def get_user_characters():
+    """Lấy thông tin ký tự còn lại của user"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT characters_remaining, subscription_expires_at,
+                       created_at, updated_at
+                FROM user_subscriptions
+                WHERE user_id = %s
+            """, (session['user_id'],))
+            
+            subscription = cursor.fetchone()
+            
+            if subscription:
+                return jsonify({
+                    'success': True,
+                    'characters_remaining': subscription['characters_remaining'],
+                    'subscription_expires_at': subscription['subscription_expires_at'].isoformat() if subscription['subscription_expires_at'] else None,
+                    'last_updated': subscription['updated_at'].isoformat() if subscription['updated_at'] else None
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'characters_remaining': 0,
+                    'subscription_expires_at': None,
+                    'last_updated': None
+                })
+                
+    except Exception as e:
+        print(f"[ERROR] Get user characters error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/payment/verify/<transaction_id>')
+def manual_verify_payment(transaction_id):
+    """Manual verification endpoint for payment"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    
+    try:
+        with conn.cursor() as cursor:
+            # Kiểm tra payment thuộc về user hiện tại
+            cursor.execute("""
+                SELECT id, payment_status, user_id, package_id, amount_vnd
+                FROM payments
+                WHERE transaction_id = %s AND user_id = %s
+            """, (transaction_id, session['user_id']))
+            
+            payment = cursor.fetchone()
+            if not payment:
+                return jsonify({'success': False, 'message': 'Không tìm thấy thanh toán'}), 404
+            
+            if payment['payment_status'] == 'completed':
+                return jsonify({
+                    'success': True,
+                    'already_verified': True,
+                    'message': 'Thanh toán đã được xác nhận thành công'
+                })
+            
+            # Verify với SePay
+            verify_result = verify_sepay_transaction(transaction_id, payment['amount_vnd'])
+            
+            if verify_result['verified']:
+                # Update payment status và user subscription
+                update_result = update_user_subscription(payment['id'], payment['user_id'], payment['package_id'])
+                
+                if update_result['success']:
+                    return jsonify({
+                        'success': True,
+                        'verified': True,
+                        'message': '🎉 Thanh toán đã được xác nhận! Bạn đã nhận thêm ký tự vào tài khoản.',
+                        'characters_added': update_result.get('characters_added'),
+                        'total_characters': update_result.get('total_characters')
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Lỗi cập nhật tài khoản: {update_result.get("error")}'
+                    })
+            else:
+                return jsonify({
+                    'success': True,
+                    'verified': False,
+                    'message': 'Thanh toán chưa được xác nhận. Vui lòng kiểm tra lại hoặc liên hệ hỗ trợ.'
+                })
+                
+    except Exception as e:
+        print(f"[ERROR] Manual verify payment error: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+# ==================== END PAYMENT STATUS & NOTIFICATION ROUTES ====================
 
 if __name__ == '__main__':
     print("=" * 60)

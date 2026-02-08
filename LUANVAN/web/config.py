@@ -41,8 +41,18 @@ ALLOWED_AUDIO_EXTENSIONS = {'wav', 'mp3'}
 SESSION_TYPE = 'filesystem'
 PERMANENT_SESSION_LIFETIME = 86400  # 24 hours
 
-# Bank Transfer QR Code Configuration
-BANK_NAME = os.environ.get('BANK_NAME') or 'TpBank'  # Tên ngân hàng
-BANK_ACCOUNT_NUMBER = os.environ.get('BANK_ACCOUNT_NUMBER') or '07083380401'  # Số tài khoản
-BANK_ACCOUNT_NAME = os.environ.get('BANK_ACCOUNT_NAME') or 'VO THANH DANH'  # Tên chủ TK
+# SePay.vn Payment Gateway Configuration
+SEPAY_API_URL = os.environ.get('SEPAY_API_URL') or 'https://my.sepay.vn/userapi/transactions'
+SEPAY_TOKEN = os.environ.get('SEPAY_TOKEN') or '8A4IL0IHUPITRUESGNYGR1FPQ9HELNB5E6YZKUJYRYOWWVHDXOQJLOKAABEFT7SK'  # Token từ SePay
+SEPAY_ACCOUNT_NUMBER = os.environ.get('SEPAY_ACCOUNT_NUMBER') or '0866005541'  # Số tài khoản SePay
+SEPAY_BANK_ID = os.environ.get('SEPAY_BANK_ID') or 'MBBank'  # ID ngân hàng trong SePay
+SEPAY_TIMEOUT = int(os.environ.get('SEPAY_TIMEOUT') or '300')  # Timeout thanh toán (giây)
+
+# SePay QR Code Generation
+SEPAY_QR_API = 'https://img.vietqr.io/image'
+
+# Bank Transfer QR Code Configuration (Backup method)
+BANK_NAME = os.environ.get('BANK_NAME') or 'MBBank'  # Tên ngân hàng
+BANK_ACCOUNT_NUMBER = os.environ.get('BANK_ACCOUNT_NUMBER') or '0866005541'  # Số tài khoản
+BANK_ACCOUNT_NAME = os.environ.get('BANK_ACCOUNT_NAME') or 'TTS SYSTEM'  # Tên chủ TK
 BANK_BRANCH = os.environ.get('BANK_BRANCH') or 'Cần Thơ'  # Chi nhánh ngân hàng
