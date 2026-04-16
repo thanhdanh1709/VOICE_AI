@@ -20,6 +20,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
+    // Emotional text character counter
+    const emotionalTextInput = document.getElementById('emotionalTextInput');
+    const emotionalCharCount = document.getElementById('emotionalCharCount');
+    if (emotionalTextInput && emotionalCharCount) {
+        emotionalTextInput.addEventListener('input', () => {
+            const count = emotionalTextInput.value.length;
+            emotionalCharCount.textContent = count.toLocaleString();
+        });
+    }
+    
     // Voice gallery modal
     const voiceGalleryBtn = document.getElementById('voiceGalleryBtn');
     const voiceGalleryModal = document.getElementById('voiceGalleryModal');
@@ -55,6 +65,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Tab switching (support both old and new styles)
     const tabButtons = document.querySelectorAll('.tab-btn, .tab-btn-modern');
+    const convertBtn = document.getElementById('convertBtn');
+    const convertEmotionalBtn = document.getElementById('convertEmotionalBtn');
+    
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
@@ -72,6 +85,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (targetTab) {
                 targetTab.style.display = 'block';
                 targetTab.classList.add('active');
+            }
+            
+            // Show/hide appropriate convert button
+            if (tab === 'emotional') {
+                if (convertBtn) convertBtn.style.display = 'none';
+                if (convertEmotionalBtn) convertEmotionalBtn.style.display = 'block';
+            } else {
+                if (convertBtn) convertBtn.style.display = 'block';
+                if (convertEmotionalBtn) convertEmotionalBtn.style.display = 'none';
             }
         });
     });
@@ -129,10 +151,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Convert button handler
-    const convertBtn = document.getElementById('convertBtn');
+    // Convert button handlers
     if (convertBtn) {
         convertBtn.addEventListener('click', handleConvert);
+    }
+    if (convertEmotionalBtn) {
+        convertEmotionalBtn.addEventListener('click', handleEmotionalConvert);
+        
+        // Check emotional TTS status on page load
+        checkEmotionalTTSStatus();
     }
 });
 
@@ -187,9 +214,34 @@ async function loadVoices() {
                 select.value = `custom_${customVoiceId}`;
             }
         }
+
+        // Populate emotional voice selector (viXTTS Clone voices only)
+        loadEmotionalVoiceSelector(customVoices);
+
     } catch (error) {
         console.error('Error loading voices:', error);
     }
+}
+
+/**
+ * Populate the Emotional TTS voice selector with viXTTS Clone voices
+ */
+function loadEmotionalVoiceSelector(customVoices) {
+    const emotionalSelect = document.getElementById('emotionalVoiceSelect');
+    if (!emotionalSelect) return;
+
+    const vixttsVoices = (customVoices || []).filter(v => v.voice_type === 'vixtts_clone');
+
+    let html = '<option value="">⭐ Mặc định (base_voice.wav)</option>';
+    if (vixttsVoices.length > 0) {
+        html += '<optgroup label="🤖 Giọng viXTTS Clone của tôi">';
+        html += vixttsVoices.map(v =>
+            `<option value="${v.id}">🎙️ ${v.name} (⭐${v.quality_score.toFixed(1)})</option>`
+        ).join('');
+        html += '</optgroup>';
+    }
+    emotionalSelect.innerHTML = html;
+    console.log(`[EMOTIONAL TTS] Loaded ${vixttsVoices.length} viXTTS Clone voice(s) into selector`);
 }
 
 // Load statistics
@@ -812,3 +864,170 @@ function hideEffectMessages() {
     if (success) success.style.display = 'none';
     if (error) error.style.display = 'none';
 }
+
+/**
+ * ========================================
+ * EMOTIONAL TTS FUNCTIONS
+ * ========================================
+ */
+
+/**
+ * Check if Emotional TTS is ready
+ */
+async function checkEmotionalTTSStatus() {
+    const convertEmotionalBtn = document.getElementById('convertEmotionalBtn');
+    if (!convertEmotionalBtn) return;
+    
+    try {
+        const response = await fetch('/api/emotional-tts/status');
+        const data = await response.json();
+        
+        if (data.success && data.ready) {
+            // Model sẵn sàng
+            convertEmotionalBtn.disabled = false;
+            console.log('[EMOTIONAL TTS] ✅ Model ready!');
+        } else {
+            // Model chưa sẵn sàng
+            convertEmotionalBtn.disabled = true;
+            convertEmotionalBtn.innerHTML = '<span>⏳</span><span>Đang load model...</span>';
+            console.log('[EMOTIONAL TTS] ⏳ Loading model...:', data.message);
+            
+            // Retry sau 5 giây
+            setTimeout(checkEmotionalTTSStatus, 5000);
+        }
+    } catch (error) {
+        console.error('[EMOTIONAL TTS] Error checking status:', error);
+        // Retry sau 5 giây
+        setTimeout(checkEmotionalTTSStatus, 5000);
+    }
+}
+
+/**
+ * Handle emotional TTS conversion
+ */
+async function handleEmotionalConvert() {
+    console.log('[EMOTIONAL TTS] Starting conversion...');
+    
+    const emotionalTextInput = document.getElementById('emotionalTextInput');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const errorMessage = document.getElementById('errorMessage');
+    const emptyState = document.getElementById('emptyState');
+    const convertBtn = document.getElementById('convertEmotionalBtn');
+    
+    const text = emotionalTextInput.value.trim();
+    
+    // Validate input
+    if (!text) {
+        alert('Vui lòng nhập văn bản với emotion tags');
+        return;
+    }
+    
+    // Check if text contains emotion hints
+    const hasEmotionTags = /\([^)]*\)/.test(text);
+    if (!hasEmotionTags) {
+        const confirmed = confirm('Văn bản của bạn không có emotion tags.\nVẫn muốn tiếp tục với giọng neutral?');
+        if (!confirmed) return;
+    }
+    
+    // Show loading, hide others
+    if (emptyState) emptyState.style.display = 'none';
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (audioPlayer) audioPlayer.style.display = 'none';
+    if (errorMessage) errorMessage.style.display = 'none';
+    
+    // Disable button
+    if (convertBtn) {
+        convertBtn.disabled = true;
+        convertBtn.innerHTML = '<span class="spinner"></span><span>Đang xử lý với AI...</span>';
+    }
+    
+    try {
+        // Get selected custom voice for emotional TTS
+        const emotionalVoiceSelect = document.getElementById('emotionalVoiceSelect');
+        const emotionalCustomVoiceId = emotionalVoiceSelect && emotionalVoiceSelect.value
+            ? emotionalVoiceSelect.value
+            : null;
+        
+        const payload = { text };
+        if (emotionalCustomVoiceId) payload.custom_voice_id = emotionalCustomVoiceId;
+        
+        console.log('[EMOTIONAL TTS] Calling API with voice:', emotionalCustomVoiceId || 'default');
+        const response = await fetch('/api/convert-emotional', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('[EMOTIONAL TTS] Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(errorData.message || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('[EMOTIONAL TTS] Response:', data);
+        
+        // Hide loading
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        
+        if (data.success) {
+            // Show audio player
+            const audioElement = document.getElementById('audioElement');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            if (audioElement && downloadBtn) {
+                // Reset audio element
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                
+                // Set new source
+                audioElement.src = data.audio_url;
+                downloadBtn.href = data.audio_url;
+                downloadBtn.download = data.audio_filename || `emotional_${Date.now()}.wav`;
+                
+                // Load audio
+                audioElement.load();
+                
+                if (audioPlayer) audioPlayer.style.display = 'block';
+                
+                console.log('[EMOTIONAL TTS] ✅ Success! File:', data.audio_filename);
+            }
+            
+            // Update stats
+            await loadStatistics();
+            
+        } else {
+            if (errorMessage) {
+                errorMessage.textContent = data.message || 'Không thể chuyển đổi';
+                errorMessage.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.error('[EMOTIONAL TTS] Error:', error);
+        
+        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        
+        let errorMsg = 'Lỗi kết nối';
+        if (error.message === 'Failed to fetch') {
+            errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra server đang chạy.';
+        } else {
+            errorMsg = error.message;
+        }
+        
+        if (errorMessage) {
+            errorMessage.textContent = errorMsg;
+            errorMessage.style.display = 'block';
+        }
+    } finally {
+        // Re-enable button
+        if (convertBtn) {
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<span class="btn-icon">🎭</span><span class="btn-text">Chuyển đổi với cảm xúc</span>';
+        }
+    }
+}
+

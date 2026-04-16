@@ -360,7 +360,7 @@
                             <div class="upload-content-modern">
                                 <div class="upload-icon-modern">📁</div>
                                 <h3>Kéo thả file hoặc click để chọn</h3>
-                                <p class="upload-specs-modern">
+                                <p class="upload-specs-modern" id="uploadSpecs">
                                     <strong>Hỗ trợ:</strong> WAV, MP3, M4A<br>
                                     <strong>Độ dài:</strong> 30 giây - 15 phút<br>
                                     <strong>Chất lượng:</strong> Không noise, không echo
@@ -390,14 +390,14 @@
 
                     </div>
 
-                    <!-- Step 2: Voice mode (RVC vs Zero-shot) -->
+                    <!-- Step 2: Voice mode (RVC vs Zero-shot vs viXTTS Clone) -->
                     <div class="form-section-modern">
                         <h2 class="section-title-modern">
                             <span class="step-number-modern">2</span>
                             <span>Chế độ tạo giọng</span>
                         </h2>
                         <p class="section-description-modern">
-                            <strong>RVC:</strong> Train model từ audio (mất vài phút). <strong>Zero-shot:</strong> Clone giọng ngay từ mẫu (cần nhập transcript).
+                            <strong>RVC:</strong> Train model từ audio (mất vài phút). <strong>Zero-shot:</strong> Clone giọng ngay từ mẫu (cần nhập transcript). <strong>viXTTS Clone:</strong> AI clone giọng bằng model viXTTS, không cần transcript.
                         </p>
                         <div class="form-group">
                             <label class="form-label">Chế độ</label>
@@ -410,12 +410,21 @@
                                     <input type="radio" name="voice_type" value="zero_shot" id="voiceTypeZeroShot">
                                     <span>Zero-shot (clone từ mẫu)</span>
                                 </label>
+                                <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                                    <input type="radio" name="voice_type" value="vixtts_clone" id="voiceTypeVixtts">
+                                    <span>🤖 viXTTS Clone (AI clone giọng)</span>
+                                </label>
                             </div>
                         </div>
                         <div id="refTranscriptBlock" class="form-group" style="display: none;">
                             <label for="refTranscript" class="form-label">Transcript (nội dung nói trong file mẫu) <span class="required" style="color: var(--error);">*</span></label>
                             <textarea id="refTranscript" name="ref_transcript" class="form-input" rows="4" placeholder="Nhập chính xác nội dung mà người nói đọc trong file audio mẫu..."></textarea>
                             <small class="form-hint">Zero-shot cần transcript khớp với audio để clone giọng chính xác.</small>
+                        </div>
+                        <div id="vixttsCloneInfo" class="training-info-modern" style="display: none; margin-top: var(--space-4);">
+                            <h4>🤖 viXTTS Clone — AI clone giọng</h4>
+                            <p>Model <strong>viXTTS</strong> sẽ học đặc trưng giọng nói từ file audio mẫu và tổng hợp giọng mới không cần transcript. Giọng được tạo ngay lập tức khi chuyển đổi văn bản.</p>
+                            <p class="info-note-modern">💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả tốt nhất.</p>
                         </div>
                     </div>
 
@@ -555,10 +564,10 @@
                     </div>
 
                     <!-- Training Info -->
-                    <div class="training-info-modern">
+                    <div class="training-info-modern" id="trainingInfoCard">
                         <h4>⚡ Thời gian tạo giọng</h4>
-                        <p>Giọng custom sẽ được tạo <strong>ngay lập tức</strong> (< 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.</p>
-                        <p class="info-note-modern">
+                        <p id="trainingInfoText">Giọng custom sẽ được tạo <strong>ngay lập tức</strong> (< 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.</p>
+                        <p class="info-note-modern" id="trainingInfoNote">
                             💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.
                         </p>
                     </div>

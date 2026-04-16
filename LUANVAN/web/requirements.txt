@@ -13,3 +13,11 @@ scipy>=1.11.0
 librosa>=0.10.0
 soundfile>=0.12.0
 cffi>=1.15.0
+
+# viXTTS Emotional TTS
+TTS>=0.22.0
+vinorm>=2.0.7
+underthesea>=6.8.0
+pydub>=0.25.1
+torch>=2.0.0
+torchaudio>=2.0.0

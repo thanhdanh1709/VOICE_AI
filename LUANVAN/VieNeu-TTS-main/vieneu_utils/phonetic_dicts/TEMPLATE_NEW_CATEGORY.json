@@ -1,0 +1,8 @@
+{
+  "_comment": "Template để tạo category mới. Xóa dòng này khi sử dụng.",
+  "_instructions": "1. Copy file này, 2. Đổi tên thành XX_category_name.json, 3. Thêm từ vào, 4. Save với UTF-8 encoding",
+  
+  "example_word1": "phiên âm tiếng việt 1",
+  "example_word2": "phiên âm tiếng việt 2",
+  "example_word3": "phiên âm tiếng việt 3"
+}

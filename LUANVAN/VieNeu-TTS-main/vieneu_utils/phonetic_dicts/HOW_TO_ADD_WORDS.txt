@@ -1,0 +1,184 @@
+===========================================
+HƯỚNG DẪN THÊM TỪ MỚI VÀO DICTIONARY
+===========================================
+
+📝 CÁCH 1: Thêm vào file có sẵn
+-------------------------------------------
+
+1. Mở file JSON tương ứng (ví dụ: 03_technology.json)
+
+2. Thêm từ mới:
+
+   {
+     "computer": "cờm piu tơ",
+     "smartphone": "smát phôn",
+     "newword": "phiên âm mới"    ← Thêm dòng này
+   }
+
+3. Lưu ý:
+   - Thêm dấu phẩy ở dòng trước
+   - KHÔNG có dấu phẩy ở dòng cuối cùng
+   - Key phải viết thường
+   - Value là phiên âm tiếng Việt
+
+4. Save file với encoding UTF-8
+
+5. Test:
+   cd vieneu_utils
+   python test_json_dict.py
+
+
+📝 CÁCH 2: Tạo category mới
+-------------------------------------------
+
+1. Copy file TEMPLATE_NEW_CATEGORY.json
+
+2. Đổi tên thành: 22_your_category_name.json
+   (số thứ tự tiếp theo + tên category)
+
+3. Thêm từ vào:
+
+   {
+     "word1": "phiên âm 1",
+     "word2": "phiên âm 2",
+     "word3": "phiên âm 3"
+   }
+
+4. Save với UTF-8 encoding
+
+5. Normalizer sẽ tự động load file mới
+
+
+📝 CÁCH 3: Custom dictionary riêng
+-------------------------------------------
+
+1. Tạo file JSON riêng ngoài thư mục này:
+   my_custom_words.json
+
+2. Format:
+   {
+     "myword": "phiên âm của tôi"
+   }
+
+3. Sử dụng:
+   normalizer = VietnameseTTSNormalizer(
+       phonetic_dict_path="path/to/my_custom_words.json"
+   )
+
+
+⚠️ LƯU Ý QUAN TRỌNG
+-------------------------------------------
+
+1. Format JSON phải đúng:
+   ✅ ĐÚNG:
+   {
+     "word1": "phiên âm 1",
+     "word2": "phiên âm 2"
+   }
+
+   ❌ SAI (thiếu dấu phẩy):
+   {
+     "word1": "phiên âm 1"
+     "word2": "phiên âm 2"
+   }
+
+   ❌ SAI (dấu phẩy dòng cuối):
+   {
+     "word1": "phiên âm 1",
+     "word2": "phiên âm 2",
+   }
+
+2. Encoding phải là UTF-8:
+   - Notepad: Save As → UTF-8
+   - VS Code: Auto UTF-8
+   - Notepad++: Encoding → UTF-8
+
+3. Key viết thường:
+   ✅ "hello": "hé lô"
+   ❌ "Hello": "hé lô"  (vẫn work nhưng không consistent)
+
+4. Validate JSON trước khi save:
+   Website: https://jsonlint.com/
+
+
+🧪 TEST SAU KHI THÊM
+-------------------------------------------
+
+Chạy test script:
+
+   cd vieneu_utils
+   python test_json_dict.py
+
+Hoặc test trực tiếp:
+
+   python
+   >>> from normalize_text import VietnameseTTSNormalizer
+   >>> n = VietnameseTTSNormalizer()
+   >>> print(n.english_phonetic.get('yourword'))
+
+
+📊 CATEGORIES CÓ SẴN
+-------------------------------------------
+
+01_greetings       - Chào hỏi (hello, thanks, sorry...)
+02_family          - Gia đình (father, mother, son...)
+03_technology      - Công nghệ (computer, phone, wifi...)
+04_social_media    - Mạng xã hội (facebook, google, youtube...)
+05_pronouns        - Đại từ (I, you, he, she, this, that...)
+06_communication   - Giao tiếp (speak, talk, listen, read...)
+07_education       - Giáo dục (school, student, teacher...)
+08_home            - Nhà cửa (house, room, kitchen, bed...)
+09_food            - Đồ ăn (breakfast, pizza, coffee...)
+10_emotions        - Cảm xúc (happy, sad, love, beautiful...)
+11_time            - Thời gian (Monday, January, today...)
+12_entertainment   - Giải trí (game, music, movie, sport...)
+13_shopping        - Mua sắm (money, price, discount, sale...)
+14_transportation  - Giao thông (car, bus, train, airplane...)
+15_business        - Kinh doanh (work, manager, meeting...)
+16_medical         - Y tế (hospital, doctor, medicine...)
+17_countries_asia  - Quốc gia Châu Á (Vietnam, Japan, Korea...)
+18_countries_europe- Quốc gia Châu Âu (France, Germany, Italy...)
+19_countries_americas - Quốc gia Châu Mỹ (USA, Canada, Brazil...)
+20_countries_oceania_africa - Châu Đại Dương & Châu Phi
+21_cities          - Thành phố (Tokyo, Paris, NewYork...)
+
+
+💡 GỢI Ý TỪ NÊN THÊM
+-------------------------------------------
+
+Crypto/Blockchain:
+  blockchain, bitcoin, ethereum, nft, defi, mining...
+
+Gaming:
+  minecraft, pubg, fortnite, roblox, steam...
+
+More brands:
+  sony, honda, toyota, nike, adidas...
+
+More cities:
+  hongkong, singapore, dubai, sydney...
+
+Food brands:
+  mcdonalds, kfc, starbucks, subway...
+
+
+📞 HỖ TRỢ
+-------------------------------------------
+
+Nếu gặp lỗi:
+1. Kiểm tra format JSON (jsonlint.com)
+2. Kiểm tra encoding (UTF-8)
+3. Chạy test_json_dict.py để debug
+4. Xem log trong console
+
+
+✅ HOÀN TẤT!
+-------------------------------------------
+
+Bây giờ bạn có thể dễ dàng:
+- Thêm từ mới vào JSON
+- Tạo category mới
+- Edit không cần biết Python
+- Collaborate với team
+
+Happy editing! 🎤

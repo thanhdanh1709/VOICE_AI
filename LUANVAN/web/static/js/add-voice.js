@@ -16,26 +16,68 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Toggle Zero-shot vs RVC: show/hide ref_transcript and base voice sections
+ * Toggle RVC / Zero-shot / viXTTS Clone: show/hide relevant sections
  */
 function setupVoiceTypeToggle() {
     const voiceTypeRvc = document.getElementById('voiceTypeRvc');
     const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
+    const voiceTypeVixtts = document.getElementById('voiceTypeVixtts');
     const refTranscriptBlock = document.getElementById('refTranscriptBlock');
     const baseVoiceSection = document.getElementById('baseVoiceSection');
     const adjustmentsSection = document.getElementById('adjustmentsSection');
+    const vixttsCloneInfo = document.getElementById('vixttsCloneInfo');
+    const trainingInfoText = document.getElementById('trainingInfoText');
+    const trainingInfoNote = document.getElementById('trainingInfoNote');
     
     function updateVisibility() {
         const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
+        const isVixtts = voiceTypeVixtts && voiceTypeVixtts.checked;
+        const isRvc = voiceTypeRvc && voiceTypeRvc.checked;
+
         if (refTranscriptBlock) refTranscriptBlock.style.display = isZeroShot ? 'block' : 'none';
-        if (baseVoiceSection) baseVoiceSection.style.display = isZeroShot ? 'none' : 'block';
-        if (adjustmentsSection) adjustmentsSection.style.display = isZeroShot ? 'none' : 'block';
+        if (vixttsCloneInfo) vixttsCloneInfo.style.display = isVixtts ? 'block' : 'none';
+
+        // Base voice and adjustments only for RVC
+        if (baseVoiceSection) baseVoiceSection.style.display = isRvc ? 'block' : 'none';
+        if (adjustmentsSection) adjustmentsSection.style.display = isRvc ? 'block' : 'none';
+
         const refInput = document.getElementById('refTranscript');
         if (refInput) refInput.required = !!isZeroShot;
+
+        // Update upload specs hint based on mode
+        const uploadSpecs = document.getElementById('uploadSpecs');
+        if (uploadSpecs) {
+            if (isVixtts) {
+                uploadSpecs.innerHTML = '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 6 giây - 2 phút (tối ưu 10–60 giây)<br><strong>Chất lượng:</strong> Không noise, không echo';
+            } else {
+                uploadSpecs.innerHTML = '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 30 giây - 15 phút<br><strong>Chất lượng:</strong> Không noise, không echo';
+            }
+        }
+
+        // Update training info card text
+        if (trainingInfoText) {
+            if (isVixtts) {
+                trainingInfoText.innerHTML = 'Giọng <strong>viXTTS Clone</strong> được tạo ngay lập tức sau khi upload. Model viXTTS sẽ clone giọng từ audio mẫu khi bạn chuyển đổi văn bản.';
+            } else if (isZeroShot) {
+                trainingInfoText.innerHTML = 'Giọng <strong>Zero-shot</strong> được tạo ngay lập tức. Model sẽ clone giọng từ audio mẫu + transcript mỗi lần chuyển đổi.';
+            } else {
+                trainingInfoText.innerHTML = 'Giọng custom sẽ được tạo <strong>ngay lập tức</strong> (< 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.';
+            }
+        }
+        if (trainingInfoNote) {
+            if (isVixtts) {
+                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả clone tốt nhất.';
+            } else if (isZeroShot) {
+                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Transcript phải khớp chính xác với nội dung trong file audio mẫu.';
+            } else {
+                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.';
+            }
+        }
     }
     
     if (voiceTypeRvc) voiceTypeRvc.addEventListener('change', updateVisibility);
     if (voiceTypeZeroShot) voiceTypeZeroShot.addEventListener('change', updateVisibility);
+    if (voiceTypeVixtts) voiceTypeVixtts.addEventListener('change', updateVisibility);
     updateVisibility();
 }
 
@@ -248,7 +290,10 @@ async function handleSubmit() {
     }
     
     const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
+    const voiceTypeVixtts = document.getElementById('voiceTypeVixtts');
     const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
+    const isVixtts = voiceTypeVixtts && voiceTypeVixtts.checked;
+
     const refTranscript = document.getElementById('refTranscript') ? document.getElementById('refTranscript').value.trim() : '';
     if (isZeroShot && !refTranscript) {
         showNotification('error', 'Zero-shot cần nhập transcript (nội dung nói trong file mẫu)');
@@ -257,6 +302,11 @@ async function handleSubmit() {
     
     const description = document.getElementById('voiceDescription').value.trim();
     
+    // Determine voice_type string
+    let voiceTypeValue = 'rvc';
+    if (isZeroShot) voiceTypeValue = 'zero_shot';
+    else if (isVixtts) voiceTypeValue = 'vixtts_clone';
+
     // Show progress
     showTrainingProgress();
     
@@ -266,10 +316,10 @@ async function handleSubmit() {
         formData.append('audio_file', selectedFile);
         formData.append('voice_name', voiceName);
         formData.append('description', description);
-        formData.append('voice_type', isZeroShot ? 'zero_shot' : 'rvc');
+        formData.append('voice_type', voiceTypeValue);
         if (isZeroShot) formData.append('ref_transcript', refTranscript);
         
-        // V2: Add base voice and adjustments (RVC only)
+        // Add base voice and adjustments (RVC only)
         const baseVoice = document.getElementById('baseVoice').value;
         const pitchAdjustment = document.getElementById('pitchAdjustment').value;
         const speedAdjustment = document.getElementById('speedAdjustment').value;
@@ -282,7 +332,7 @@ async function handleSubmit() {
         
         console.log('[ADD VOICE] Submitting with:', {
             voice_name: voiceName,
-            voice_type: isZeroShot ? 'zero_shot' : 'rvc',
+            voice_type: voiceTypeValue,
             ref_transcript: isZeroShot ? refTranscript : '(none)',
             base_voice_id: baseVoice,
             pitch_adjustment: pitchAdjustment,
@@ -290,7 +340,7 @@ async function handleSubmit() {
             energy_adjustment: energyAdjustment
         });
         
-        // Upload and start training (or zero-shot: done immediately)
+        // Upload and start training (or instant modes: done immediately)
         const response = await fetch('/api/custom-voice/upload', {
             method: 'POST',
             body: formData
@@ -304,13 +354,17 @@ async function handleSubmit() {
         
         console.log('[ADD VOICE] Upload successful:', data);
         
-        // Zero-shot: no training, show success immediately
+        // Instant modes: no training needed
         if (data.voice_type === 'zero_shot') {
             showTrainingSuccess(data.message || 'Giọng Zero-shot đã sẵn sàng. Bạn có thể dùng ngay.');
             return;
         }
+        if (data.voice_type === 'vixtts_clone') {
+            showTrainingSuccess(data.message || 'Giọng viXTTS Clone đã sẵn sàng. Bạn có thể dùng ngay.');
+            return;
+        }
         
-        // Store voice ID for progress tracking
+        // Store voice ID for progress tracking (RVC training)
         currentVoiceId = data.custom_voice_id;
         
         // Update progress subtitle

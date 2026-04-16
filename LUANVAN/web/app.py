@@ -21,9 +21,34 @@ import uuid
 
 # Thêm đường dẫn VieNeu-TTS-main vào sys.path để import Vieneu
 BASE_DIR = Path(__file__).resolve().parent.parent
+WEB_DIR = Path(__file__).resolve().parent   # d:/.../LUANVAN/web/
 VieNeu_TTS_DIR = BASE_DIR / 'VieNeu-TTS-main'
 if str(VieNeu_TTS_DIR) not in sys.path:
     sys.path.insert(0, str(VieNeu_TTS_DIR))
+
+def resolve_audio_path(path: str) -> str:
+    """Convert relative sample_audio_path stored in DB to absolute path.
+    Tries multiple base directories to handle files uploaded from different working directories.
+    """
+    if not path:
+        return path
+    p = Path(path)
+    if p.is_absolute():
+        return str(p)
+    # Try 1: resolve from WEB_DIR (app.py directory) — the canonical location
+    candidate1 = WEB_DIR / p
+    if candidate1.exists():
+        return str(candidate1)
+    # Try 2: resolve from WEB_DIR's parent (LUANVAN/) — app may have been run from there
+    candidate2 = WEB_DIR.parent / p
+    if candidate2.exists():
+        return str(candidate2)
+    # Try 3: current working directory
+    candidate3 = Path.cwd() / p
+    if candidate3.exists():
+        return str(candidate3)
+    # Default: return WEB_DIR-based path (caller will check existence and report error)
+    return str(candidate1)
 
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
@@ -44,6 +69,17 @@ try:
 except ImportError as e:
     RVC_AVAILABLE = False
     print(f"[WARNING] RVC not available: {e}")
+
+# Import viXTTS Emotional TTS
+VIXTTS_EMOTIONAL_AVAILABLE = False
+VIXTTS_INSTANCE = None  # Store the instance globally
+try:
+    from emotional_tts_vixtts import get_vixtts_emotional_instance
+    VIXTTS_EMOTIONAL_AVAILABLE = True
+    print("[INFO] viXTTS Emotional TTS is available")
+except ImportError as e:
+    VIXTTS_EMOTIONAL_AVAILABLE = False
+    print(f"[WARNING] viXTTS Emotional TTS not available: {e}")
 
 # Import custom voice training modules
 try:
@@ -586,112 +622,137 @@ def convert_text_to_speech():
             raise Exception(f"Không thể khởi tạo TTS engine: {str(tts_error)}")
         
         try:
-            voice_data = tts.get_preset_voice(voice_id) if voice_id and not (is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot') else None
+            _cv_type = (custom_voice_data.get('voice_type') or 'rvc').strip().lower() if (is_custom_voice and custom_voice_data) else 'rvc'
+            voice_data = tts.get_preset_voice(voice_id) if voice_id and _cv_type not in ('zero_shot', 'vixtts_clone') else None
             print(f"[CONVERT] Voice data obtained: {voice_id}")
         except Exception as voice_error:
             print(f"[WARNING] Could not get preset voice {voice_id}, using None: {voice_error}")
             voice_data = None
         
         print(f"[CONVERT] Converting text to speech (length: {len(text)} chars)...")
-        try:
-            # Zero-shot: use ref_audio + ref_text; otherwise preset voice or ref from voice_data
-            use_zero_shot = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot'
-            if use_zero_shot:
-                ref_audio_path = custom_voice_data.get('sample_audio_path')
-                ref_text_zs = custom_voice_data.get('ref_transcript') or ''
-                if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
-                    print(f"[CONVERT Zero-shot] ref_audio={ref_audio_path}, ref_text length={len(ref_text_zs)}")
-                    audio = tts.infer(text=text, ref_audio=ref_audio_path, ref_text=ref_text_zs)
-                else:
-                    print(f"[WARNING] Zero-shot missing ref_audio/ref_text, using default voice")
-                    audio = tts.infer(text=text, voice=voice_data if voice_data else None)
-            else:
-                audio = tts.infer(text=text, voice=voice_data if voice_data else None)
-            
-            # Calculate duration from audio shape
-            duration_seconds = 0
-            sample_rate = getattr(tts, 'sample_rate', 24000)
-            
-            # Log audio information
-            if hasattr(audio, 'shape'):
-                audio_shape = audio.shape
-                audio_dtype = audio.dtype
-                if len(audio_shape) > 0:
-                    duration_seconds = audio_shape[0] / sample_rate
-                    print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}, duration={duration_seconds:.2f}s")
-                else:
-                    print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}")
-            else:
-                audio_length = len(audio) if hasattr(audio, '__len__') else 'unknown'
-                print(f"[CONVERT] Text inference completed: audio length={audio_length}")
-            
-        except Exception as infer_error:
-            error_trace = traceback.format_exc()
-            print(f"[ERROR] Failed to infer audio: {infer_error}")
-            print(f"[ERROR] Traceback: {error_trace}")
-            raise Exception(f"Lỗi tạo âm thanh: {str(infer_error)}")
-        
-        print(f"[CONVERT] Saving audio to: {output_path}")
-        try:
-            # Ensure output directory exists
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            tts.save(audio, str(output_path))
-            print(f"[CONVERT] Audio saved successfully")
-            
-            # V2: Apply speed adjustment if custom voice (before pitch)
-            if is_custom_voice and speed_adjustment != 1.0:
-                try:
-                    import librosa
-                    import soundfile as sf
-                    print(f"[CONVERT V2] Applying speed adjustment: {speed_adjustment}x")
-                    
-                    # Load audio
-                    audio_data, sr = librosa.load(str(output_path), sr=None)
-                    
-                    # Change speed
-                    audio_adjusted = librosa.effects.time_stretch(audio_data, rate=speed_adjustment)
-                    
-                    # Save adjusted audio
-                    sf.write(str(output_path), audio_adjusted, sr)
-                    print(f"[CONVERT V2] Speed adjustment applied successfully")
-                except Exception as speed_error:
-                    print(f"[WARNING] Could not apply speed adjustment: {speed_error}")
-            
-            # V2: Apply pitch adjustment if custom voice
-            if is_custom_voice and pitch_adjustment != 0:
-                try:
-                    print(f"[CONVERT V2] Applying pitch adjustment: {pitch_adjustment}")
-                    rvc_processor = get_rvc_processor()
-                    if rvc_processor.is_available():
-                        adjusted_filename = f"{uuid.uuid4()}_adjusted.wav"
-                        adjusted_path = AUDIO_OUTPUT_DIR / adjusted_filename
-                        
-                        success, msg, result_path = rvc_processor.adjust_voice(
-                            str(output_path), 
-                            str(adjusted_path), 
-                            pitch=pitch_adjustment
-                        )
-                        
-                        if success and result_path:
-                            # Delete original, use adjusted
-                            os.remove(output_path)
-                            output_path = Path(adjusted_path)
-                            filename = adjusted_filename
-                            print(f"[CONVERT V2] Pitch adjustment applied successfully")
-                        else:
-                            print(f"[WARNING] Pitch adjustment failed: {msg}")
+        duration_seconds = 0
+        sample_rate = 24000
+
+        # viXTTS Clone: synthesize directly with user's voice reference
+        use_vixtts_clone = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'vixtts_clone'
+
+        if use_vixtts_clone:
+            try:
+                if not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None or VIXTTS_INSTANCE.model is None:
+                    raise Exception("viXTTS model chưa được tải. Vui lòng thử lại sau vài phút.")
+                ref_audio_path = resolve_audio_path(custom_voice_data.get('sample_audio_path'))
+                if not ref_audio_path or not os.path.exists(ref_audio_path):
+                    raise Exception(f"Không tìm thấy file audio mẫu của giọng viXTTS Clone: {ref_audio_path}")
+                print(f"[CONVERT viXTTS-Clone] Using voice ref: {ref_audio_path}")
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                VIXTTS_INSTANCE.synthesize_with_voice(text, ref_audio_path, str(output_path))
+                import librosa as _librosa
+                _y, _sr = _librosa.load(str(output_path), sr=None)
+                duration_seconds = len(_y) / _sr
+                print(f"[CONVERT viXTTS-Clone] Audio generated, duration: {duration_seconds:.2f}s")
+            except Exception as vixtts_err:
+                error_trace = traceback.format_exc()
+                print(f"[ERROR] viXTTS Clone failed: {vixtts_err}")
+                print(f"[ERROR] Traceback: {error_trace}")
+                raise Exception(f"Lỗi tạo âm thanh viXTTS Clone: {str(vixtts_err)}")
+        else:
+            try:
+                # Zero-shot: use ref_audio + ref_text; otherwise preset voice or ref from voice_data
+                use_zero_shot = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot'
+                if use_zero_shot:
+                    ref_audio_path = resolve_audio_path(custom_voice_data.get('sample_audio_path'))
+                    ref_text_zs = custom_voice_data.get('ref_transcript') or ''
+                    if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
+                        print(f"[CONVERT Zero-shot] ref_audio={ref_audio_path}, ref_text length={len(ref_text_zs)}")
+                        audio = tts.infer(text=text, ref_audio=ref_audio_path, ref_text=ref_text_zs)
                     else:
-                        print(f"[WARNING] RVC not available for pitch adjustment")
-                except Exception as pitch_error:
-                    print(f"[WARNING] Could not apply pitch adjustment: {pitch_error}")
-                    # Continue with original audio
+                        print(f"[WARNING] Zero-shot missing ref_audio/ref_text, using default voice")
+                        audio = tts.infer(text=text, voice=voice_data if voice_data else None)
+                else:
+                    audio = tts.infer(text=text, voice=voice_data if voice_data else None)
                 
-        except Exception as save_error:
-            error_trace = traceback.format_exc()
-            print(f"[ERROR] Failed to save audio: {save_error}")
-            print(f"[ERROR] Traceback: {error_trace}")
-            raise Exception(f"Lỗi lưu file âm thanh: {str(save_error)}")
+                # Calculate duration from audio shape
+                sample_rate = getattr(tts, 'sample_rate', sample_rate)
+                
+                if hasattr(audio, 'shape'):
+                    audio_shape = audio.shape
+                    audio_dtype = audio.dtype
+                    if len(audio_shape) > 0:
+                        duration_seconds = audio_shape[0] / sample_rate
+                        print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}, duration={duration_seconds:.2f}s")
+                    else:
+                        print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}")
+                else:
+                    audio_length = len(audio) if hasattr(audio, '__len__') else 'unknown'
+                    print(f"[CONVERT] Text inference completed: audio length={audio_length}")
+                
+            except Exception as infer_error:
+                error_trace = traceback.format_exc()
+                print(f"[ERROR] Failed to infer audio: {infer_error}")
+                print(f"[ERROR] Traceback: {error_trace}")
+                raise Exception(f"Lỗi tạo âm thanh: {str(infer_error)}")
+            
+            print(f"[CONVERT] Saving audio to: {output_path}")
+            try:
+                # Ensure output directory exists
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                tts.save(audio, str(output_path))
+                print(f"[CONVERT] Audio saved successfully")
+                
+                # V2: Apply speed adjustment if custom voice (before pitch)
+                if is_custom_voice and speed_adjustment != 1.0:
+                    try:
+                        import librosa
+                        import soundfile as sf
+                        print(f"[CONVERT V2] Applying speed adjustment: {speed_adjustment}x")
+                        
+                        # Load audio
+                        audio_data, sr = librosa.load(str(output_path), sr=None)
+                        
+                        # Change speed
+                        audio_adjusted = librosa.effects.time_stretch(audio_data, rate=speed_adjustment)
+                        
+                        # Save adjusted audio
+                        sf.write(str(output_path), audio_adjusted, sr)
+                        print(f"[CONVERT V2] Speed adjustment applied successfully")
+                    except Exception as speed_error:
+                        print(f"[WARNING] Could not apply speed adjustment: {speed_error}")
+                
+                # V2: Apply pitch adjustment if custom voice
+                if is_custom_voice and pitch_adjustment != 0:
+                    try:
+                        print(f"[CONVERT V2] Applying pitch adjustment: {pitch_adjustment}")
+                        rvc_processor = get_rvc_processor()
+                        if rvc_processor.is_available():
+                            adjusted_filename = f"{uuid.uuid4()}_adjusted.wav"
+                            adjusted_path = AUDIO_OUTPUT_DIR / adjusted_filename
+                            
+                            success, msg, result_path = rvc_processor.adjust_voice(
+                                str(output_path), 
+                                str(adjusted_path), 
+                                pitch=pitch_adjustment
+                            )
+                            
+                            if success and result_path:
+                                # Delete original, use adjusted
+                                os.remove(output_path)
+                                output_path = Path(adjusted_path)
+                                filename = adjusted_filename
+                                print(f"[CONVERT V2] Pitch adjustment applied successfully")
+                            else:
+                                print(f"[WARNING] Pitch adjustment failed: {msg}")
+                        else:
+                            print(f"[WARNING] RVC not available for pitch adjustment")
+                    except Exception as pitch_error:
+                        print(f"[WARNING] Could not apply pitch adjustment: {pitch_error}")
+                        # Continue with original audio
+                    
+            except Exception as save_error:
+                error_trace = traceback.format_exc()
+                print(f"[ERROR] Failed to save audio: {save_error}")
+                print(f"[ERROR] Traceback: {error_trace}")
+                raise Exception(f"Lỗi lưu file âm thanh: {str(save_error)}")
         
         # Kiểm tra file đã được tạo chưa
         if not output_path.exists():
@@ -830,6 +891,261 @@ def get_audio(filename):
     response.headers['Cache-Control'] = 'public, max-age=3600'
     
     return response
+
+@app.route('/api/emotional-tts/status', methods=['GET'])
+def check_emotional_tts_status():
+    """
+    Check if Emotional TTS is ready to use
+    """
+    try:
+        if not VIXTTS_EMOTIONAL_AVAILABLE:
+            return jsonify({
+                'success': True,
+                'ready': False,
+                'message': 'Emotional TTS không được cài đặt (import failed)'
+            }), 200
+        
+        # Check instance và model
+        if VIXTTS_INSTANCE is None:
+            return jsonify({
+                'success': True,
+                'ready': False,
+                'message': 'Model chưa được khởi tạo'
+            }), 200
+        
+        # Check if model is loaded
+        is_ready = VIXTTS_INSTANCE.model is not None
+        
+        return jsonify({
+            'success': True,
+            'ready': is_ready,
+            'message': 'Sẵn sàng' if is_ready else 'Model đang load...'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'ready': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/convert-emotional', methods=['POST'])
+def convert_text_to_speech_emotional():
+    """
+    Chuyển văn bản thành giọng nói VỚI EMOTION CONTROL
+    Sử dụng viXTTS với tự động phát hiện emotion từ text tags
+    """
+    conn = None
+    conversion_id = None
+    
+    try:
+        # Kiểm tra viXTTS có available không
+        if not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None:
+            return jsonify({
+                'success': False,
+                'message': 'Tính năng Emotional TTS chưa được cài đặt. Vui lòng liên hệ admin.'
+            }), 503
+
+        # Check model đã load chưa
+        if VIXTTS_INSTANCE.model is None:
+            return jsonify({
+                'success': False,
+                'message': 'Emotional TTS đang khởi động. Vui lòng đợi 30 giây và thử lại.'
+            }), 503
+        
+        emotional_tts = VIXTTS_INSTANCE
+        
+        # Kiểm tra đăng nhập
+        if not is_logged_in():
+            return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'}), 401
+        
+        # Lấy dữ liệu từ request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+        
+        text = data.get('text', '').strip()
+        custom_voice_id_emotional = data.get('custom_voice_id')  # optional vixtts_clone voice
+        voice_id = 'viXTTS-Emotional'  # Fixed voice ID for emotional TTS
+        
+        if not text:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập văn bản'}), 400
+        
+        # Look up custom voice reference audio if provided
+        ref_audio_for_emotional = None
+        if custom_voice_id_emotional:
+            try:
+                conn_cv = get_db_connection()
+                if conn_cv:
+                    with conn_cv.cursor() as cur_cv:
+                        cur_cv.execute("""
+                            SELECT sample_audio_path, voice_type, voice_name
+                            FROM custom_voices
+                            WHERE id = %s AND user_id = %s AND status = 'completed'
+                        """, (int(custom_voice_id_emotional), session['user_id']))
+                        cv_row = cur_cv.fetchone()
+                    conn_cv.close()
+                    if cv_row and (cv_row.get('voice_type') or '').strip().lower() == 'vixtts_clone':
+                        ref_path = resolve_audio_path(cv_row.get('sample_audio_path'))
+                        print(f"[CONVERT EMOTIONAL] Resolved ref_path: {ref_path}")
+                        if ref_path and os.path.exists(ref_path):
+                            ref_audio_for_emotional = ref_path
+                            voice_id = f"viXTTS-Emotional ({cv_row['voice_name']})"
+                            print(f"[CONVERT EMOTIONAL] Using custom voice: {cv_row['voice_name']}, ref={ref_path}")
+                        else:
+                            print(f"[ERROR] Custom voice ref audio not found at: {ref_path}")
+                            return jsonify({
+                                'success': False,
+                                'message': f'Không tìm thấy file audio mẫu của giọng "{cv_row["voice_name"]}". '
+                                           f'Vui lòng xóa giọng này và tải lại file mẫu.'
+                            }), 400
+                    elif cv_row:
+                        print(f"[WARNING] Custom voice {custom_voice_id_emotional} has wrong type: {cv_row.get('voice_type')}")
+                        return jsonify({
+                            'success': False,
+                            'message': 'Giọng này không phải viXTTS Clone. Chỉ giọng viXTTS Clone mới được dùng ở đây.'
+                        }), 400
+                    else:
+                        print(f"[WARNING] Custom voice {custom_voice_id_emotional} not found in DB")
+                        return jsonify({
+                            'success': False,
+                            'message': 'Không tìm thấy giọng clone. Vui lòng thử lại.'
+                        }), 404
+            except Exception as cv_err:
+                print(f"[ERROR] Could not load custom voice for emotional: {cv_err}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Lỗi tải thông tin giọng clone: {str(cv_err)}'
+                }), 500
+        
+        # Kiểm tra giới hạn ký tự
+        text_length = len(text)
+        can_convert, error_message = check_characters_limit(session['user_id'], text_length)
+        if not can_convert:
+            return jsonify({'success': False, 'message': error_message}), 403
+        
+        print(f"[CONVERT EMOTIONAL] Text length: {text_length} chars")
+        print(f"[CONVERT EMOTIONAL] Text preview: {text[:100]}...")
+        
+        # Generate unique filename
+        filename = f"{uuid.uuid4()}_emotional.wav"
+        output_path = AUDIO_OUTPUT_DIR / filename
+        
+        # Save conversion to database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Không thể kết nối database'}), 500
+        
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
+                       VALUES (%s, %s, %s, %s, 'processing')""",
+                    (session['user_id'], text, len(text), voice_id)
+                )
+                conn.commit()
+                conversion_id = cursor.lastrowid
+                print(f"[CONVERT EMOTIONAL] Conversion ID: {conversion_id}")
+        except Exception as e:
+            print(f"[ERROR] Error saving conversion: {e}")
+            conn.close()
+            return jsonify({'success': False, 'message': 'Không thể lưu bản ghi chuyển đổi'}), 500
+        
+        conn.close()
+        conn = None
+        
+        # Use the pre-loaded VIXTTS_INSTANCE (already checked at start of function)
+        print(f"[CONVERT EMOTIONAL] Using pre-loaded viXTTS instance")
+        
+        # Generate audio with emotion control
+        print(f"[CONVERT EMOTIONAL] Generating audio with emotion control...")
+        try:
+            if ref_audio_for_emotional:
+                print(f"[CONVERT EMOTIONAL] Using custom voice ref for emotional synthesis")
+                emotional_tts.synthesize_emotional_with_voice(text, ref_audio_for_emotional, str(output_path))
+            else:
+                emotional_tts.synthesize(text, str(output_path))
+            
+            if not output_path.exists():
+                raise Exception("File audio không được tạo thành công")
+            
+            file_size = os.path.getsize(output_path)
+            print(f"[CONVERT EMOTIONAL] Audio created: {file_size} bytes")
+            
+            # Calculate duration
+            import librosa
+            y, sr = librosa.load(str(output_path), sr=None)
+            duration_seconds = len(y) / sr
+            print(f"[CONVERT EMOTIONAL] Duration: {duration_seconds:.2f}s")
+            
+        except Exception as gen_error:
+            error_trace = traceback.format_exc()
+            print(f"[ERROR] Failed to generate audio: {gen_error}")
+            print(f"[ERROR] Traceback: {error_trace}")
+            raise Exception(f"Lỗi tạo âm thanh: {str(gen_error)}")
+        
+        # Update conversion record
+        if conversion_id:
+            conn_update = get_db_connection()
+            if conn_update:
+                try:
+                    with conn_update.cursor() as cursor:
+                        cursor.execute(
+                            """UPDATE conversions SET 
+                               audio_file_path = %s, audio_file_size = %s, voice_name = %s,
+                               duration_seconds = %s, status = 'completed', completed_at = NOW()
+                               WHERE id = %s""",
+                            (str(output_path), file_size, 'Emotional Voice (viXTTS)', duration_seconds, conversion_id)
+                        )
+                        conn_update.commit()
+                        
+                        # Update characters used
+                        update_characters_used(session['user_id'], text_length)
+                        
+                except Exception as e:
+                    print(f"[ERROR] Error updating conversion: {e}")
+                finally:
+                    conn_update.close()
+        
+        # Return success response
+        return jsonify({
+            'success': True,
+            'message': 'Chuyển đổi thành công với emotion control!',
+            'audio_url': f'/api/audio/{filename}',
+            'audio_filename': filename,
+            'conversion_id': conversion_id,
+            'file_size': file_size,
+            'duration': round(duration_seconds, 2)
+        }), 200
+        
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] Emotional conversion error: {e}")
+        print(f"[ERROR] Traceback: {error_trace}")
+        
+        # Mark conversion as failed
+        if conversion_id:
+            try:
+                conn_err = get_db_connection()
+                if conn_err:
+                    with conn_err.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE conversions SET status = 'failed', completed_at = NOW() WHERE id = %s",
+                            (conversion_id,)
+                        )
+                        conn_err.commit()
+                    conn_err.close()
+            except:
+                pass
+        
+        return jsonify({
+            'success': False,
+            'message': f'Lỗi: {str(e)}'
+        }), 500
+    
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/upload/extract', methods=['POST'])
 def extract_text_from_file():
@@ -3144,13 +3460,15 @@ def upload_custom_voice():
         voice_name = request.form.get('voice_name', 'Untitled Voice')
         description = request.form.get('description', '')
         
-        # Voice type: 'rvc' (training) or 'zero_shot' (clone from audio + transcript)
+        # Voice type: 'rvc' (training), 'zero_shot' (clone from audio + transcript), or 'vixtts_clone' (viXTTS clone)
         voice_type = (request.form.get('voice_type') or 'rvc').strip().lower()
-        if voice_type not in ('rvc', 'zero_shot'):
+        if voice_type not in ('rvc', 'zero_shot', 'vixtts_clone'):
             voice_type = 'rvc'
         ref_transcript = (request.form.get('ref_transcript') or '').strip()
         if voice_type == 'zero_shot' and not ref_transcript:
             return jsonify({'success': False, 'error': 'Zero-shot cần nhập transcript (nội dung nói) của file mẫu'}), 400
+        if voice_type == 'vixtts_clone' and (not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None):
+            return jsonify({'success': False, 'error': 'viXTTS model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
         
         # V2: Get base voice and adjustments (with defaults) - for RVC mode
         base_voice_id = request.form.get('base_voice_id', 'ly')
@@ -3166,16 +3484,31 @@ def upload_custom_voice():
         if not audio_file.filename:
             return jsonify({'success': False, 'error': 'No file selected'}), 400
         
-        # Save file
+        # Save file — use absolute path so the file is always at WEB_DIR/uploads/...
         filename = f"{user_id}_{int(time.time())}_{secure_filename(audio_file.filename)}"
-        upload_dir = os.path.join("uploads", "custom_voices", f"user_{user_id}")
+        upload_dir = str(WEB_DIR / "uploads" / "custom_voices" / f"user_{user_id}")
         os.makedirs(upload_dir, exist_ok=True)
         audio_path = os.path.join(upload_dir, filename)
         audio_file.save(audio_path)
         
         # Validate audio
         audio_processor = get_audio_processor()
-        is_valid, message, duration = audio_processor.validate_audio(audio_path)
+        if voice_type == 'vixtts_clone':
+            # viXTTS Clone only needs 6–120 seconds of reference audio
+            import librosa as _lb
+            try:
+                duration = _lb.get_duration(path=audio_path)
+            except Exception:
+                duration = 0
+            if duration < 6:
+                os.remove(audio_path)
+                return jsonify({'success': False, 'error': 'Audio quá ngắn cho viXTTS Clone. Cần ít nhất 6 giây.'}), 400
+            if duration > 120:
+                os.remove(audio_path)
+                return jsonify({'success': False, 'error': 'Audio quá dài cho viXTTS Clone. Tối đa 120 giây (2 phút).'}), 400
+            is_valid, message = True, 'Audio hợp lệ'
+        else:
+            is_valid, message, duration = audio_processor.validate_audio(audio_path)
         
         if not is_valid:
             os.remove(audio_path)  # Remove invalid file
@@ -3194,8 +3527,8 @@ def upload_custom_voice():
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
         cursor = conn.cursor()
-        # Zero-shot: status='completed' immediately; RVC: status='pending' then training
-        initial_status = 'completed' if voice_type == 'zero_shot' else 'pending'
+        # Zero-shot / vixtts_clone: status='completed' immediately; RVC: status='pending' then training
+        initial_status = 'completed' if voice_type in ('zero_shot', 'vixtts_clone') else 'pending'
         try:
             cursor.execute("""
                 INSERT INTO custom_voices 
@@ -3238,6 +3571,16 @@ def upload_custom_voice():
                 'voice_type': 'rvc',
                 'training_mode': result.get('mode'),
                 'message': result.get('message'),
+                'quality_score': quality_score,
+                'quality_message': quality_msg,
+                'duration': duration
+            })
+        elif voice_type == 'vixtts_clone':
+            return jsonify({
+                'success': True,
+                'custom_voice_id': custom_voice_id,
+                'voice_type': 'vixtts_clone',
+                'message': 'Giọng viXTTS Clone đã sẵn sàng. Bạn có thể dùng ngay.',
                 'quality_score': quality_score,
                 'quality_message': quality_msg,
                 'duration': duration
@@ -3368,48 +3711,59 @@ def test_custom_voice(voice_id):
             audio_filename = f"{uuid.uuid4()}_test.wav"
             audio_path = os.path.join(AUDIO_OUTPUT_DIR, audio_filename)
             
-            try:
-                if voice_type_cv == 'zero_shot':
-                    ref_audio_path = voice.get('sample_audio_path')
-                    ref_text_zs = (voice.get('ref_transcript') or '').strip()
-                    pitch_adj, speed_adj = 0, 1.0  # no adjustment for zero_shot
-                    if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
-                        # Giới hạn ref_transcript
-                        REF_TEXT_MAX_CHARS = 250
-                        if len(ref_text_zs) > REF_TEXT_MAX_CHARS:
-                            ref_text_zs = ref_text_zs[:REF_TEXT_MAX_CHARS]
-                            print(f"[TEST VOICE Zero-shot] Truncated ref_transcript to {REF_TEXT_MAX_CHARS} chars")
-                        # Mã hóa ref rồi cắt ref_codes để không vượt context 2048 (audio mẫu dài = rất nhiều token)
-                        REF_CODES_MAX_FRAMES = 40
-                        ref_codes_full = tts.encode_reference(ref_audio_path)
-                        import numpy as np
-                        if hasattr(ref_codes_full, 'cpu'):
-                            ref_codes_full = ref_codes_full.cpu().numpy()
-                        ref_codes_full = np.asarray(ref_codes_full).flatten()
-                        ref_codes_short = ref_codes_full[:REF_CODES_MAX_FRAMES].tolist()
-                        print(f"[TEST VOICE Zero-shot] ref_audio={ref_audio_path}, ref_codes frames: {len(ref_codes_full)} -> {len(ref_codes_short)}")
-                        audio = tts.infer(text=test_text, ref_codes=ref_codes_short, ref_text=ref_text_zs, max_chars=150)
+            if voice_type_cv == 'vixtts_clone':
+                # viXTTS Clone: synthesize with user's voice reference directly to file
+                pitch_adj, speed_adj = 0, 1.0
+                ref_audio_path = resolve_audio_path(voice.get('sample_audio_path'))
+                if not ref_audio_path or not os.path.exists(ref_audio_path):
+                    return jsonify({'error': f'Không tìm thấy file audio mẫu của giọng viXTTS Clone: {ref_audio_path}'}), 400
+                if not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None or VIXTTS_INSTANCE.model is None:
+                    return jsonify({'error': 'viXTTS model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
+                print(f"[TEST VOICE viXTTS-Clone] ref_audio={ref_audio_path}")
+                VIXTTS_INSTANCE.synthesize_with_voice(test_text, ref_audio_path, str(audio_path))
+            else:
+                try:
+                    if voice_type_cv == 'zero_shot':
+                        ref_audio_path = voice.get('sample_audio_path')
+                        ref_text_zs = (voice.get('ref_transcript') or '').strip()
+                        pitch_adj, speed_adj = 0, 1.0  # no adjustment for zero_shot
+                        if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
+                            # Giới hạn ref_transcript
+                            REF_TEXT_MAX_CHARS = 250
+                            if len(ref_text_zs) > REF_TEXT_MAX_CHARS:
+                                ref_text_zs = ref_text_zs[:REF_TEXT_MAX_CHARS]
+                                print(f"[TEST VOICE Zero-shot] Truncated ref_transcript to {REF_TEXT_MAX_CHARS} chars")
+                            # Mã hóa ref rồi cắt ref_codes để không vượt context 2048 (audio mẫu dài = rất nhiều token)
+                            REF_CODES_MAX_FRAMES = 40
+                            ref_codes_full = tts.encode_reference(ref_audio_path)
+                            import numpy as np
+                            if hasattr(ref_codes_full, 'cpu'):
+                                ref_codes_full = ref_codes_full.cpu().numpy()
+                            ref_codes_full = np.asarray(ref_codes_full).flatten()
+                            ref_codes_short = ref_codes_full[:REF_CODES_MAX_FRAMES].tolist()
+                            print(f"[TEST VOICE Zero-shot] ref_audio={ref_audio_path}, ref_codes frames: {len(ref_codes_full)} -> {len(ref_codes_short)}")
+                            audio = tts.infer(text=test_text, ref_codes=ref_codes_short, ref_text=ref_text_zs, max_chars=150)
+                        else:
+                            return jsonify({'error': 'Zero-shot thiếu ref_audio hoặc ref_transcript'}), 400
                     else:
-                        return jsonify({'error': 'Zero-shot thiếu ref_audio hoặc ref_transcript'}), 400
-                else:
-                    base_voice_id = voice.get('base_voice_id', 'ly')
-                    pitch_adj = voice.get('pitch_adjustment', 0)
-                    speed_adj = voice.get('speed_adjustment', 1.0)
-                    tts_voice_id = base_voice_id
-                    if tts_voice_id and str(tts_voice_id).endswith('HM'):
-                        tts_voice_id = tts_voice_id[:-2]
-                    if tts_voice_id:
-                        tts_voice_id = str(tts_voice_id).capitalize()
-                    voice_data = tts.get_preset_voice(tts_voice_id) if tts_voice_id else None
-                    audio = tts.infer(text=test_text, voice=voice_data, max_chars=256)
-            except ValueError as ve:
-                if 'context window' in str(ve) or 'exceed' in str(ve).lower():
-                    return jsonify({
-                        'error': 'Giới hạn model (2048 token) bị vượt. Với Zero-shot: dùng file mẫu ngắn (vài giây) và transcript ngắn; văn bản test giữ dưới 300 ký tự.'
-                    }), 400
-                raise
-            
-            tts.save(audio, str(audio_path))
+                        base_voice_id = voice.get('base_voice_id', 'ly')
+                        pitch_adj = voice.get('pitch_adjustment', 0)
+                        speed_adj = voice.get('speed_adjustment', 1.0)
+                        tts_voice_id = base_voice_id
+                        if tts_voice_id and str(tts_voice_id).endswith('HM'):
+                            tts_voice_id = tts_voice_id[:-2]
+                        if tts_voice_id:
+                            tts_voice_id = str(tts_voice_id).capitalize()
+                        voice_data = tts.get_preset_voice(tts_voice_id) if tts_voice_id else None
+                        audio = tts.infer(text=test_text, voice=voice_data, max_chars=256)
+                except ValueError as ve:
+                    if 'context window' in str(ve) or 'exceed' in str(ve).lower():
+                        return jsonify({
+                            'error': 'Giới hạn model (2048 token) bị vượt. Với Zero-shot: dùng file mẫu ngắn (vài giây) và transcript ngắn; văn bản test giữ dưới 300 ký tự.'
+                        }), 400
+                    raise
+                
+                tts.save(audio, str(audio_path))
             
             # Apply speed adjustment if needed
             if speed_adj != 1.0:
@@ -3776,11 +4130,38 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"[WORKER] ❌ Failed to start worker: {e}")
     
-    # Không pre-initialize TTS để khởi động nhanh hơn
-    # TTS sẽ được khởi tạo lazy khi có request đầu tiên cần dùng
-    print("[TTS] Server ready!")
-    print("[TTS] TTS engine se duoc khoi tao tu dong khi can")
-    print("[TTS] Nhan Ctrl+C de dung server")
+    # Pre-load viXTTS Emotional TTS để user không phải chờ lần đầu
+    if VIXTTS_EMOTIONAL_AVAILABLE:
+        try:
+            print("\n" + "=" * 60)
+            print("[viXTTS] 🚀 ĐANG LOAD EMOTIONAL TTS MODEL...")
+            print("[viXTTS] Vui lòng đợi, server sẽ sẵn sàng sau 30-45 giây")
+            print("[viXTTS] (Lần đầu tiên sẽ download model ~2GB)")
+            print("=" * 60 + "\n")
+            
+            VIXTTS_INSTANCE = get_vixtts_emotional_instance()
+            VIXTTS_INSTANCE.load_model()  # Load model ngay
+            
+            print("\n" + "=" * 60)
+            print("[viXTTS] ✅ MODEL ĐÃ SẴN SÀNG!")
+            print("[viXTTS] User có thể sử dụng ngay không cần chờ")
+            print("[viXTTS] Model sẽ được giữ trong RAM cho đến khi restart")
+            print("=" * 60 + "\n")
+        except Exception as e:
+            import traceback
+            VIXTTS_INSTANCE = None
+            print(f"\n[viXTTS] ❌ Pre-load FAILED: {e}")
+            print(f"[viXTTS] Traceback:\n{traceback.format_exc()}")
+            print("[viXTTS] Model sẽ được load khi có request đầu tiên\n")
+    
+    # Check readiness status
+    is_ready = VIXTTS_INSTANCE is not None and VIXTTS_INSTANCE.model is not None if VIXTTS_EMOTIONAL_AVAILABLE else False
+    
+    print("=" * 60)
+    print("[TTS] 🎉 SERVER READY - SẴN SÀNG PHỤC VỤ!")
+    print("[TTS] URL: http://127.0.0.1:5000")
+    print("[TTS] Emotional TTS: " + ("✅ Sẵn sàng" if is_ready else "❌ Không khả dụng"))
+    print("[TTS] Nhấn Ctrl+C để dừng server")
     print("=" * 60)
     print()
     

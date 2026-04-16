@@ -363,6 +363,7 @@
                     <div class="tabs-modern">
                         <button class="tab-btn-modern active" data-tab="text">📝 Nhập văn bản</button>
                         <button class="tab-btn-modern" data-tab="file">📄 Tải file lên</button>
+                        <button class="tab-btn-modern" data-tab="emotional">🎭 Emotional TTS</button>
                     </div>
 
                     <div class="tab-content active" id="textTab">
@@ -383,6 +384,60 @@ Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng n
                                 <p style="font-size: 0.875rem; color: var(--text-tertiary);">Hỗ trợ: TXT, PDF, DOCX (tối đa 10MB)</p>
                             </label>
                             <div id="fileName" style="margin-top: 1rem; font-weight: 500; color: var(--primary);"></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="emotionalTab" style="display: none;">
+                        <div class="alert alert-info" style="margin-bottom: var(--space-4);">
+                            <span style="font-size: 1.5rem;">🎭</span>
+                            <div>
+                                <strong>Emotional TTS - AI đọc với cảm xúc tự nhiên!</strong>
+                                <p style="margin: var(--space-2) 0 0;">Giọng của bạn + cảm xúc tự động thay đổi theo nội dung</p>
+                            </div>
+                        </div>
+
+                        <!-- Emotional voice selector (viXTTS Clone voices only) -->
+                        <div class="form-group" style="margin-bottom: var(--space-4);">
+                            <label class="form-label" style="font-size: var(--text-sm); font-weight: var(--font-semibold);">🎙️ Giọng đọc (Emotional)</label>
+                            <select id="emotionalVoiceSelect" class="form-select" style="font-size: var(--text-sm);">
+                                <option value="">⭐ Mặc định (base_voice.wav)</option>
+                            </select>
+                            <small style="color: var(--text-secondary); font-size: var(--text-xs);">Chỉ hỗ trợ giọng <strong>viXTTS Clone</strong>. Thêm giọng tại <a href="/add-voice">Thêm giọng mới</a>.</small>
+                        </div>
+
+                        <textarea id="emotionalTextInput" class="textarea-modern" placeholder="Nhập văn bản của bạn tại đây...
+
+Sử dụng emotion tags trong ngoặc đơn để AI tự động thay đổi cảm xúc:
+(tươi sáng), (vui vẻ), (hào hứng), (chậm rãi), (ấm áp), (buồn), v.v.
+
+AI sẽ tự động điều chỉnh giọng đọc theo cảm xúc bạn mô tả!" rows="10"></textarea>
+                        <div class="char-counter-modern">
+                            <span id="emotionalCharCount">0</span> ký tự
+                        </div>
+
+                        <!-- Emotion Tags Guide -->
+                        <div style="margin-top: var(--space-6); padding: var(--space-4); background-color: var(--bg-secondary); border-radius: var(--radius-lg);">
+                            <div style="font-weight: var(--font-semibold); margin-bottom: var(--space-3); color: var(--text-primary);">
+                                🎯 Hướng dẫn sử dụng Emotion Tags:
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); font-size: var(--text-sm);">
+                                <div>
+                                    <strong style="color: var(--primary);">😊 Vui vẻ/Cheerful:</strong><br>
+                                    <code style="font-size: 0.8em; color: var(--text-tertiary);">(tươi sáng), (nụ cười), (vui vẻ)</code>
+                                </div>
+                                <div>
+                                    <strong style="color: var(--primary);">🎉 Phấn khích/Excited:</strong><br>
+                                    <code style="font-size: 0.8em; color: var(--text-tertiary);">(hào hứng), (wow), (phấn khích)</code>
+                                </div>
+                                <div>
+                                    <strong style="color: var(--primary);">😌 Bình tĩnh/Calm:</strong><br>
+                                    <code style="font-size: 0.8em; color: var(--text-tertiary);">(chậm), (ấm), (dịu), (nhẹ nhàng)</code>
+                                </div>
+                                <div>
+                                    <strong style="color: var(--primary);">😢 Buồn/Sad:</strong><br>
+                                    <code style="font-size: 0.8em; color: var(--text-tertiary);">(buồn), (tiếc), (thương)</code>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -407,10 +462,15 @@ Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng n
                 </div>
             </div>
 
-            <!-- Action Button -->
+            <!-- Action Buttons -->
             <button id="convertBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: var(--space-6);">
                 <span class="btn-icon">▶️</span>
                 <span class="btn-text">Chuyển đổi ngay</span>
+            </button>
+            
+            <button id="convertEmotionalBtn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: var(--space-6); display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <span class="btn-icon">🎭</span>
+                <span class="btn-text">Chuyển đổi với cảm xúc</span>
             </button>
         </div>
 
@@ -583,6 +643,7 @@ Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng n
                         <li>Nghe thử các giọng để chọn phù hợp nhất</li>
                         <li>File lớn sẽ được xử lý lâu hơn</li>
                         <li>Điều chỉnh pitch để thay đổi cao độ giọng</li>
+                        <li>Dùng Emotional TTS để AI tự động thay đổi cảm xúc theo văn bản</li>
                     </ul>
                 </div>
             </div>

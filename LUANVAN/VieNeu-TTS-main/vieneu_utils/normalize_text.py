@@ -1,12 +1,28 @@
 import re
+import json
+from pathlib import Path
 
 class VietnameseTTSNormalizer:
     """
     A text normalizer for Vietnamese Text-to-Speech systems.
     Converts numbers, dates, units, and special characters into readable Vietnamese text.
+    
+    NEW FEATURES:
+    - Extended currency support (Euro, Yen, RMB, GBP, etc.)
+    - English phonetic pronunciation in Vietnamese
+    - Optional LLM integration for meaning preservation
     """
     
-    def __init__(self):
+    def __init__(self, llm_client=None, phonetic_dict_path=None):
+        """
+        Initialize normalizer.
+        
+        Args:
+            llm_client: Optional LLM client for advanced normalization
+            phonetic_dict_path: Optional path to custom phonetic dictionary JSON file
+        """
+        self.llm_client = llm_client
+        
         self.units = {
             'km': 'ki lô mét', 'dm': 'đê xi mét', 'cm': 'xen ti mét',
             'mm': 'mi li mét', 'nm': 'na nô mét', 'µm': 'mic rô mét',
@@ -43,18 +59,167 @@ class VietnameseTTSNormalizer:
         
         self.digits = ['không', 'một', 'hai', 'ba', 'bốn', 
                       'năm', 'sáu', 'bảy', 'tám', 'chín']
+        
+        self.currencies = {
+            'đ': 'đồng',
+            'vnd': 'đồng',
+            'dong': 'đồng',
+            '$': 'đô la',
+            'usd': 'đô la',
+            'dollar': 'đô la',
+            'dollars': 'đô la',
+            '€': 'ơ rô',
+            'eur': 'ơ rô',
+            'euro': 'ơ rô',
+            'euros': 'ơ rô',
+            '£': 'bảng anh',
+            'gbp': 'bảng anh',
+            'pound': 'bảng anh',
+            'pounds': 'bảng anh',
+            '¥': 'yên',
+            'jpy': 'yên nhật',
+            'yen': 'yên',
+            'cny': 'nhân dân tệ',
+            'rmb': 'nhân dân tệ',
+            'yuan': 'nhân dân tệ',
+            '₽': 'ru bơ',
+            'rub': 'ru bơ',
+            'ruble': 'ru bơ',
+            '₩': 'won',
+            'krw': 'won hàn quốc',
+            'won': 'won',
+            '₹': 'ru pi',
+            'inr': 'ru pi',
+            'rupee': 'ru pi',
+            'btc': 'bít coin',
+            'bitcoin': 'bít coin',
+            'eth': 'i thi ri âm',
+            'ethereum': 'i thi ri âm',
+            'ag': 'bạc',
+            'silver': 'bạc',
+            'au': 'vàng',
+            'gold': 'vàng',
+        }
+        
+        self.english_phonetic = self._load_phonetic_dict(phonetic_dict_path)
+        
+        self._phonetic_cache = {}
     
-    def normalize(self, text):
-        """Main normalization pipeline with EN tag protection."""
-        # Step 1: Extract and protect EN tags
+    def _load_phonetic_dict(self, dict_path=None):
+        """
+        Load English phonetic dictionary from JSON files.
+        
+        Dictionary is split into multiple JSON files in phonetic_dicts/ folder:
+        - 01_greetings.json: Greetings & common phrases
+        - 02_family.json: Family & people
+        - 03_technology.json: Technology terms
+        - 04_social_media.json: Social media & brands
+        - 05_pronouns.json: Pronouns & basic words
+        - 06_communication.json: Language & communication
+        - 07_education.json: Education
+        - 08_home.json: Home & daily life
+        - 09_food.json: Food & drinks
+        - 10_emotions.json: Emotions & feelings
+        - 11_time.json: Time-related words
+        - 12_entertainment.json: Entertainment
+        - 13_shopping.json: Shopping & money
+        - 14_transportation.json: Transportation
+        - 15_business.json: Work & business
+        - 16_medical.json: Health & medical
+        - 17_countries_asia.json: Asian countries
+        - 18_countries_europe.json: European countries
+        - 19_countries_americas.json: American countries
+        - 20_countries_oceania_africa.json: Oceania & African countries
+        - 21_cities.json: Major cities
+        
+        Args:
+            dict_path: Optional path to custom dictionary JSON file
+        
+        Returns:
+            dict: Merged dictionary from all JSON files
+        """
+        default_dict = {}
+        
+        dict_dir = Path(__file__).parent / 'phonetic_dicts'
+        
+        if dict_dir.exists():
+            json_files = sorted(dict_dir.glob('*.json'))
+            
+            if not json_files:
+                print(f"[WARNING] No JSON files found in {dict_dir}")
+                print("[WARNING] Dictionary will be empty. Please check phonetic_dicts/ folder.")
+                return default_dict
+            
+            for json_file in json_files:
+                try:
+                    with open(json_file, 'r', encoding='utf-8') as f:
+                        category_dict = json.load(f)
+                        default_dict.update(category_dict)
+                        print(f"[INFO] Loaded {len(category_dict)} words from {json_file.name}")
+                except Exception as e:
+                    print(f"[WARNING] Could not load {json_file.name}: {e}")
+            
+            print(f"[INFO] Total phonetic dictionary: {len(default_dict)} words")
+        else:
+            print(f"[ERROR] Phonetic dict directory not found: {dict_dir}")
+            print("[ERROR] Creating default fallback dictionary...")
+            
+            # FALLBACK: Basic words only if JSON files not found
+            default_dict = {
+                'hello': 'hé lô',
+                'father': 'phá thơ',
+                'mother': 'mơ thơ',
+                'computer': 'cờm piu tơ',
+                'facebook': 'phây búc',
+                'google': 'gú gồ',
+                'vietnam': 'việt nam',
+                'japan': 'giờ pàn',
+                'usa': 'iu ét ây'
+            }
+            print(f"[WARNING] Using minimal fallback dictionary with {len(default_dict)} words")
+        
+        # Load custom dictionary if provided
+        if dict_path and Path(dict_path).exists():
+            try:
+                with open(dict_path, 'r', encoding='utf-8') as f:
+                    custom_dict = json.load(f)
+                    default_dict.update(custom_dict)
+                    print(f"[INFO] Loaded {len(custom_dict)} custom words from {dict_path}")
+            except Exception as e:
+                print(f"[WARNING] Could not load custom phonetic dict: {e}")
+        
+        return default_dict
+    
+    def normalize(self, text, use_llm=False):
+        """
+        Main normalization pipeline with EN tag protection and phonetic conversion.
+        
+        Args:
+            text: Input text to normalize
+            use_llm: If True, use LLM for verification (requires llm_client)
+        
+        Returns:
+            Normalized text ready for TTS
+        """
+        original_text = text
+        
+        # Step 1: Extract and protect EN tags, convert to phonetic
         en_contents = []
-        placeholder_pattern = "___EN_PLACEHOLDER_{}___ "
+        en_phonetic_contents = []
+        placeholder_base = "___EN_PLACEHOLDER_{}___ "
         
-        def extract_en(match):
-            en_contents.append(match.group(0))
-            return placeholder_pattern.format(len(en_contents) - 1)
+        def extract_and_convert_en(match):
+            en_tag_full = match.group(0)
+            en_content = match.group(1)
+            
+            en_contents.append(en_tag_full)
+            
+            phonetic = self._convert_english_to_phonetic(en_content)
+            en_phonetic_contents.append(phonetic)
+            
+            return placeholder_base.format(len(en_contents) - 1)
         
-        text = re.sub(r'<en>.*?</en>', extract_en, text, flags=re.IGNORECASE)
+        text = re.sub(r'<en>(.*?)</en>', extract_and_convert_en, text, flags=re.IGNORECASE | re.DOTALL)
         
         # Step 2: Normal normalization pipeline
         text = text.lower()
@@ -71,12 +236,27 @@ class VietnameseTTSNormalizer:
         text = self._normalize_special_chars(text)
         text = self._normalize_whitespace(text)
         
-        # Step 3: Restore EN tags
-        for idx, en_content in enumerate(en_contents):
-            text = text.replace(placeholder_pattern.format(idx).lower(), en_content + ' ')
+        # Step 3: Restore EN tags with phonetic pronunciation
+        for idx, phonetic in enumerate(en_phonetic_contents):
+            placeholder = placeholder_base.format(idx).lower()
+            # Debug: Check if placeholder exists in text
+            if placeholder not in text:
+                # Try without trailing space
+                placeholder_no_space = placeholder.rstrip()
+                if placeholder_no_space in text:
+                    text = text.replace(placeholder_no_space, phonetic)
+                else:
+                    print(f"[WARNING] Placeholder not found: '{placeholder}' or '{placeholder_no_space}'")
+                    print(f"[WARNING] Text content: {text[:200]}")
+            else:
+                text = text.replace(placeholder, phonetic + ' ')
         
         # Final whitespace cleanup
         text = self._normalize_whitespace(text)
+        
+        # Step 4: Optional LLM verification
+        if use_llm and self.llm_client:
+            text = self._llm_verify_and_correct(original_text, text)
         
         return text
     
@@ -90,7 +270,7 @@ class VietnameseTTSNormalizer:
         return text
     
     def _normalize_currency(self, text):
-        """Convert currency notation to words."""
+        """Convert currency notation to words with extended currency support."""
         def decimal_currency(match):
             whole = match.group(1)
             decimal = match.group(2)
@@ -104,10 +284,15 @@ class VietnameseTTSNormalizer:
         text = re.sub(r'(\d+)\s*k\b', r'\1 nghìn', text, flags=re.IGNORECASE)
         text = re.sub(r'(\d+)\s*m\b', r'\1 triệu', text, flags=re.IGNORECASE)
         text = re.sub(r'(\d+)\s*b\b', r'\1 tỷ', text, flags=re.IGNORECASE)
-        text = re.sub(r'(\d+(?:[.,]\d+)?)\s*đ\b', r'\1 đồng', text)
-        text = re.sub(r'(\d+(?:[.,]\d+)?)\s*vnd\b', r'\1 đồng', text, flags=re.IGNORECASE)
-        text = re.sub(r'\$\s*(\d+(?:[.,]\d+)?)', r'\1 đô la', text)
-        text = re.sub(r'(\d+(?:[.,]\d+)?)\s*\$', r'\1 đô la', text)
+        
+        sorted_currencies = sorted(self.currencies.items(), key=lambda x: len(x[0]), reverse=True)
+        
+        for symbol, name in sorted_currencies:
+            escaped_symbol = re.escape(symbol)
+            
+            text = re.sub(rf'{escaped_symbol}\s*(\d+(?:[.,]\d+)?)', rf'\1 {name}', text, flags=re.IGNORECASE)
+            text = re.sub(rf'(\d+(?:[.,]\d+)?)\s*{escaped_symbol}\b', rf'\1 {name}', text, flags=re.IGNORECASE)
+        
         return text
     
     def _normalize_percentage(self, text):
@@ -418,6 +603,113 @@ class VietnameseTTSNormalizer:
         text = re.sub(r'[^\w\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ.,!?;:@%_]', ' ', text)
         return text
     
+    def _convert_english_to_phonetic(self, english_text):
+        """
+        Convert English text to Vietnamese phonetic pronunciation.
+        Uses dictionary lookup with optional LLM fallback.
+        
+        Args:
+            english_text: English text to convert
+        
+        Returns:
+            Vietnamese phonetic pronunciation
+        """
+        english_text = english_text.strip()
+        
+        if english_text in self._phonetic_cache:
+            return self._phonetic_cache[english_text]
+        
+        words = english_text.split()
+        converted_words = []
+        
+        for word in words:
+            clean_word = re.sub(r'[^\w]', '', word.lower())
+            
+            if clean_word in self.english_phonetic:
+                converted_words.append(self.english_phonetic[clean_word])
+            elif self.llm_client:
+                try:
+                    phonetic = self._llm_convert_phonetic(clean_word)
+                    converted_words.append(phonetic)
+                    self.english_phonetic[clean_word] = phonetic
+                except Exception as e:
+                    print(f"[WARNING] LLM phonetic conversion failed for '{clean_word}': {e}")
+                    converted_words.append(word)
+            else:
+                converted_words.append(word)
+        
+        result = ' '.join(converted_words)
+        self._phonetic_cache[english_text] = result
+        
+        return result
+    
+    def _llm_convert_phonetic(self, english_word):
+        """
+        Use LLM to convert English word to Vietnamese phonetic.
+        
+        Args:
+            english_word: English word to convert
+        
+        Returns:
+            Vietnamese phonetic pronunciation
+        """
+        if not self.llm_client:
+            return english_word
+        
+        prompt = f"""Hãy chuyển từ tiếng Anh sau sang phiên âm tiếng Việt (cách người Việt thường đọc):
+
+Tiếng Anh: {english_word}
+
+Ví dụ:
+- Hello -> hé lô
+- Animals -> én ni mô
+- Father -> phá thơ
+- Computer -> cờm piu tơ
+- Facebook -> phây búc
+
+Chỉ trả về phiên âm tiếng Việt, không giải thích."""
+
+        try:
+            response = self.llm_client.generate(prompt)
+            phonetic = response.strip().lower()
+            return phonetic
+        except Exception as e:
+            print(f"[ERROR] LLM phonetic conversion error: {e}")
+            return english_word
+    
+    def _llm_verify_and_correct(self, original_text, normalized_text):
+        """
+        Use LLM to verify that normalization preserves meaning.
+        
+        Args:
+            original_text: Original input text
+            normalized_text: Normalized text
+        
+        Returns:
+            Verified/corrected normalized text
+        """
+        if not self.llm_client:
+            return normalized_text
+        
+        prompt = f"""Kiểm tra xem văn bản sau khi chuẩn hóa có giữ nguyên ý nghĩa không:
+
+Văn bản gốc: {original_text}
+Văn bản đã chuẩn hóa: {normalized_text}
+
+Yêu cầu:
+1. Nếu ý nghĩa giữ nguyên hoàn toàn -> trả về văn bản đã chuẩn hóa
+2. Nếu ý nghĩa thay đổi -> sửa lại văn bản chuẩn hóa để đúng ý nghĩa
+
+Chỉ trả về văn bản cuối cùng, không giải thích."""
+
+        try:
+            response = self.llm_client.generate(prompt)
+            verified_text = response.strip()
+            return verified_text
+        except Exception as e:
+            print(f"[WARNING] LLM verification failed: {e}")
+            return normalized_text
+    
     def _normalize_whitespace(self, text):
         """Normalize whitespace."""
         text = re.sub(r'\s+', ' ', text)
@@ -430,15 +722,31 @@ if __name__ == "__main__":
     
     test_texts = [
         "Chỉ cần thay đổi một dấu thanh, ý nghĩa của từ đã hoàn toàn khác biệt. Ví dụ như \"ma\", \"má\", \"mà\", \"mả\", \"mã\", \"mạ\" – đây chính là \"bài toán khó\" mà các kỹ sư công nghệ phải giải quyết để tạo ra một giọng đọc tự nhiên như người bản xứ.",
-        "Phiên bản hiện tại là 1.0.4 và địa chỉ IP của tôi là 192.168.1.1"
+        "Phiên bản hiện tại là 1.0.4 và địa chỉ IP của tôi là 192.168.1.1",
+        
+        "Số điện thoại của tôi là 0866005541, hãy gọi cho tôi.",
+        
+        "Giá sản phẩm: 1000000đ, $100, €50, £30, ¥500, 50 yuan",
+        
+        "Tiền cryptocurrency: 0.5 BTC, 2 ETH, giá vàng 2000$/oz, giá bạc 25$/oz",
+        
+        "<en>Hello</en> xin chào! <en>Animals</en> rất đáng yêu. <en>Father</en> của tôi làm việc tại <en>Google</en>.",
+        
+        "<en>I love Vietnamese food</en> và tôi thích ăn phở.",
+        
+        "Nhiệt độ hôm nay là 25°C, giá cà phê $3.50, và tỷ lệ là 15%",
+        
+        "Tôi có 1000k trong tài khoản, bạn có 5m, còn anh ấy có 2b VND",
     ]
     
-    print("=" * 80)
-    print("VIETNAMESE TTS NORMALIZATION TEST (WITH EN TAG)")
-    print("=" * 80)
+    print("=" * 100)
+    print("VIETNAMESE TTS NORMALIZATION TEST - ENHANCED VERSION")
+    print("Features: Extended Currency, English Phonetic, Phone Numbers")
+    print("=" * 100)
     
-    for text in test_texts:
-        print(f"\n📝 Input: {text}")
+    for i, text in enumerate(test_texts, 1):
+        print(f"\n[Test {i}]")
+        print(f"📝 Input:  {text}")
         normalized = normalizer.normalize(text)
         print(f"🎵 Output: {normalized}")
-        print("-" * 80)
+        print("-" * 100)
