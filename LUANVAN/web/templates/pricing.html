@@ -1,423 +1,501 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice - Nâng cấp gói dịch vụ</title>
 
-{% block title %}Thanh toán - VoiceAI TTS{% endblock %}
+<!-- Anti-flash -->
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
-{% block extra_css %}
-<style>
-/* Status Grid */
-.status-grid-modern {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-6);
-    margin: var(--space-6) 0;
-}
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 
-.status-metric-modern {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-5);
-    background-color: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-}
-
-.metric-icon-modern {
-    font-size: 2.5rem;
-}
-
-.metric-details-modern {
-    flex: 1;
-}
-
-.metric-label-modern {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-1);
-}
-
-.metric-value-modern {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    color: var(--text-primary);
-}
-
-.metric-value-modern.primary {
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* Progress Bar */
-.status-progress-modern {
-    margin-top: var(--space-6);
-}
-
-.progress-bar-full {
-    width: 100%;
-    height: 12px;
-    background-color: var(--bg-tertiary);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-    margin-bottom: var(--space-2);
-}
-
-.progress-fill-gradient {
-    height: 100%;
-    background: var(--primary-gradient);
-    border-radius: var(--radius-full);
-    transition: width var(--duration-slow) var(--ease-out);
-}
-
-.progress-text-modern {
-    text-align: center;
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-}
-
-/* Pricing Grid */
-.pricing-grid-modern {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--space-8);
-    margin-top: var(--space-8);
-}
-
-.pricing-card-modern {
-    background: var(--bg-primary);
-    border-radius: var(--radius-xl);
-    padding: var(--space-8);
-    box-shadow: var(--shadow-md);
-    transition: all var(--duration-base) var(--ease-out);
-    border: 2px solid transparent;
-}
-
-.pricing-card-modern:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-2xl);
-}
-
-.pricing-card-modern.featured {
-    border-color: var(--primary);
-    background: linear-gradient(white, white), var(--primary-gradient);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-}
-
-.pricing-header-modern {
-    text-align: center;
-    margin-bottom: var(--space-6);
-}
-
-.pricing-name {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    margin-bottom: var(--space-3);
-}
-
-.pricing-price {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-extrabold);
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.pricing-period {
-    font-size: var(--text-sm);
-    color: var(--text-tertiary);
-}
-
-.pricing-features {
-    list-style: none;
-    padding: 0;
-    margin: var(--space-6) 0;
-}
-
-.pricing-features li {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) 0;
-    color: var(--text-secondary);
-}
-
-.pricing-features li::before {
-    content: '✓';
-    color: var(--success);
-    font-weight: var(--font-bold);
-    font-size: var(--text-lg);
-}
-
-.pricing-cta {
-    margin-top: var(--space-6);
-}
-
-/* Notice */
-.payment-notice-modern {
-    padding: var(--space-6);
-    background-color: rgba(59, 130, 246, 0.1);
-    border-left: 4px solid var(--info);
-    border-radius: var(--radius-lg);
-    margin-top: var(--space-8);
-}
-
-.payment-notice-modern h3 {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-4);
-}
-
-.payment-notice-modern ul {
-    margin: 0;
-    padding-left: var(--space-6);
-}
-
-.payment-notice-modern li {
-    margin-bottom: var(--space-2);
-    line-height: var(--leading-relaxed);
-}
-
-/* QR Modal Specific */
-.qr-modal-content {
-    max-width: 600px;
-}
-
-.qr-instructions {
-    background-color: var(--bg-secondary);
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--space-6);
-}
-
-.qr-instructions p {
-    margin-bottom: var(--space-2);
-    line-height: var(--leading-relaxed);
-}
-
-.qr-code-container {
-    text-align: center;
-    padding: var(--space-6);
-    background-color: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--space-6);
-}
-
-.bank-info {
-    padding: var(--space-5);
-    background-color: var(--bg-tertiary);
-    border-radius: var(--radius-lg);
-    margin-bottom: var(--space-6);
-}
-
-.bank-details p {
-    margin-bottom: var(--space-3);
-}
-
-.copyable-text {
-    cursor: pointer;
-    color: var(--primary);
-    font-weight: var(--font-semibold);
-    transition: color var(--duration-fast) var(--ease-out);
-}
-
-.copyable-text:hover {
-    color: var(--primary-dark);
-}
-
-.verify-section {
-    padding: var(--space-5);
-    background-color: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-}
-
-.verify-form {
-    display: flex;
-    gap: var(--space-3);
-    margin: var(--space-4) 0;
-}
-
-.verify-input {
-    flex: 1;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .status-grid-modern {
-        grid-template-columns: 1fr;
-    }
-    
-    .pricing-grid-modern {
-        grid-template-columns: 1fr;
-    }
-    
-    .verify-form {
-        flex-direction: column;
-    }
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container">
-    <div class="main-content">
-        <!-- Hero Section -->
-        <div style="margin-bottom: var(--space-8); text-align: center;">
-            <h1 class="gradient-text">💳 Nâng cấp gói dịch vụ</h1>
-            <p style="color: var(--text-secondary); font-size: var(--text-lg);">Chọn gói phù hợp để mở rộng khả năng chuyển đổi của bạn</p>
-        </div>
-
-        <!-- Current Status Card -->
-        <div class="card card-elevated animate-fadeIn" style="margin-bottom: var(--space-8);">
-            <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-6);">
-                <span style="font-size: var(--text-2xl);">📊</span>
-                <h2 style="margin: 0;">Trạng thái tài khoản</h2>
-            </div>
-            
-            <div class="status-grid-modern">
-                <div class="status-metric-modern">
-                    <div class="metric-icon-modern">✅</div>
-                    <div class="metric-details-modern">
-                        <div class="metric-label-modern">Đã sử dụng</div>
-                        <div class="metric-value-modern" id="charactersUsed">0</div>
-                    </div>
-                </div>
-                <div class="status-metric-modern">
-                    <div class="metric-icon-modern">⚡</div>
-                    <div class="metric-details-modern">
-                        <div class="metric-label-modern">Còn lại</div>
-                        <div class="metric-value-modern primary" id="charactersRemaining">0</div>
-                    </div>
-                </div>
-                <div class="status-metric-modern">
-                    <div class="metric-icon-modern">📈</div>
-                    <div class="metric-details-modern">
-                        <div class="metric-label-modern">Tổng hạn mức</div>
-                        <div class="metric-value-modern" id="charactersLimit">0</div>
-                    </div>
-                </div>
-                <div class="status-metric-modern">
-                    <div class="metric-icon-modern">📅</div>
-                    <div class="metric-details-modern">
-                        <div class="metric-label-modern">Hết hạn</div>
-                        <div class="metric-value-modern" id="endDate">-</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="status-progress-modern">
-                <div class="progress-bar-full">
-                    <div class="progress-fill-gradient" id="usageProgress" style="width: 0%"></div>
-                </div>
-                <div class="progress-text-modern">
-                    <span id="usagePercent">0%</span> đã sử dụng
-                </div>
-            </div>
-        </div>
-
-        <!-- Pricing Section -->
-        <div style="text-align: center; margin-bottom: var(--space-8);">
-            <h2 style="font-size: var(--text-3xl); margin-bottom: var(--space-3);">✨ Các gói dịch vụ</h2>
-            <p style="color: var(--text-secondary);">Tất cả gói đều bao gồm đầy đủ tính năng</p>
-        </div>
-        
-        <div class="pricing-grid-modern" id="pricingGrid">
-            <div style="text-align: center; padding: var(--space-12); grid-column: 1 / -1;">
-                <div class="spinner" style="margin: 0 auto var(--space-4);"></div>
-                <p style="color: var(--text-secondary);">Đang tải gói dịch vụ...</p>
-            </div>
-        </div>
-
-        <!-- Payment Info -->
-        <div class="payment-notice-modern animate-slideUp">
-            <h3>
-                <span>ℹ️</span>
-                <span>Thông tin thanh toán</span>
-            </h3>
-            <ul>
-                <li>Thanh toán qua QR Code chuyển khoản ngân hàng nhanh chóng</li>
-                <li>Gói sẽ được kích hoạt sau khi admin xác nhận thanh toán (trong 24h)</li>
-                <li>Liên hệ <a href="mailto:support@example.com" style="color: var(--primary); font-weight: var(--font-semibold);">support@example.com</a> nếu cần hỗ trợ</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!-- QR Code Payment Modal -->
-<div id="qrPaymentModal" class="modal">
-    <div class="modal-overlay"></div>
-    <div class="modal-content qr-modal-content">
-        <div class="modal-header">
-            <h2>💳 Thanh toán qua QR Code</h2>
-            <button class="modal-close close-qr">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="qr-instructions">
-                <p><strong>Hướng dẫn thanh toán:</strong></p>
-                <p>1. Mở app ngân hàng của bạn (TPBank, Vietcombank, BIDV, v.v.)</p>
-                <p>2. Chọn chức năng "Quét QR" hoặc "Chuyển khoản"</p>
-                <p>3. Quét QR code bên dưới</p>
-                <p>4. Kiểm tra thông tin: Số tài khoản, số tiền, nội dung</p>
-                <p>5. Xác nhận thanh toán</p>
-                <p>6. Nhập số tham chiếu giao dịch để xác nhận với hệ thống</p>
-            </div>
-            
-            <div class="qr-code-container">
-                <img id="qrCodeImage" src="" alt="QR Code" style="max-width: 100%; max-height: 400px; display: none;">
-                <div id="qrLoading" style="text-align: center;">
-                    <div class="spinner" style="margin: 0 auto var(--space-3);"></div>
-                    <p style="color: var(--text-secondary);">Đang tạo QR code...</p>
-                </div>
-                <div id="qrDebugInfo" style="display: none;" class="alert alert-warning"></div>
-            </div>
-            
-            <div class="bank-info" id="bankInfo" style="display: none;">
-                <h4>Thông tin chuyển khoản:</h4>
-                <div class="bank-details">
-                    <p><strong>Ngân hàng:</strong> <span id="bankName">-</span></p>
-                    <p><strong>Số tài khoản:</strong> <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">-</span> <small style="color: var(--text-tertiary);">(Click để copy)</small></p>
-                    <p><strong>Chủ tài khoản:</strong> <span id="accountName">-</span></p>
-                    <p><strong>Số tiền:</strong> <span id="amount" style="color: var(--success); font-weight: var(--font-bold);">-</span> VNĐ</p>
-                    <p><strong>Nội dung:</strong> <span id="content" class="copyable-text" onclick="copyToClipboard(this)">-</span> <small style="color: var(--text-tertiary);">(Click để copy)</small></p>
-                </div>
-            </div>
-            
-            <div class="verify-section" id="verifySection" style="display: none;">
-                <h4>Xác nhận đã chuyển khoản:</h4>
-                <div class="verify-form">
-                    <input type="text" id="transactionProof" placeholder="Nhập số tham chiếu giao dịch" class="verify-input">
-                    <button id="verifyBtn" class="btn btn-primary btn-md">Xác nhận đã chuyển khoản</button>
-                </div>
-                <p style="font-size: var(--text-sm); color: var(--text-tertiary); margin-top: var(--space-3);">Sau khi xác nhận, admin sẽ duyệt trong vòng 24 giờ.</p>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
-<script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
-function copyToClipboard(element) {
-    const text = element.textContent.trim();
-    navigator.clipboard.writeText(text).then(() => {
-        const originalText = element.textContent;
-        element.textContent = 'Đã copy!';
-        element.style.color = 'var(--success)';
-        setTimeout(() => {
-            element.textContent = originalText;
-            element.style.color = '';
-        }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        alert('Không thể copy. Vui lòng copy thủ công: ' + text);
-    });
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface-dim":  "#051424",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "surface-variant":"#273647",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "on-background":     "#d4e4fa",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-fixed":     "#e9ddff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "on-primary-container":"#340080",
+        "inverse-primary":   "#6d3bd7",
+        "secondary":         "#bec6e0",
+        "secondary-container":"#3f465c",
+        "on-secondary":      "#283044",
+        "tertiary":          "#2fd9f4",
+        "tertiary-container":"#009fb4",
+        "on-tertiary":       "#00363e",
+        "error":             "#ffb4ab",
+        "error-container":   "#93000a",
+        "on-error":          "#690005",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+        "inverse-surface":   "#d4e4fa",
+        "inverse-on-surface":"#233143",
+        "surface-tint":      "#d0bcff",
+      },
+    },
+  },
 }
 </script>
-{% endblock %}
+
+<style>
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
+
+  /* Glass cards */
+  .glass-card {
+    background: rgba(18,33,49,0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .glass-card-active {
+    box-shadow: 0 0 28px rgba(208,188,255,0.2);
+    border: 1px solid rgba(208,188,255,0.45) !important;
+  }
+
+  /* Pricing card hover */
+  .pricing-card-modern {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .pricing-card-modern:hover:not(.featured) {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  }
+  .pricing-card-modern.featured {
+    transform: scale(1.04);
+    z-index: 10;
+    position: relative;
+  }
+
+  /* QR Modal */
+  #qrPaymentModal { display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center; }
+  #qrPaymentModal.is-active { display:flex; }
+  .modal-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px); }
+  .modal-content { position:relative;z-index:1;background:#0d1c2d;border:1px solid rgba(208,188,255,0.15);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.5);margin:16px; }
+  .modal-header { display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid rgba(73,68,84,0.4); }
+  .modal-body { padding:24px; }
+
+  /* Copyable text */
+  .copyable-text { cursor:pointer;color:#d0bcff;font-weight:600;transition:color 0.15s; }
+  .copyable-text:hover { color:#a078ff; }
+
+  /* Usage progress */
+  #usageProgress { transition: width 0.8s ease; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+  .animate-in { animation: fadeInUp 0.4s ease-out both; }
+</style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-background text-on-background">
+
+<!-- ═══ TOP NAVBAR ═══ -->
+<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+  <div class="flex justify-between items-center px-6 h-16 max-w-[1360px] mx-auto">
+    <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
+      VietVoice
+    </a>
+    <div class="hidden md:flex items-center space-x-1">
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">Pricing</a>
+      {% if session.user_role == 'admin' %}
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
+        <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+        <span id="charsNavCount">...</span>
+      </a>
+      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <a href="{{ url_for('contact') }}" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
+        <span class="material-symbols-outlined">help_outline</span>
+      </a>
+      <div class="flex items-center gap-2 pl-2 border-l border-white/10">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+          {{ (session.full_name or session.username or 'U')[0] | upper }}
+        </div>
+        <div class="hidden sm:flex flex-col">
+          <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
+          <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ LAYOUT ═══ -->
+<div class="flex flex-1 pt-16 min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-60 fixed left-0 top-16 bottom-0 bg-[#051424] pt-6">
+    <div class="px-4 mb-4">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white">VietVoice Pro</div>
+          <div class="text-xs text-primary">AI Synthesis Active</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+        Tạo Audio mới
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
+        Thư viện Audio
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+        Giọng của tôi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">history</span>
+        Lịch sử chuyển đổi
+      </a>
+      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('pricing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+        Bảng giá
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
+        Liên hệ
+      </a>
+    </nav>
+
+    <div class="p-4 mt-auto">
+      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+        Nâng cấp gói
+      </a>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="flex-1 md:ml-60 flex flex-col">
+    <main class="flex-grow py-10 px-6 lg:px-10 max-w-[1300px] mx-auto w-full">
+
+      <!-- Page Header -->
+      <header class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-on-surface mb-3 tracking-tight">Nâng cấp gói dịch vụ</h1>
+        <p class="text-base text-on-surface-variant max-w-xl mx-auto">Chọn gói phù hợp để mở rộng khả năng chuyển đổi của bạn</p>
+      </header>
+
+      <!-- Account Status Grid -->
+      <section class="mb-12 animate-in" style="animation-delay:0.05s">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Used -->
+          <div class="glass-card rounded-xl p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;font-size:18px">data_usage</span>
+              <span class="text-xs font-semibold uppercase tracking-wider">Đã sử dụng</span>
+            </div>
+            <div class="text-2xl font-bold text-on-surface" id="charactersUsed">—</div>
+            <div class="text-xs text-on-surface-variant mt-0.5">ký tự</div>
+          </div>
+          <!-- Remaining -->
+          <div class="glass-card rounded-xl p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;font-size:18px">pie_chart</span>
+              <span class="text-xs font-semibold uppercase tracking-wider">Còn lại</span>
+            </div>
+            <div class="text-2xl font-bold text-primary" id="charactersRemaining">—</div>
+            <div class="text-xs text-on-surface-variant mt-0.5">ký tự</div>
+            <div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-3 overflow-hidden">
+              <div id="usageProgress" class="bg-gradient-to-r from-tertiary to-primary h-full rounded-full" style="width:0%"></div>
+            </div>
+            <div class="text-[11px] text-on-surface-variant mt-1"><span id="usagePercent">0%</span> đã dùng</div>
+          </div>
+          <!-- Limit -->
+          <div class="glass-card rounded-xl p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-secondary" style="font-variation-settings:'FILL' 1;font-size:18px">inventory_2</span>
+              <span class="text-xs font-semibold uppercase tracking-wider">Tổng hạn mức</span>
+            </div>
+            <div class="text-2xl font-bold text-on-surface" id="charactersLimit">—</div>
+            <div class="text-xs text-on-surface-variant mt-0.5">ký tự / kỳ</div>
+          </div>
+          <!-- Expiry -->
+          <div class="glass-card rounded-xl p-5 flex flex-col">
+            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+              <span class="material-symbols-outlined text-error" style="font-variation-settings:'FILL' 1;font-size:18px">event</span>
+              <span class="text-xs font-semibold uppercase tracking-wider">Hết hạn</span>
+            </div>
+            <div class="text-2xl font-bold text-on-surface" id="endDate">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Section -->
+      <section class="mb-12">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl font-bold text-on-surface mb-1">Các gói dịch vụ</h2>
+          <p class="text-sm text-on-surface-variant">Tất cả gói đều bao gồm đầy đủ tính năng cốt lõi</p>
+        </div>
+
+        <!-- Dynamic pricing grid — populated by pricing.js -->
+        <div id="pricingGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 items-start">
+          <div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-3 text-on-surface-variant">
+            <div style="width:32px;height:32px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+            <p class="text-sm">Đang tải gói dịch vụ...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Payment Info -->
+      <section class="glass-card rounded-xl p-7 flex flex-col md:flex-row items-start md:items-center gap-7 border-t-2 border-t-tertiary/25 animate-in" style="animation-delay:0.2s">
+        <div class="flex-1">
+          <h3 class="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">payments</span>
+            Thanh toán dễ dàng
+          </h3>
+          <p class="text-sm text-on-surface-variant mb-5 max-w-xl">Chúng tôi hỗ trợ nhiều hình thức thanh toán để đảm bảo quá trình nâng cấp dịch vụ của bạn diễn ra nhanh chóng và thuận tiện nhất.</p>
+          <div class="flex flex-wrap gap-3">
+            <div class="flex items-center gap-2 bg-surface-container py-2 px-4 rounded-lg border border-white/5">
+              <span class="material-symbols-outlined text-primary" style="font-size:18px">qr_code</span>
+              <span class="text-sm font-medium text-on-surface">Quét mã QR</span>
+            </div>
+            <div class="flex items-center gap-2 bg-surface-container py-2 px-4 rounded-lg border border-white/5">
+              <span class="material-symbols-outlined text-tertiary" style="font-size:18px">account_balance</span>
+              <span class="text-sm font-medium text-on-surface">Chuyển khoản</span>
+            </div>
+          </div>
+          <div class="mt-5 text-xs text-on-surface-variant space-y-1.5">
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
+              Thanh toán qua QR Code chuyển khoản ngân hàng nhanh chóng
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
+              Gói sẽ được kích hoạt sau khi admin xác nhận thanh toán (trong 24h)
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
+              Liên hệ <a href="{{ url_for('contact') }}" class="text-primary hover:underline no-underline">support@vietvoice.ai</a> nếu cần hỗ trợ
+            </div>
+          </div>
+        </div>
+        <div class="shrink-0 w-44 h-44 bg-white rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
+          <img alt="QR thanh toán" class="w-full h-full object-cover opacity-90"
+               src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VietVoice-Payment"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+          <div style="display:none" class="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400">
+            <span class="material-symbols-outlined" style="font-size:40px">qr_code_2</span>
+            <span class="text-xs">QR Code</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="w-full border-t border-white/5 py-6 bg-[#051424] md:pl-60">
+  <div class="max-w-[1360px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="text-xs font-bold text-slate-500">© 2026 VietVoice AI · Powered by Neural Synthesis</div>
+    <div class="flex gap-5 text-xs text-slate-500">
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Hỗ trợ</a>
+      <a href="{{ url_for('pricing') }}" class="hover:text-primary transition-colors no-underline">Bảng giá</a>
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Điều khoản</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ QR PAYMENT MODAL ═══ -->
+<div id="qrPaymentModal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">qr_code</span>
+        <h2 class="text-base font-bold text-on-surface">Thanh toán qua QR Code</h2>
+      </div>
+      <button class="close-qr text-on-surface-variant hover:text-on-surface p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+        <span class="material-symbols-outlined" style="font-size:20px">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Instructions -->
+      <div class="bg-surface-container rounded-xl p-4 mb-5 text-sm text-on-surface-variant space-y-1.5">
+        <p class="font-semibold text-on-surface mb-2">Hướng dẫn thanh toán:</p>
+        <p>1. Mở app ngân hàng (TPBank, Vietcombank, BIDV, v.v.)</p>
+        <p>2. Chọn "Quét QR" hoặc "Chuyển khoản"</p>
+        <p>3. Quét QR code bên dưới</p>
+        <p>4. Kiểm tra thông tin: Số tài khoản, số tiền, nội dung</p>
+        <p>5. Xác nhận thanh toán trong app ngân hàng</p>
+        <p>6. Hệ thống tự động xác nhận — không cần nhập mã</p>
+      </div>
+
+      <!-- QR Code display -->
+      <div class="bg-surface-container rounded-xl p-5 mb-5 flex flex-col items-center">
+        <img id="qrCodeImage" src="" alt="QR Code"
+             class="max-w-[280px] w-full rounded-lg"
+             style="display:none;max-height:280px;object-fit:contain"/>
+        <div id="qrLoading" class="flex flex-col items-center gap-3 py-8 text-on-surface-variant">
+          <div style="width:28px;height:28px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+          <p class="text-sm">Đang tạo QR code...</p>
+        </div>
+        <div id="qrDebugInfo" style="display:none" class="text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded-lg"></div>
+      </div>
+
+      <!-- Bank Info -->
+      <div id="bankInfo" style="display:none" class="bg-surface-container rounded-xl p-4 mb-5 space-y-2.5 text-sm">
+        <p class="font-semibold text-on-surface mb-3">Thông tin chuyển khoản:</p>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Ngân hàng:</span>
+          <span id="bankName" class="text-on-surface font-medium">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Số tài khoản:</span>
+          <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Chủ tài khoản:</span>
+          <span id="accountName" class="text-on-surface font-medium">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Số tiền:</span>
+          <span id="amount" class="text-tertiary font-bold">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-on-surface-variant">Nội dung:</span>
+          <span id="content" class="copyable-text" onclick="copyToClipboard(this)">—</span>
+        </div>
+        <p class="text-[11px] text-on-surface-variant pt-1">(Click vào số tài khoản / nội dung để copy)</p>
+      </div>
+
+      <!-- Auto-Verify Section -->
+      <div id="verifySection" style="display:none;background:rgba(208,188,255,0.06);border:1px solid rgba(208,188,255,0.15)" class="rounded-xl p-4">
+
+        <!-- Trạng thái đang chờ -->
+        <div id="verifyWaiting">
+          <div class="flex items-center gap-3 mb-3">
+            <div id="verifySpinner" style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.2);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.9s linear infinite;flex-shrink:0"></div>
+            <p class="text-sm font-semibold text-on-surface">Đang chờ xác nhận thanh toán...</p>
+          </div>
+          <p class="text-xs text-on-surface-variant mb-3 ml-8">
+            Hệ thống tự động kiểm tra mỗi 5 giây. Sau khi chuyển khoản thành công, gói sẽ được kích hoạt ngay lập tức.
+          </p>
+          <button id="verifyBtn"
+            class="ml-8 flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+            style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.25);color:#d0bcff">
+            <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
+            Kiểm tra ngay
+          </button>
+        </div>
+
+        <!-- Trạng thái thành công (ẩn, hiện khi xác nhận) -->
+        <div id="verifySuccess" style="display:none" class="flex items-center gap-3">
+          <span class="text-2xl">🎉</span>
+          <div>
+            <p class="text-sm font-bold" style="color:#6ee7b7">Thanh toán thành công!</p>
+            <p id="verifySuccessMsg" class="text-xs text-on-surface-variant mt-0.5"></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+// ── Characters remaining (nav badge) ─────────────────────────
+async function loadCharsRemaining() {
+  try {
+    const r = await fetch('/api/user/characters');
+    const d = await r.json();
+    if (d.success) {
+      const n = d.characters_remaining;
+      const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+      const el = document.getElementById('charsNavCount');
+      if (el) el.textContent = fmt + ' ký tự';
+    }
+  } catch(e) {}
+}
+loadCharsRemaining();
+
+// ── Theme toggle ──────────────────────────────────────────────
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+updateThemeIcon();
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+    localStorage.setItem('tts-theme', next);
+    updateThemeIcon();
+  });
+}
+
+// Copy to clipboard utility
+function copyToClipboard(element) {
+  const text = element.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = element.textContent;
+    element.textContent = 'Đã copy!';
+    element.style.color = '#2fd9f4';
+    setTimeout(() => { element.textContent = orig; element.style.color = ''; }, 2000);
+  }).catch(() => {
+    alert('Không thể copy. Vui lòng copy thủ công: ' + text);
+  });
+}
+</script>
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+</body>
+</html>

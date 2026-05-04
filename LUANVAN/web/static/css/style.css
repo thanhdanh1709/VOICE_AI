@@ -364,7 +364,7 @@ body {
     max-width: 440px;
     animation: scaleIn 0.4s ease;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 @keyframes scaleIn {

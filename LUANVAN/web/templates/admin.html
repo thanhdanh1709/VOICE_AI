@@ -1,138 +1,483 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice AI - Bảng điều khiển Quản trị</title>
 
-{% block title %}Quản trị - TTS System{% endblock %}
+<!-- Anti-flash -->
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
-{% block content %}
-<div class="container">
-    <div class="page-header">
-        <h1>Trang quản trị</h1>
-        <div class="admin-actions">
-            <button id="generateSamplesBtn" class="btn btn-primary">
-                🎵 Tạo file mẫu giọng đọc
-            </button>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface-dim":  "#051424",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "surface-variant":"#273647",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "inverse-primary":   "#6d3bd7",
+        "tertiary":          "#2fd9f4",
+        "tertiary-container":"#009fb4",
+        "error":             "#ffb4ab",
+        "error-container":   "#93000a",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+      },
+    },
+  },
+}
+</script>
+
+<style>
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  .glass-panel {
+    background: rgba(18,33,49,0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
+
+  /* Table styles */
+  .admin-table { width:100%;border-collapse:separate;border-spacing:0; }
+  .admin-table th { padding:12px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#958ea0; }
+  .admin-table td { padding:12px 16px;font-size:13px;color:#cbc3d7;vertical-align:middle; }
+  .admin-table tbody tr:hover td { background:rgba(208,188,255,0.04); }
+
+  /* Role select */
+  .role-select {
+    background: #122131;
+    border: 1px solid #494454;
+    color: #d4e4fa;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+  .role-select:focus { border-color: #d0bcff; }
+
+  /* Status badges */
+  .badge-admin   { display:inline-block;padding:2px 10px;border-radius:9999px;background:rgba(160,120,255,0.2);color:#d0bcff;font-size:11px;font-weight:700; }
+  .badge-user    { display:inline-block;padding:2px 10px;border-radius:9999px;background:rgba(73,68,84,0.6);color:#cbc3d7;font-size:11px;font-weight:600; }
+  .badge-active  { display:inline-block;padding:2px 10px;border-radius:9999px;background:rgba(16,185,129,0.15);color:#10b981;font-size:11px;font-weight:600; }
+  .badge-inactive{ display:inline-block;padding:2px 10px;border-radius:9999px;background:rgba(239,68,68,0.15);color:#f87171;font-size:11px;font-weight:600; }
+
+  /* Action buttons */
+  .btn-sm { padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all 0.15s; }
+  .btn-warning { background:rgba(245,158,11,0.12);color:#f59e0b;border-color:rgba(245,158,11,0.25); }
+  .btn-warning:hover { background:rgba(245,158,11,0.25); }
+  .btn-success { background:rgba(16,185,129,0.12);color:#10b981;border-color:rgba(16,185,129,0.25); }
+  .btn-success:hover { background:rgba(16,185,129,0.25); }
+  .btn-danger  { background:rgba(239,68,68,0.12);color:#f87171;border-color:rgba(239,68,68,0.25); }
+  .btn-danger:hover  { background:rgba(239,68,68,0.25); }
+
+  /* Chart containers */
+  .chart-box { position:relative;height:240px;width:100%; }
+
+  /* Ranking items generated by JS */
+  .ranking-item { display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;transition:background 0.15s; }
+  .ranking-item:hover { background:rgba(208,188,255,0.06); }
+  .ranking-rank { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;background:rgba(73,68,84,0.6);color:#cbc3d7; }
+  .ranking-item:first-child .ranking-rank { background:rgba(160,120,255,0.25);color:#d0bcff; }
+  .ranking-info { flex:1;min-width:0; }
+  .ranking-name { font-size:13px;font-weight:600;color:#d4e4fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .ranking-details { font-size:11px;color:#958ea0;margin-top:2px; }
+  .loading-text { color:#958ea0;font-size:13px;text-align:center;padding:16px; }
+  .error-text   { color:#ffb4ab;font-size:13px;text-align:center;padding:16px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
+  .animate-in { animation: fadeInUp 0.35s ease-out both; }
+</style>
+</head>
+
+<body class="min-h-screen flex bg-background text-on-surface">
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="h-screen w-64 fixed left-0 top-0 bg-[#0F172A] hidden md:flex flex-col z-40">
+  <div class="px-6 pt-6 pb-4">
+    <a href="{{ url_for('index') }}" class="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:22px">graphic_eq</span>
+      <span class="text-xl font-black tracking-tighter text-white">VietVoice</span>
+    </a>
+    <p class="text-xs text-on-surface-variant mt-1 font-medium">Admin Dashboard</p>
+  </div>
+
+  <div class="flex flex-col gap-1 p-4 flex-1">
+    <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin') }}">
+      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
+      Bảng điều khiển
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-users">
+      <span class="material-symbols-outlined" style="font-size:18px">group</span>
+      Quản lý người dùng
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-voices">
+      <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+      Quản lý giọng đọc
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-payments">
+      <span class="material-symbols-outlined" style="font-size:18px">payments</span>
+      Quản lý thanh toán
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin_landing') }}">
+      <span class="material-symbols-outlined" style="font-size:18px">palette</span>
+      Landing Page
+    </a>
+    <div class="my-2"></div>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+      Về trang chính
+    </a>
+  </div>
+
+  <div class="p-4">
+    <button id="generateSamplesBtn"
+      class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-semibold hover:shadow-[0_0_15px_rgba(160,120,255,0.4)] transition-all">
+      <span class="material-symbols-outlined" style="font-size:16px">music_note</span>
+      Tạo mẫu giọng đọc
+    </button>
+  </div>
+</nav>
+
+<!-- ═══ MAIN WRAPPER ═══ -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+
+  <!-- ═══ TOP NAVBAR ═══ -->
+  <header class="fixed top-0 left-0 right-0 md:left-64 z-50 bg-[#0F172A]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.3)]">
+    <div class="px-6 h-16 flex items-center justify-between">
+      <div class="hidden md:flex items-center gap-1">
+        <a href="{{ url_for('admin') }}" class="text-violet-400 border-b-2 border-violet-500 pb-0.5 px-3 py-2 text-sm font-semibold no-underline">Bảng điều khiển</a>
+        <a href="#section-users" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all">Người dùng</a>
+        <a href="#section-voices" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all">Giọng đọc</a>
+        <a href="#section-payments" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all">Thanh toán</a>
+        <a href="{{ url_for('admin_landing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all">Landing Page</a>
+      </div>
+      <div class="md:hidden text-xl font-black text-white">VietVoice Admin</div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+            {{ (session.full_name or session.username or 'A')[0] | upper }}
+          </div>
+          <span class="hidden sm:block text-xs font-semibold text-on-surface">{{ session.full_name or session.username }}</span>
+          <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
         </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="flex-1 p-6 pt-[88px] max-w-[1360px] mx-auto w-full">
+
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-7 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-on-surface mb-1">Tổng quan hệ thống</h2>
+        <p class="text-sm text-on-surface-variant">Thống kê và hoạt động gần đây của VietVoice AI.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="{{ url_for('admin_landing') }}"
+           class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors no-underline">
+          <span class="material-symbols-outlined" style="font-size:16px">palette</span>
+          Chỉnh sửa Landing
+        </a>
+        <button id="refreshUsersBtn"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors">
+          <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
+          Làm mới
+        </button>
+      </div>
     </div>
 
-    <!-- Thống kê tổng quan -->
-    <div class="admin-stats">
-        <h2>Thống kê hệ thống</h2>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">👥</div>
-                <h3 id="totalUsers">0</h3>
-                <p>Tổng số người dùng</p>
-                <small id="activeUsers">0 hoạt động</small>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🔄</div>
-                <h3 id="totalConversions">0</h3>
-                <p>Tổng số chuyển đổi</p>
-                <small id="successRate">0% thành công</small>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎤</div>
-                <h3 id="totalVoices">0</h3>
-                <p>Số giọng đọc</p>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📝</div>
-                <h3 id="totalCharacters">0</h3>
-                <p>Tổng ký tự</p>
-                <small id="avgTextLength">TB: 0 ký tự</small>
-            </div>
+    <!-- ═══ STATS GRID ═══ -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-7 animate-in">
+
+      <div class="glass-panel rounded-xl p-5 relative overflow-hidden hover:border-primary/40 transition-colors">
+        <div class="absolute top-3 right-3 opacity-10 text-primary">
+          <span class="material-symbols-outlined" style="font-size:48px">group</span>
         </div>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng người dùng</p>
+        <h3 class="text-3xl font-extrabold text-on-surface" id="totalUsers">—</h3>
+        <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
+          <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
+          <span id="activeUsers">—</span>
+        </p>
+      </div>
+
+      <div class="glass-panel rounded-xl p-5 relative overflow-hidden hover:border-primary/40 transition-colors">
+        <div class="absolute top-3 right-3 opacity-10 text-tertiary">
+          <span class="material-symbols-outlined" style="font-size:48px">swap_calls</span>
+        </div>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng chuyển đổi</p>
+        <h3 class="text-3xl font-extrabold text-on-surface" id="totalConversions">—</h3>
+        <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
+          <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
+          <span id="successRate">—</span>
+        </p>
+      </div>
+
+      <div class="glass-panel rounded-xl p-5 relative overflow-hidden hover:border-primary/40 transition-colors">
+        <div class="absolute top-3 right-3 opacity-10 text-primary">
+          <span class="material-symbols-outlined" style="font-size:48px">mic</span>
+        </div>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Số giọng đọc</p>
+        <h3 class="text-3xl font-extrabold text-on-surface" id="totalVoices">—</h3>
+        <p class="text-xs text-on-surface-variant mt-1">Active</p>
+      </div>
+
+      <div class="glass-panel rounded-xl p-5 relative overflow-hidden hover:border-primary/40 transition-colors">
+        <div class="absolute top-3 right-3 opacity-10 text-primary">
+          <span class="material-symbols-outlined" style="font-size:48px">text_fields</span>
+        </div>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng ký tự (tháng)</p>
+        <h3 class="text-3xl font-extrabold text-on-surface" id="totalCharacters">—</h3>
+        <p class="text-xs text-on-surface-variant mt-1" id="avgTextLength">TB: —</p>
+      </div>
     </div>
 
-    <!-- Thống kê theo thời gian -->
-    <div class="admin-section">
-        <h2>Thống kê theo thời gian</h2>
-        <div class="time-stats-grid">
-            <div class="time-stat-card">
-                <h4>Hôm nay</h4>
-                <div class="time-stat-content">
-                    <div><strong id="todayConversions">0</strong> chuyển đổi</div>
-                    <div><strong id="todayCharacters">0</strong> ký tự</div>
-                </div>
-            </div>
-            <div class="time-stat-card">
-                <h4>Tuần này</h4>
-                <div class="time-stat-content">
-                    <div><strong id="weekConversions">0</strong> chuyển đổi</div>
-                    <div><strong id="weekCharacters">0</strong> ký tự</div>
-                </div>
-            </div>
-            <div class="time-stat-card">
-                <h4>Tháng này</h4>
-                <div class="time-stat-content">
-                    <div><strong id="monthConversions">0</strong> chuyển đổi</div>
-                    <div><strong id="monthCharacters">0</strong> ký tự</div>
-                </div>
-            </div>
+    <!-- ═══ TIME STATS ═══ -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-7 animate-in" style="animation-delay:0.05s">
+      <div class="glass-panel rounded-xl p-5">
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:14px">today</span>
+          Hôm nay
+        </p>
+        <div class="flex justify-between text-sm">
+          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <strong class="text-on-surface" id="todayConversions">—</strong>
         </div>
-        
-        <!-- Biểu đồ xu hướng 7 ngày -->
-        <div class="chart-container">
-            <h4>Xu hướng 7 ngày qua</h4>
-            <canvas id="trendChart"></canvas>
+        <div class="flex justify-between text-sm mt-1.5">
+          <span class="text-on-surface-variant">Ký tự:</span>
+          <strong class="text-primary" id="todayCharacters">—</strong>
         </div>
+      </div>
+      <div class="glass-panel rounded-xl p-5">
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary" style="font-size:14px">date_range</span>
+          Tuần này
+        </p>
+        <div class="flex justify-between text-sm">
+          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <strong class="text-on-surface" id="weekConversions">—</strong>
+        </div>
+        <div class="flex justify-between text-sm mt-1.5">
+          <span class="text-on-surface-variant">Ký tự:</span>
+          <strong class="text-primary" id="weekCharacters">—</strong>
+        </div>
+      </div>
+      <div class="glass-panel rounded-xl p-5">
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:14px">calendar_month</span>
+          Tháng này
+        </p>
+        <div class="flex justify-between text-sm">
+          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <strong class="text-on-surface" id="monthConversions">—</strong>
+        </div>
+        <div class="flex justify-between text-sm mt-1.5">
+          <span class="text-on-surface-variant">Ký tự:</span>
+          <strong class="text-primary" id="monthCharacters">—</strong>
+        </div>
+      </div>
     </div>
 
-    <!-- Top Rankings -->
-    <div class="admin-section">
-        <h2>Top Rankings</h2>
-        <div class="rankings-grid">
-            <div class="ranking-card">
-                <h3>Top 5 Người dùng</h3>
-                <div id="topUsersList" class="ranking-list">
-                    <div class="loading-text">Đang tải...</div>
-                </div>
-            </div>
-            <div class="ranking-card">
-                <h3>Top 5 Giọng đọc</h3>
-                <div id="topVoicesList" class="ranking-list">
-                    <div class="loading-text">Đang tải...</div>
-                </div>
-            </div>
+    <!-- ═══ CHARTS ═══ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7 animate-in" style="animation-delay:0.08s">
+      <!-- Trend Chart -->
+      <div class="glass-panel rounded-xl p-6 lg:col-span-2">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-base font-bold text-on-surface">Xu hướng 7 ngày qua</h3>
+          <div class="flex gap-1.5">
+            <button class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold hover:text-primary transition-colors">Tuần</button>
+            <button class="px-2.5 py-1 rounded-md bg-primary/20 text-primary text-xs font-semibold border border-primary/25">Tháng</button>
+            <button class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold hover:text-primary transition-colors">Năm</button>
+          </div>
         </div>
-        
-        <!-- Biểu đồ phân bổ giọng đọc -->
-        <div class="chart-container">
-            <h4>Phân bổ giọng đọc</h4>
-            <canvas id="voiceDistributionChart"></canvas>
+        <div class="chart-box">
+          <canvas id="trendChart"></canvas>
         </div>
+      </div>
+
+      <!-- Voice Distribution Chart -->
+      <div class="glass-panel rounded-xl p-6">
+        <h3 class="text-base font-bold text-on-surface mb-5">Phân bổ giọng đọc</h3>
+        <div class="chart-box">
+          <canvas id="voiceDistributionChart"></canvas>
+        </div>
+      </div>
     </div>
 
-    <div class="admin-section">
-        <h2>Quản lý người dùng</h2>
-        <div class="admin-controls">
-            <button id="refreshUsersBtn" class="btn btn-primary">🔄 Làm mới</button>
+    <!-- ═══ TOP RANKINGS ═══ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7 animate-in" style="animation-delay:0.1s" id="section-voices">
+
+      <!-- Top Users -->
+      <div class="glass-panel rounded-xl p-6">
+        <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
+          Top 5 Người dùng
+          <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
+            <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
+            Làm mới
+          </button>
+        </h3>
+        <div id="topUsersList">
+          <p class="loading-text">Đang tải...</p>
         </div>
-        <div class="admin-table-container">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tên đăng nhập</th>
-                        <th>Email</th>
-                        <th>Họ tên</th>
-                        <th>Vai trò</th>
-                        <th>Trạng thái</th>
-                        <th>Số chuyển đổi</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody">
-                    <tr>
-                        <td colspan="8" class="loading-text">Đang tải...</td>
-                    </tr>
-                </tbody>
-            </table>
+      </div>
+
+      <!-- Top Voices -->
+      <div class="glass-panel rounded-xl p-6">
+        <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
+          Top 5 Giọng đọc
+          <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
+            <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
+            Làm mới
+          </button>
+        </h3>
+        <div id="topVoicesList">
+          <p class="loading-text">Đang tải...</p>
         </div>
+      </div>
     </div>
+
+    <!-- ═══ USERS TABLE ═══ -->
+    <div class="glass-panel rounded-xl overflow-hidden mb-7 animate-in" style="animation-delay:0.12s" id="section-users">
+      <div class="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary" style="font-size:18px">group</span>
+          Quản lý người dùng
+        </h3>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:16px">search</span>
+          <input type="text" placeholder="Tìm kiếm người dùng..."
+            class="bg-surface-container-highest border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-56 placeholder-on-surface-variant/50"
+            oninput="filterUsersTable(this.value)"/>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên đăng nhập</th>
+              <th>Email</th>
+              <th>Họ tên</th>
+              <th>Vai trò</th>
+              <th>Trạng thái</th>
+              <th>Chuyển đổi</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="8" class="loading-text">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ PAYMENTS TABLE ═══ -->
+    <div class="glass-panel rounded-xl overflow-hidden mb-7 animate-in" style="animation-delay:0.14s" id="section-payments">
+      <div class="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:18px">payments</span>
+          Quản lý thanh toán
+        </h3>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="refreshPaymentsBtn"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
+            <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
+            Làm mới
+          </button>
+          <button id="autoApproveBtn"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors">
+            <span class="material-symbols-outlined" style="font-size:15px">bolt</span>
+            Duyệt tự động (≥5 phút)
+          </button>
+          <span id="paymentsCount" class="text-xs text-on-surface-variant"></span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Người dùng</th>
+              <th>Gói</th>
+              <th>Số tiền</th>
+              <th>Phương thức</th>
+              <th>Trạng thái</th>
+              <th>Mã giao dịch</th>
+              <th>Thời gian</th>
+              <th class="text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTableBody">
+            <tr><td colspan="9" class="loading-text">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full py-5 bg-[#0F172A] mt-auto">
+    <div class="px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+      <span class="text-xs font-bold text-slate-500">© 2026 VietVoice AI Synthesis Lab.</span>
+      <div class="flex gap-5 text-xs text-slate-500 uppercase tracking-wider">
+        <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Privacy Policy</a>
+        <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Terms of Service</a>
+        <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Support</a>
+      </div>
+    </div>
+  </footer>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Inline user table search filter
+function filterUsersTable(query) {
+  const rows = document.querySelectorAll('#usersTableBody tr');
+  const q = query.toLowerCase();
+  rows.forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
-{% endblock %}
+</body>
+</html>

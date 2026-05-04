@@ -12,15 +12,21 @@ const ThemeManager = {
     THEME_DARK: 'dark',
     
     init() {
-        // Load saved theme or detect system preference
+        // Landing page luôn dark, không phụ thuộc theme toggle
+        const path = window.location.pathname;
+        const isLanding = (path === '/' || path === '/landing');
         const savedTheme = this.getSavedTheme();
-        const theme = savedTheme || this.getSystemTheme();
+        const theme = isLanding ? this.THEME_DARK : (savedTheme || this.THEME_DARK);
         this.setTheme(theme);
-        
-        // Setup toggle button
+
+        // Setup toggle button — ẩn trên landing page
         const toggleBtn = document.getElementById('themeToggle');
         if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => this.toggleTheme());
+            if (isLanding) {
+                toggleBtn.style.display = 'none';
+            } else {
+                toggleBtn.addEventListener('click', () => this.toggleTheme());
+            }
         }
         
         // Listen for system theme changes

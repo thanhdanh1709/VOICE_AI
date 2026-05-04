@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Design System Variables
- * VoiceAI TTS - v2.0
+ * VietVoice - v2.0
  */
 
 :root {
@@ -222,7 +222,6 @@
   --secondary: #68d391;
   --secondary-dark: #48bb78;
 }
-
 /* ============================================
    RESPONSIVE BREAKPOINTS
    ============================================ */
@@ -235,3 +234,4 @@ Usage:
 @media (min-width: 1280px) { ... } // xl
 @media (min-width: 1536px) { ... } // 2xl
 */
+

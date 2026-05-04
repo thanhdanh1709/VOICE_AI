@@ -258,11 +258,10 @@ function showTestError(message) {
     const testError = document.getElementById('testError');
     if (testError) {
         testError.innerHTML = `
-            <div class="alert alert-error">
-                <span>❌</span>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;background:rgba(147,0,10,0.15);border:1px solid rgba(255,180,171,0.25);color:#ffb4ab;font-size:13px;">
+                <span class="material-symbols-outlined" style="font-size:16px">error_outline</span>
                 <span>${message}</span>
-            </div>
-        `;
+            </div>`;
         testError.style.display = 'block';
     }
 }
@@ -294,22 +293,23 @@ async function deleteVoice(voiceId, voiceName) {
             showNotification('success', 'Đã xóa giọng thành công');
             
             // Remove card from DOM
-            const card = document.querySelector(`.voice-card[data-voice-id="${voiceId}"]`);
+            const card = document.querySelector(`.voice-card-modern[data-voice-id="${voiceId}"]`);
             if (card) {
                 card.style.opacity = '0';
-                card.style.transform = 'scale(0.9)';
+                card.style.transform = 'scale(0.95)';
+                card.style.transition = 'all 0.3s ease';
                 setTimeout(() => card.remove(), 300);
             }
-            
+
             // Stop polling if exists
             if (progressPollingInterval[voiceId]) {
                 clearInterval(progressPollingInterval[voiceId]);
                 delete progressPollingInterval[voiceId];
             }
-            
+
             // Check if no voices left
             setTimeout(() => {
-                const remainingVoices = document.querySelectorAll('.voice-card');
+                const remainingVoices = document.querySelectorAll('.voice-card-modern');
                 if (remainingVoices.length === 0) {
                     location.reload();
                 }

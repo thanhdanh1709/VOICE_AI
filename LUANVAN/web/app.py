@@ -52,6 +52,8 @@ def resolve_audio_path(path: str) -> str:
 
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
+from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+from authlib.integrations.flask_client import OAuth
 import qrcode
 import io
 import base64
@@ -98,6 +100,16 @@ app = Flask(__name__,
             static_url_path='/static',
             template_folder='templates')
 app.secret_key = 'dev-secret-key-change-in-production'
+
+# ── Google OAuth ──────────────────────────────────────────
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
 
 # Request logging
 @app.before_request
@@ -165,7 +177,10 @@ def get_db_connection():
             password=DB_CONFIG['password'],
             database=DB_CONFIG['database'],
             charset=DB_CONFIG['charset'],
-            cursorclass=pymysql.cursors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor,
+            connect_timeout=5,
+            read_timeout=10,
+            write_timeout=10
         )
         return connection
     except Exception as e:
@@ -287,8 +302,16 @@ def update_characters_used(user_id, text_length):
 def index():
     """Trang chủ"""
     if not is_logged_in():
-        return redirect(url_for('login'))
+        return redirect(url_for('landing'))
     return render_template('index.html')
+
+@app.route('/landing')
+def landing():
+    """Landing page - trang giới thiệu dành cho người chưa đăng nhập"""
+    if is_logged_in():
+        return redirect(url_for('index'))
+    content = load_landing_content()
+    return render_template('landing.html', lp=content)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -397,6 +420,114 @@ def logout():
     """Đăng xuất"""
     session.clear()
     return redirect(url_for('login'))
+
+# ══════════════════════════════════════════════════════════
+# GOOGLE OAUTH
+# ══════════════════════════════════════════════════════════
+
+@app.route('/auth/google')
+def google_login():
+    """Bắt đầu luồng đăng nhập Google"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return redirect(url_for('login') + '?error=google_not_configured')
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/auth/google/callback')
+def google_callback():
+    """Callback sau khi Google xác thực"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return redirect(url_for('login') + '?error=google_not_configured')
+
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo') or google.userinfo()
+    except Exception as e:
+        print(f"[GOOGLE AUTH] Error: {e}")
+        return redirect(url_for('login') + '?error=google_auth_failed')
+
+    google_id  = user_info.get('sub')
+    email      = user_info.get('email', '')
+    full_name  = user_info.get('name', '')
+    avatar_url = user_info.get('picture', '')
+
+    if not google_id or not email:
+        return redirect(url_for('login') + '?error=google_no_email')
+
+    conn = get_db_connection()
+    if not conn:
+        return redirect(url_for('login') + '?error=db_error')
+
+    try:
+        with conn.cursor() as cursor:
+            # 1. Tìm user theo google_id
+            cursor.execute("SELECT * FROM users WHERE google_id = %s", (google_id,))
+            user = cursor.fetchone()
+
+            # 2. Tìm theo email nếu chưa có google_id
+            if not user:
+                cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+                user = cursor.fetchone()
+                if user:
+                    # Liên kết google_id vào tài khoản hiện có
+                    cursor.execute(
+                        "UPDATE users SET google_id = %s, avatar_url = %s WHERE id = %s",
+                        (google_id, avatar_url, user['id'])
+                    )
+                    conn.commit()
+
+            # 3. Tạo tài khoản mới nếu chưa có
+            if not user:
+                # Tạo username từ email (vd: nguyenvana@gmail.com → nguyenvana)
+                base_username = email.split('@')[0].lower()
+                base_username = ''.join(c for c in base_username if c.isalnum() or c == '_')[:30]
+                username = base_username
+
+                # Đảm bảo username duy nhất
+                counter = 1
+                while True:
+                    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+                    if not cursor.fetchone():
+                        break
+                    username = f"{base_username}{counter}"
+                    counter += 1
+
+                cursor.execute(
+                    """INSERT INTO users (username, email, password, full_name, google_id, avatar_url, is_active)
+                       VALUES (%s, %s, %s, %s, %s, %s, 1)""",
+                    (username, email, '', full_name, google_id, avatar_url)
+                )
+                user_id = cursor.lastrowid
+
+                # Tặng 100,000 ký tự miễn phí
+                cursor.execute("""
+                    INSERT INTO user_subscriptions
+                    (user_id, characters_limit, characters_used, start_date, end_date)
+                    VALUES (%s, 100000, 0, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+                """, (user_id,))
+                conn.commit()
+
+                cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+                user = cursor.fetchone()
+
+        # Đăng nhập
+        session['user_id']   = user['id']
+        session['username']  = user['username']
+        session['user_role'] = user.get('role', 'user')
+        session['full_name'] = user.get('full_name', '')
+        session.permanent    = True
+
+        print(f"[GOOGLE AUTH] Logged in: {user['username']} ({email})")
+        return redirect(url_for('index'))
+
+    except Exception as e:
+        conn.rollback()
+        print(f"[GOOGLE AUTH] DB error: {e}")
+        print(traceback.format_exc())
+        return redirect(url_for('login') + '?error=db_error')
+    finally:
+        conn.close()
 
 @app.route('/api/voices')
 def get_voices():
@@ -1784,6 +1915,45 @@ def admin():
         return redirect(url_for('index'))
     return render_template('admin.html')
 
+
+# ── LANDING PAGE CONTENT ──────────────────────────────────────────
+LANDING_CONTENT_FILE = os.path.join(os.path.dirname(__file__), 'landing_content.json')
+
+def load_landing_content():
+    """Đọc nội dung landing page từ JSON"""
+    try:
+        with open(LANDING_CONTENT_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_landing_content(data):
+    """Lưu nội dung landing page vào JSON"""
+    with open(LANDING_CONTENT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+@app.route('/admin/landing', methods=['GET'])
+def admin_landing():
+    """Trang chỉnh sửa nội dung landing page"""
+    if not is_logged_in() or not is_admin():
+        return redirect(url_for('index'))
+    content = load_landing_content()
+    return render_template('admin_landing.html', content=content)
+
+@app.route('/admin/landing/save', methods=['POST'])
+def admin_landing_save():
+    """Lưu nội dung landing page"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+        save_landing_content(data)
+        return jsonify({'success': True, 'message': 'Đã lưu nội dung landing page thành công!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # SePay.vn Integration Functions
 def create_sepay_payment(amount, transaction_id, description, user_name):
     """Tạo thanh toán qua SePay.vn"""
@@ -1881,7 +2051,7 @@ def create_manual_qr_code(amount, content):
         }
 
 def verify_sepay_transaction(transaction_id, amount):
-    """Xác minh giao dịch qua SePay API với auto-approve"""
+    """Xác minh giao dịch qua SePay API - dùng endpoint /transactions/list"""
     try:
         headers = {
             'Authorization': f'Bearer {SEPAY_TOKEN}',
@@ -1890,43 +2060,61 @@ def verify_sepay_transaction(transaction_id, amount):
         
         print(f"[INFO] Verifying SePay transaction: {transaction_id}, amount: {amount}")
         
-        # Gọi API SePay để kiểm tra giao dịch
-        # Note: URL này có thể cần điều chỉnh dựa trên API thực tế của SePay
+        # SePay correct endpoint: /transactions/list with transaction_content filter
         response = requests.get(
-            f"{SEPAY_API_URL}/check",
+            f"{SEPAY_API_URL}/list",
             params={
-                'content': transaction_id,
-                'amount': amount,
-                'accountNumber': SEPAY_ACCOUNT_NUMBER
+                'account_number': SEPAY_ACCOUNT_NUMBER,
+                'transaction_content': transaction_id,
+                'limit': 5
             },
             headers=headers,
-            timeout=30
+            timeout=8
         )
         
         print(f"[INFO] SePay API response status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
-            print(f"[INFO] SePay API response data: {data}")
+            print(f"[INFO] SePay API response: {data}")
             
-            # Logic verification có thể cần điều chỉnh dựa trên response format của SePay
-            verified = data.get('status') == 'success' or data.get('verified') == True
+            transactions = data.get('transactions', [])
             
-            return {
-                'success': True,
-                'verified': verified,
-                'transaction_data': data,
-                'auto_verified': verified
-            }
+            # Tìm giao dịch khớp: nội dung chứa transaction_id VÀ số tiền đúng
+            txn_id_upper = transaction_id.upper()
+            txn_id_normalized = ''.join(c for c in txn_id_upper if c.isalnum())
+            # Phần hex thuần (bỏ TTS_ prefix)
+            hex_part = txn_id_upper.replace('TTS_', '').replace('TTS', '').strip('_- ')
+
+            for txn in transactions:
+                content = str(txn.get('transaction_content', '') or '').upper()
+                content_normalized = ''.join(c for c in content if c.isalnum())
+                txn_amount = int(txn.get('amount_in', 0) or 0)
+
+                content_match = (
+                    txn_id_upper in content or
+                    txn_id_normalized in content_normalized or
+                    (len(hex_part) >= 8 and hex_part in content_normalized)
+                )
+
+                if content_match and txn_amount >= int(amount) * 0.99:
+                    print(f"[INFO] SePay transaction MATCHED: {txn}")
+                    return {
+                        'success': True,
+                        'verified': True,
+                        'transaction_data': txn,
+                        'source': 'sepay_api'
+                    }
+            
+            print(f"[INFO] No matching SePay transaction found for {transaction_id}")
+            return {'success': True, 'verified': False, 'source': 'sepay_api'}
         else:
-            print(f"[WARNING] SePay API returned status {response.status_code}")
-            # Fallback: nếu không verify được qua API, thử duyệt auto dựa trên thời gian
-            return auto_approve_by_time(transaction_id, amount)
+            print(f"[WARNING] SePay API returned status {response.status_code}: {response.text}")
+            return {'success': True, 'verified': False, 'error': f'SePay API status {response.status_code}'}
             
     except Exception as e:
         print(f"[ERROR] SePay verification failed: {e}")
-        # Fallback: auto-approve dựa trên thời gian
-        return auto_approve_by_time(transaction_id, amount)
+        return {'success': False, 'verified': False, 'error': str(e)}
 
 def auto_approve_by_time(transaction_id, amount):
     """Auto-approve payment sau một khoảng thời gian (fallback method)"""
@@ -1980,6 +2168,64 @@ def pricing():
     if not is_logged_in():
         return redirect(url_for('login'))
     return render_template('pricing.html')
+
+@app.route('/payment/confirm')
+def payment_confirm():
+    """Trang xác nhận thanh toán"""
+    if not is_logged_in():
+        return redirect(url_for('login'))
+
+    payment_id = request.args.get('id', type=int)
+    if not payment_id:
+        return redirect(url_for('pricing'))
+
+    conn = get_db_connection()
+    if not conn:
+        return redirect(url_for('pricing'))
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id AS payment_id, p.transaction_id, p.amount_vnd,
+                       p.payment_status, p.created_at,
+                       pk.package_name, pk.characters_limit, pk.duration_days
+                FROM payments p
+                JOIN subscription_packages pk ON p.package_id = pk.id
+                WHERE p.id = %s AND p.user_id = %s
+            """, (payment_id, session.get('user_id')))
+            row = cursor.fetchone()
+
+        if not row:
+            return redirect(url_for('pricing'))
+
+        # Generate (or regenerate) QR code for this payment
+        from config import SEPAY_BANK_ID, SEPAY_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME
+        qr_result = create_sepay_qr_code(
+            row['amount_vnd'],
+            row['transaction_id'],
+            f"Thanh toan {row['package_name']}"
+        )
+
+        payment = {
+            'payment_id':       row['payment_id'],
+            'transaction_id':   row['transaction_id'],
+            'amount_vnd':       row['amount_vnd'],
+            'payment_status':   row['payment_status'],
+            'package_name':     row['package_name'],
+            'characters_limit': row['characters_limit'],
+            'duration_days':    row['duration_days'],
+            'qr_code':          qr_result.get('qr_image', ''),
+            'bank_name':        SEPAY_BANK_ID,
+            'account_number':   SEPAY_ACCOUNT_NUMBER,
+            'account_name':     BANK_ACCOUNT_NAME,
+        }
+        return render_template('payment_confirmation.html', payment=payment)
+
+    except Exception as e:
+        print(f"[ERROR] payment_confirm: {e}")
+        return redirect(url_for('pricing'))
+    finally:
+        conn.close()
 
 @app.route('/contact')
 def contact():
@@ -2467,7 +2713,7 @@ def create_payment():
             print(f"[DEBUG] Package: {package['package_name']} - {package['characters_limit']:,} chars - {package['price_vnd']:,}đ")
             
             # Tạo payment record  
-            transaction_id = f"TTS_{uuid.uuid4().hex[:16].upper()}"
+            transaction_id = f"TTS{uuid.uuid4().hex[:16].upper()}"
             cursor.execute("""
                 INSERT INTO payments (user_id, package_id, amount_vnd, payment_method, payment_status, transaction_id)
                 VALUES (%s, %s, %s, %s, 'pending', %s)
@@ -2926,40 +3172,233 @@ def verify_sepay_payment():
     finally:
         conn.close()
 
-@app.route('/api/payment/sepay/webhook', methods=['POST'])
-def sepay_webhook():
-    """Xử lý webhook từ SePay"""
+@app.route('/api/payment/debug/sub')
+def debug_subscription():
+    """DEBUG ONLY - xem subscription hiện tại"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'DB failed'})
     try:
-        data = request.get_json()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT us.*, u.username FROM user_subscriptions us
+                JOIN users u ON us.user_id = u.id
+                ORDER BY us.created_at DESC LIMIT 5
+            """)
+            rows = cursor.fetchall()
+            # Serialize dates
+            result = []
+            for r in rows:
+                d = dict(r)
+                for k, v in d.items():
+                    if hasattr(v, 'isoformat'):
+                        d[k] = v.isoformat()
+                result.append(d)
+            return jsonify({'subscriptions': result})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/payment/debug/pending')
+def debug_pending_payments():
+    """DEBUG ONLY - xem pending payments trong DB"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'DB connection failed'})
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id, p.transaction_id, p.amount_vnd, p.payment_status, p.created_at,
+                       u.username
+                FROM payments p
+                JOIN users u ON p.user_id = u.id
+                WHERE p.payment_status IN ('pending', 'completed')
+                ORDER BY p.created_at DESC LIMIT 10
+            """)
+            rows = cursor.fetchall()
+            return jsonify({'payments': [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        conn.close()
+
+@app.route('/api/payment/sepay/webhook', methods=['POST'])
+@app.route('/webhook/sepay', methods=['POST'])
+def sepay_webhook():
+    """
+    Xử lý webhook từ SePay - tự động duyệt thanh toán và cộng ký tự.
+    SePay webhook format:
+    {
+      "id": 123456,
+      "gateway": "MBBank",
+      "transactionDate": "2024-01-15 10:30:00",
+      "accountNumber": "0866005541",
+      "content": "TXN12345ABC",
+      "transferType": "in",
+      "amount": 50000,
+      "accumulated": 100000,
+      "referenceCode": "...",
+      "code": null
+    }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+        print(f"[WEBHOOK] ===== SePay webhook received =====")
+        print(f"[WEBHOOK] Full data: {data}")
         
-        # Xác thực webhook (nếu SePay có signature)
-        # transaction_id = data.get('orderCode') hoặc tương đương
-        # amount = data.get('amount')
-        # status = data.get('status')
+        # Chỉ xử lý giao dịch tiền VÀO tài khoản
+        transfer_type = str(data.get('transferType', '') or data.get('transfer_type', '') or '').strip()
+        print(f"[WEBHOOK] transferType='{transfer_type}'")
+        if transfer_type and transfer_type.lower() not in ('in', 'credit', 'receive'):
+            print(f"[WEBHOOK] Ignored - transfer type is outgoing: {transfer_type}")
+            return jsonify({'success': True, 'message': 'Ignored (not incoming)'})
         
-        print(f"[INFO] SePay webhook received: {data}")
+        # SePay gửi số tiền ở field 'transferAmount' (không phải 'amount')
+        webhook_amount = int(float(
+            data.get('transferAmount') or
+            data.get('transfer_amount') or
+            data.get('amount') or
+            0
+        ))
+        # SePay có thể gửi content ở nhiều field khác nhau
+        raw_content = (
+            data.get('content') or
+            data.get('transaction_content') or
+            data.get('description') or
+            data.get('memo') or
+            data.get('reference') or ''
+        )
+        webhook_content = str(raw_content).upper().strip()
         
-        # Tìm payment trong database
+        print(f"[WEBHOOK] transferAmount={data.get('transferAmount')}, amount={data.get('amount')}, "
+              f"resolved_amount={webhook_amount}")
+        print(f"[WEBHOOK] raw_content='{raw_content}', content_upper='{webhook_content}'")
+        
+        if not webhook_content or webhook_amount <= 0:
+            print(f"[WEBHOOK] Missing content or amount — cannot match")
+            return jsonify({'success': True, 'message': 'No content/amount'})
+        
         conn = get_db_connection()
         if not conn:
-            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-            
+            return jsonify({'success': False, 'message': 'DB error'}), 500
+        
         try:
             with conn.cursor() as cursor:
-                # Tìm payment dựa trên transaction_id hoặc thông tin khác từ webhook
-                # Logic này cần điều chỉnh dựa trên format thực tế của SePay webhook
+                # Lấy TẤT CẢ pending payments (bỏ filter amount ở SQL để debug)
+                cursor.execute("""
+                    SELECT p.*, sp.characters_limit, sp.duration_days, sp.package_name,
+                           u.username
+                    FROM payments p
+                    JOIN subscription_packages sp ON p.package_id = sp.id
+                    JOIN users u ON p.user_id = u.id
+                    WHERE p.payment_status = 'pending'
+                      AND UPPER(p.transaction_id) != ''
+                    ORDER BY p.created_at DESC
+                    LIMIT 50
+                """)
                 
-                return jsonify({'success': True, 'message': 'Webhook processed'})
+                pending_payments = cursor.fetchall()
+                print(f"[WEBHOOK] Found {len(pending_payments)} pending payments")
+                matched_payment = None
+                
+                # Chuẩn hóa: chỉ giữ alphanum, chuyển uppercase
+                def normalize(s):
+                    return ''.join(c for c in str(s).upper() if c.isalnum())
+                
+                webhook_norm = normalize(webhook_content)
+                print(f"[WEBHOOK] webhook_norm='{webhook_norm}'")
+
+                for pmt in pending_payments:
+                    txn_id      = str(pmt['transaction_id']).upper().strip()
+                    txn_norm    = normalize(txn_id)
+                    # Bỏ prefix TTS (có hoặc không có gạch dưới)
+                    hex_part    = txn_norm
+                    for pfx in ('TTS_', 'TTS'):
+                        if hex_part.startswith(pfx):
+                            hex_part = hex_part[len(pfx):]
+                            break
+                    
+                    amount_ok = abs(webhook_amount - int(pmt['amount_vnd'])) <= 2000
+
+                    # So khớp linh hoạt: full match HOẶC hex part match
+                    content_match = (
+                        txn_norm    in webhook_norm or
+                        webhook_norm in txn_norm   or
+                        (len(hex_part) >= 8 and hex_part in webhook_norm)
+                    )
+
+                    print(f"[WEBHOOK] Check pmt#{pmt['id']}: txn={txn_id}, txn_norm={txn_norm}, hex={hex_part}, "
+                          f"content_match={content_match}, amount_ok={amount_ok} "
+                          f"(pmt_amount={pmt['amount_vnd']}, webhook_amount={webhook_amount})")
+
+                    if content_match and amount_ok:
+                        matched_payment = pmt
+                        print(f"[WEBHOOK] ✅ MATCHED payment #{pmt['id']} for user {pmt['username']}")
+                        break
+                
+                if not matched_payment:
+                    print(f"[WEBHOOK] ❌ No matching pending payment. content='{webhook_content}', amount={webhook_amount}")
+                    return jsonify({'success': True, 'message': 'No matching payment found'})
+                
+                print(f"[WEBHOOK] Matched payment ID={matched_payment['id']} for user={matched_payment['username']}")
+                
+                # Cập nhật payment thành completed
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'completed',
+                        bank_transaction_id = %s,
+                        description = %s,
+                        completed_at = NOW()
+                    WHERE id = %s AND payment_status = 'pending'
+                """, (
+                    str(data.get('id', '') or data.get('referenceCode', '')),
+                    f"SePay webhook auto-approved: {webhook_content}",
+                    matched_payment['id']
+                ))
+                
+                if cursor.rowcount == 0:
+                    # Đã được duyệt bởi request khác (race condition)
+                    print(f"[WEBHOOK] Payment {matched_payment['id']} already processed")
+                    conn.commit()
+                    return jsonify({'success': True, 'message': 'Already processed'})
+                
+                conn.commit()
+                
+                # Cộng ký tự cho user
+                sub_success = update_user_subscription(
+                    matched_payment['user_id'],
+                    matched_payment['characters_limit'],
+                    matched_payment['duration_days']
+                )
+                
+                if sub_success:
+                    print(f"[WEBHOOK] ✅ Auto-approved payment {matched_payment['id']} for user {matched_payment['username']}: +{matched_payment['characters_limit']:,} chars")
+                else:
+                    print(f"[WEBHOOK] ⚠️ Payment approved but subscription update failed for user {matched_payment['username']}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Payment auto-approved',
+                    'payment_id': matched_payment['id'],
+                    'user': matched_payment['username'],
+                    'characters_added': matched_payment['characters_limit']
+                })
                 
         except Exception as e:
-            print(f"[ERROR] SePay webhook processing error: {e}")
-            return jsonify({'success': False, 'message': 'Processing failed'}), 500
+            import traceback
+            conn.rollback()
+            print(f"[WEBHOOK ERROR] {e}")
+            print(traceback.format_exc())
+            return jsonify({'success': False, 'message': f'DB error: {str(e)}'}), 500
         finally:
             conn.close()
             
     except Exception as e:
-        print(f"[ERROR] SePay webhook error: {e}")
-        return jsonify({'success': False, 'message': 'Webhook failed'}), 500
+        import traceback
+        print(f"[WEBHOOK FATAL] {e}")
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 def update_user_subscription(user_id, characters_limit, duration_days):
     """Cập nhật subscription cho user"""
@@ -3035,11 +3474,13 @@ def update_user_subscription(user_id, characters_limit, duration_days):
 
 @app.route('/api/admin/payment/approve', methods=['POST'])
 def admin_approve_payment():
-    """Admin duyệt thanh toán thủ công"""
+    """Admin duyệt thanh toán thủ công — bắt buộc verify SePay.
+    Nếu SePay không tìm thấy giao dịch → đánh dấu FAILED, không cộng ký tự.
+    """
     if not is_logged_in() or not is_admin():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
-    data = request.get_json()
+    data       = request.get_json()
     payment_id = data.get('payment_id')
     
     conn = get_db_connection()
@@ -3049,7 +3490,8 @@ def admin_approve_payment():
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT p.*, sp.characters_limit, sp.duration_days, u.username
+                SELECT p.*, sp.characters_limit, sp.duration_days, sp.package_name,
+                       u.username
                 FROM payments p
                 LEFT JOIN subscription_packages sp ON p.package_id = sp.id
                 LEFT JOIN users u ON p.user_id = u.id
@@ -3058,30 +3500,81 @@ def admin_approve_payment():
             payment = cursor.fetchone()
             
             if not payment:
-                return jsonify({'success': False, 'message': 'Payment not found or already processed'}), 404
+                return jsonify({'success': False, 'message': 'Không tìm thấy thanh toán hoặc đã được xử lý'}), 404
             
-            # Cập nhật payment thành completed
+            # ── Verify SePay bắt buộc ──
+            verified    = False
+            verify_note = ''
+            try:
+                verification = verify_sepay_transaction(
+                    payment['transaction_id'],
+                    payment['amount_vnd']
+                )
+                verified    = verification.get('verified', False)
+                verify_note = verification.get('note', '')
+                print(f"[ADMIN-APPROVE] SePay verify: verified={verified}, note={verify_note}")
+            except Exception as ve:
+                print(f"[ADMIN-APPROVE] SePay verify error: {ve}")
+                verified    = False
+                verify_note = str(ve)
+            
+            if not verified:
+                # ── Không verify được → đánh dấu FAILED, kết thúc thanh toán ──
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'failed',
+                        description    = CONCAT(IFNULL(description,''), ' - Admin verify failed: không tìm thấy giao dịch SePay'),
+                        completed_at   = NOW()
+                    WHERE id = %s AND payment_status = 'pending'
+                """, (payment_id,))
+                conn.commit()
+                print(f"[ADMIN-APPROVE] Payment {payment_id} marked FAILED — no SePay transaction found")
+                return jsonify({
+                    'success': False,
+                    'failed': True,
+                    'message': (
+                        f'❌ Thanh toán #{payment_id} không thể xác minh qua SePay.\n\n'
+                        f'Lý do: {verify_note or "Không có giao dịch nào khớp với mã giao dịch và số tiền"}\n\n'
+                        f'⚠️ Người dùng CHƯA chuyển khoản hoặc số tiền không khớp.\n\n'
+                        f'Thanh toán đã bị đánh dấu THẤT BẠI. Người dùng cần tạo đơn thanh toán mới.'
+                    )
+                })
+            
+            # ── SePay xác nhận → tiến hành duyệt ──
             cursor.execute("""
                 UPDATE payments
                 SET payment_status = 'completed',
-                    description = CONCAT(description, ' - Admin approved'),
-                    completed_at = NOW()
-                WHERE id = %s
+                    description    = CONCAT(IFNULL(description,''), ' - SePay verified + Admin approved'),
+                    completed_at   = NOW()
+                WHERE id = %s AND payment_status = 'pending'
             """, (payment_id,))
             
-            # Cập nhật subscription cho user
+            if cursor.rowcount == 0:
+                conn.rollback()
+                return jsonify({'success': False, 'message': 'Thanh toán đã được xử lý bởi request khác'}), 409
+            
+            conn.commit()
+            
+            # Cộng ký tự cho user
             success = update_user_subscription(
                 payment['user_id'],
                 payment['characters_limit'],
                 payment['duration_days']
             )
             
-            conn.commit()
-            
             if success:
                 return jsonify({
                     'success': True,
-                    'message': f'🎉 Đã duyệt thanh toán thành công!\n\n👤 User: {payment["username"]}\n📋 Gói: {payment.get("package_name", "Custom")}\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n📝 Ký tự thêm: +{payment["characters_limit"]:,}\n⏰ Thời hạn thêm: +{payment["duration_days"]} ngày\n\n✅ Gói dịch vụ đã được kích hoạt cho user.',
+                    'verified': True,
+                    'message': (
+                        f'🎉 Đã duyệt thanh toán thành công! ✅ (Đã xác minh SePay)\n\n'
+                        f'👤 User: {payment["username"]}\n'
+                        f'📋 Gói: {payment.get("package_name","Custom")}\n'
+                        f'💰 Số tiền: {payment["amount_vnd"]:,}đ\n'
+                        f'📝 Ký tự thêm: +{payment["characters_limit"]:,}\n'
+                        f'⏰ Thời hạn thêm: +{payment["duration_days"]} ngày\n\n'
+                        f'✅ Gói dịch vụ đã được kích hoạt cho user.'
+                    ),
                     'approval_info': {
                         'user': payment["username"],
                         'package_name': payment.get("package_name", "Custom"),
@@ -3093,7 +3586,7 @@ def admin_approve_payment():
             else:
                 return jsonify({
                     'success': True,
-                    'message': f'⚠️ Đã duyệt thanh toán cho user {payment["username"]} nhưng có lỗi cập nhật gói dịch vụ. Vui lòng kiểm tra lại.',
+                    'message': f'⚠️ Đã duyệt cho user {payment["username"]} nhưng có lỗi cập nhật gói. Kiểm tra lại DB.',
                     'warning': True
                 })
                 
@@ -3937,7 +4430,10 @@ def worker_status():
 
 @app.route('/api/payment/status/<int:payment_id>')
 def check_payment_status(payment_id):
-    """Kiểm tra trạng thái thanh toán"""
+    """
+    Kiểm tra trạng thái thanh toán - có auto-verify qua SePay API nếu còn pending.
+    Frontend polls endpoint này mỗi 5 giây.
+    """
     if not is_logged_in():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     
@@ -3947,7 +4443,6 @@ def check_payment_status(payment_id):
     
     try:
         with conn.cursor() as cursor:
-            # Lấy thông tin payment của user hiện tại
             cursor.execute("""
                 SELECT p.*, sp.package_name, sp.characters_limit, sp.price_vnd, sp.duration_days,
                        u.username, u.full_name
@@ -3961,20 +4456,55 @@ def check_payment_status(payment_id):
             if not payment:
                 return jsonify({'success': False, 'message': 'Không tìm thấy thanh toán'}), 404
             
-            # Nếu payment đã thành công, kiểm tra user subscription
+            # Nếu PENDING → thử auto-verify qua SePay API ngay
+            if payment['payment_status'] == 'pending':
+                verification = verify_sepay_transaction(
+                    payment['transaction_id'],
+                    payment['amount_vnd']
+                )
+                
+                if verification.get('verified'):
+                    # Tìm thấy giao dịch trên SePay → auto-approve
+                    cursor.execute("""
+                        UPDATE payments
+                        SET payment_status = 'completed',
+                            bank_transaction_id = %s,
+                            description = 'Auto-verified via SePay API polling',
+                            completed_at = NOW()
+                        WHERE id = %s AND payment_status = 'pending'
+                    """, (payment['transaction_id'], payment_id))
+                    
+                    conn.commit()
+                    
+                    # Cộng ký tự cho user
+                    update_user_subscription(
+                        session['user_id'],
+                        payment['characters_limit'],
+                        payment['duration_days']
+                    )
+                    
+                    print(f"[POLL-AUTO] Payment {payment_id} auto-approved for user {session.get('username')}")
+                    
+                    # Re-fetch updated status
+                    payment['payment_status'] = 'completed'
+            
+            # Lấy thông tin ký tự nếu đã completed
             characters_info = None
             if payment['payment_status'] == 'completed':
                 cursor.execute("""
-                    SELECT characters_remaining, subscription_expires_at
+                    SELECT characters_limit, characters_used,
+                           (characters_limit - COALESCE(characters_used, 0)) AS characters_remaining,
+                           end_date
                     FROM user_subscriptions
-                    WHERE user_id = %s
+                    WHERE user_id = %s AND is_active = 1
+                    ORDER BY created_at DESC LIMIT 1
                 """, (session['user_id'],))
                 sub_info = cursor.fetchone()
                 
                 if sub_info:
                     characters_info = {
-                        'characters_remaining': sub_info['characters_remaining'],
-                        'subscription_expires_at': sub_info['subscription_expires_at'].isoformat() if sub_info['subscription_expires_at'] else None
+                        'characters_remaining': int(sub_info['characters_remaining'] or 0),
+                        'subscription_expires_at': sub_info['end_date'].isoformat() if sub_info['end_date'] else None
                     }
             
             return jsonify({
@@ -3985,7 +4515,6 @@ def check_payment_status(payment_id):
                     'status': payment['payment_status'],
                     'amount': payment['amount_vnd'],
                     'created_at': payment['created_at'].isoformat(),
-                    'updated_at': payment['updated_at'].isoformat() if payment['updated_at'] else None,
                     'package_info': {
                         'name': payment['package_name'],
                         'characters': payment['characters_limit'],
@@ -4016,10 +4545,12 @@ def get_user_characters():
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT characters_remaining, subscription_expires_at,
-                       created_at, updated_at
+                SELECT characters_limit, characters_used,
+                       (characters_limit - COALESCE(characters_used, 0)) AS characters_remaining,
+                       end_date, created_at, updated_at
                 FROM user_subscriptions
-                WHERE user_id = %s
+                WHERE user_id = %s AND is_active = 1
+                ORDER BY created_at DESC LIMIT 1
             """, (session['user_id'],))
             
             subscription = cursor.fetchone()
@@ -4027,8 +4558,8 @@ def get_user_characters():
             if subscription:
                 return jsonify({
                     'success': True,
-                    'characters_remaining': subscription['characters_remaining'],
-                    'subscription_expires_at': subscription['subscription_expires_at'].isoformat() if subscription['subscription_expires_at'] else None,
+                    'characters_remaining': int(subscription['characters_remaining'] or 0),
+                    'subscription_expires_at': subscription['end_date'].isoformat() if subscription['end_date'] else None,
                     'last_updated': subscription['updated_at'].isoformat() if subscription['updated_at'] else None
                 })
             else:
@@ -4167,4 +4698,4 @@ if __name__ == '__main__':
     
     # Chạy Flask với cấu hình tối ưu
     # use_reloader=False để tránh reload loop với PyTorch
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False, threaded=True)

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice AI - Bộ công cụ công nghệ AI toàn diện</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "outline": "#958ea0",
+                "primary-fixed-dim": "#d0bcff",
+                "on-tertiary-container": "#002f36",
+                "on-primary-fixed-variant": "#5516be",
+                "on-background": "#d4e4fa",
+                "tertiary-fixed-dim": "#2fd9f4",
+                "on-surface-variant": "#cbc3d7",
+                "on-primary": "#3c0091",
+                "primary-container": "#a078ff",
+                "on-primary-container": "#340080",
+                "on-error-container": "#ffdad6",
+                "primary-fixed": "#e9ddff",
+                "on-secondary": "#283044",
+                "on-error": "#690005",
+                "on-tertiary-fixed-variant": "#004e5a",
+                "on-surface": "#d4e4fa",
+                "on-tertiary-fixed": "#001f25",
+                "surface-tint": "#d0bcff",
+                "surface-container": "#122131",
+                "secondary-fixed": "#dae2fd",
+                "inverse-on-surface": "#233143",
+                "on-secondary-fixed-variant": "#3f465c",
+                "secondary-fixed-dim": "#bec6e0",
+                "on-secondary-container": "#adb4ce",
+                "tertiary": "#2fd9f4",
+                "surface-container-highest": "#273647",
+                "surface-container-high": "#1c2b3c",
+                "surface-bright": "#2c3a4c",
+                "error-container": "#93000a",
+                "tertiary-fixed": "#a2eeff",
+                "surface-container-low": "#0d1c2d",
+                "on-secondary-fixed": "#131b2e",
+                "inverse-primary": "#6d3bd7",
+                "surface-variant": "#273647",
+                "primary": "#d0bcff",
+                "error": "#ffb4ab",
+                "surface-container-lowest": "#010f1f",
+                "secondary-container": "#3f465c",
+                "background": "#051424",
+                "on-primary-fixed": "#23005c",
+                "inverse-surface": "#d4e4fa",
+                "on-tertiary": "#00363e",
+                "surface": "#051424",
+                "surface-dim": "#051424",
+                "outline-variant": "#494454",
+                "tertiary-container": "#009fb4",
+                "secondary": "#bec6e0"
+            },
+            borderRadius: { DEFAULT:"0.25rem", lg:"0.5rem", xl:"0.75rem", full:"9999px" },
+            fontFamily: { body: ["Manrope"] },
+            animation: {
+                "float": "float 6s ease-in-out infinite",
+                "float-delayed": "float 6s ease-in-out 3s infinite",
+                "pulse-slow": "pulse 4s cubic-bezier(0.4,0,0.6,1) infinite",
+            },
+            keyframes: {
+                float: { "0%,100%":{transform:"translateY(0px)"}, "50%":{transform:"translateY(-20px)"} }
+            }
+        }
+    }
+}
+</script>
+<style>
+body { background-color:#051424; color:#d4e4fa; font-family:'Manrope',sans-serif; overflow-x:hidden; }
+.glass-panel { background:rgba(18,33,49,0.6); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); }
+.glass-card { background:rgba(18,33,49,0.4); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(208,188,255,0.15); box-shadow:0 8px 32px 0 rgba(0,0,0,0.2); transition:all 0.3s ease; }
+.glass-card:hover { border-color:rgba(208,188,255,0.4); box-shadow:0 12px 48px 0 rgba(160,120,255,0.15); }
+.gradient-text { background:linear-gradient(to right,#d0bcff,#2fd9f4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.primary-gradient-btn { background:linear-gradient(135deg,#a078ff 0%,#6d3bd7 100%); transition:all 0.3s ease; position:relative; overflow:hidden; }
+.primary-gradient-btn::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg,#d0bcff 0%,#a078ff 100%); opacity:0; transition:opacity 0.3s ease; }
+.primary-gradient-btn:hover::before { opacity:1; }
+.primary-gradient-btn > * { position:relative; z-index:1; }
+.glow-effect { box-shadow:0 0 24px rgba(160,120,255,0.2); }
+.hero-glow { position:absolute; width:600px; height:600px; background:radial-gradient(circle,rgba(109,59,215,0.15) 0%,rgba(5,20,36,0) 70%); top:50%; left:50%; transform:translate(-50%,-50%); z-index:-1; pointer-events:none; }
+.reveal-on-scroll { opacity:0; transform:translateY(40px); transition:all 0.8s ease-out; }
+.reveal-on-scroll.is-visible { opacity:1; transform:translateY(0); }
+.delay-100 { transition-delay:100ms; }
+.delay-200 { transition-delay:200ms; }
+.delay-300 { transition-delay:300ms; }
+@keyframes drift { 0%{transform:translate(0,0) scale(1);} 33%{transform:translate(10%,15%) scale(1.1);} 66%{transform:translate(-5%,20%) scale(0.9);} 100%{transform:translate(0,0) scale(1);} }
+@keyframes pulse-grid { 0%,100%{opacity:0.15;} 50%{opacity:0.25;} }
+.bg-blob { position:fixed; border-radius:50%; filter:blur(100px); z-index:-2; opacity:0.15; pointer-events:none; }
+.blob-1 { width:600px; height:600px; background:radial-gradient(circle,#a078ff 0%,transparent 70%); top:-10%; left:-10%; animation:drift 25s ease-in-out infinite; }
+.blob-2 { width:800px; height:800px; background:radial-gradient(circle,#2fd9f4 0%,transparent 70%); bottom:-20%; right:-10%; animation:drift 35s ease-in-out infinite; }
+.grid-overlay { position:fixed; inset:0; background-image:radial-gradient(circle at 1px 1px,rgba(212,228,250,0.1) 1px,transparent 0); background-size:40px 40px; z-index:-1; pointer-events:none; animation:pulse-grid 8s ease-in-out infinite; }
+</style>
+</head>
+<body class="antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
+
+<!-- Animated BG -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden">
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<!-- Navbar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 max-w-7xl mx-auto left-0 right-0 bg-[#051424]/80 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+  <div class="flex items-center gap-2">
+    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
+    <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
+  </div>
+  <div class="hidden md:flex items-center gap-8">
+    <a class="text-sm font-medium text-violet-400 border-b-2 border-violet-500 pb-1 transition-all duration-300 hover:text-cyan-400" href="#features">Tính năng</a>
+    <a class="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#about">Về chúng tôi</a>
+    <a class="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="{{ url_for('login') }}">Tài khoản</a>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="{{ url_for('register') }}" class="hidden md:inline-flex items-center justify-center h-10 px-6 rounded-full primary-gradient-btn text-white font-semibold text-sm hover:shadow-[0_0_15px_rgba(160,120,255,0.4)]">
+      <span>{{ lp.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}</span>
+    </a>
+    <a href="{{ url_for('login') }}" class="hidden md:inline-flex items-center justify-center h-10 px-5 rounded-full border border-white/20 text-white font-semibold text-sm hover:bg-white/5 transition-all">
+      Đăng nhập
+    </a>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="flex-grow pt-[100px]">
+
+  <!-- Hero Section -->
+  <section class="relative min-h-[920px] flex items-center justify-center px-6 py-20 overflow-hidden">
+    <div class="hero-glow animate-pulse-slow"></div>
+    <div class="absolute top-20 left-10 w-64 h-64 bg-primary-container/5 rounded-full blur-3xl animate-float"></div>
+    <div class="absolute bottom-20 right-10 w-80 h-80 bg-tertiary-container/5 rounded-full blur-3xl animate-float-delayed"></div>
+
+    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center z-10">
+      <!-- Left -->
+      <div class="lg:col-span-7 flex flex-col items-start gap-8">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-semibold tracking-widest uppercase">
+          <span class="material-symbols-outlined text-sm">rocket_launch</span>
+          {{ lp.get('hero', {}).get('tag', 'Giải pháp AI Tiên Phong') }}
+        </div>
+
+        <h1 class="font-extrabold tracking-tight leading-tight text-4xl md:text-5xl xl:text-6xl text-on-surface">
+          {{ lp.get('hero', {}).get('title_line1', 'VietVoice: Chuyển đổi') }}<br class="hidden md:block"/>
+          <span class="bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400 bg-[length:200%_auto] animate-pulse-slow bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(160,120,255,0.3)]">
+            {{ lp.get('hero', {}).get('title_grad', 'văn bản thành giọng nói AI') }}
+          </span><br class="hidden md:block"/>
+          {{ lp.get('hero', {}).get('title_line2', 'tự nhiên &amp; truyền cảm') | safe }}
+        </h1>
+
+        <!-- Company Info Card -->
+        <div class="glass-card p-6 rounded-xl border-l-4 border-l-primary-container max-w-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity duration-300">
+            <span class="material-symbols-outlined text-6xl" style="font-variation-settings:'FILL' 1;">corporate_fare</span>
+          </div>
+          <h2 class="font-semibold text-on-surface mb-2 relative z-10 text-lg">{{ lp.get('company', {}).get('name', 'CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG') }}</h2>
+          <p class="text-sm text-on-surface-variant mb-4 relative z-10">{{ lp.get('company', {}).get('desc', 'CHUYÊN CUNG CẤP GIẢI PHÁP CÔNG NGHỆ KỸ THUẬT CAO VÀ XUẤT NHẬP KHẨU CÁC MẶT HÀNG CÔNG NGHỆ TIÊN TIẾN.') }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-4 border-t border-outline-variant/30 relative z-10">
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-primary mt-0.5">badge</span>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-outline">MST / NGƯỜI ĐẠI DIỆN</p>
+                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('mst', '1801526082') }}<br/>{{ lp.get('company', {}).get('representative', 'NGÔ HỒ ANH KHÔI') }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-primary mt-0.5">location_on</span>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-outline">ĐỊA CHỈ</p>
+                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('address', 'P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, P. Cái Răng, TP. Cần Thơ') }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-primary mt-0.5">call</span>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-outline">HOTLINE</p>
+                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('phone', '0916 416 409') }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-primary mt-0.5">calendar_today</span>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-outline">HOẠT ĐỘNG TỪ</p>
+                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('since', '05/04/2017') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-6 mt-4">
+          <a href="{{ url_for('register') }}" class="w-full sm:w-auto h-14 px-8 rounded-full primary-gradient-btn text-white font-semibold text-lg glow-effect flex items-center justify-center gap-2 group">
+            <span>{{ lp.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}</span>
+            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </a>
+          <div class="flex items-center gap-2 text-on-surface-variant text-sm opacity-80">
+            <span class="material-symbols-outlined text-tertiary-fixed-dim">verified</span>
+            <span>{{ lp.get('hero', {}).get('free_note', 'Không cần thẻ tín dụng - 100.000 ký tự miễn phí khi đăng ký') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Bento -->
+      <div class="mt-16 lg:mt-0 relative h-full min-h-[500px] lg:col-span-5 opacity-0" style="animation:slideUp 0.8s ease-out 0.2s forwards;animation-fill-mode:forwards;">
+        <style>@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}</style>
+        <div class="absolute inset-0 grid grid-cols-2 grid-rows-3 gap-6">
+          <!-- Audio Visualizer -->
+          <div class="col-span-1 row-span-1 glass-card rounded-2xl p-4 flex flex-col justify-between overflow-hidden relative group scale-105">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings:'FILL' 1;">audiotrack</span>
+            <div class="mt-auto">
+              <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden mb-2">
+                <div class="h-full bg-primary-container w-3/4 animate-pulse"></div>
+              </div>
+              <div class="flex items-end gap-1 h-8">
+                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-3/4 animate-pulse"></div>
+                <div class="w-1/6 bg-violet-400 rounded-t-sm h-full animate-pulse" style="animation-delay:.1s"></div>
+                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-1/2 animate-pulse" style="animation-delay:.2s"></div>
+                <div class="w-1/6 bg-violet-400 rounded-t-sm h-4/5 animate-pulse" style="animation-delay:.3s"></div>
+                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-1/4 animate-pulse" style="animation-delay:.4s"></div>
+                <div class="w-1/6 bg-violet-400 rounded-t-sm h-2/3 animate-pulse" style="animation-delay:.5s"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Neural Engine -->
+          <div class="col-span-1 row-span-2 glass-card rounded-2xl p-6 relative overflow-hidden flex flex-col items-center justify-center text-center group scale-105">
+            <div class="absolute inset-0 bg-gradient-to-b from-surface-container/50 to-surface-container-lowest/80 z-0"></div>
+            <div class="relative z-10 w-20 h-20 rounded-full border-2 border-tertiary/30 flex items-center justify-center mb-4 bg-surface-container-low/80 backdrop-blur-sm shadow-[0_0_30px_rgba(47,217,244,0.2)] group-hover:scale-110 transition-transform duration-500">
+              <span class="material-symbols-outlined text-4xl text-tertiary animate-pulse" style="font-variation-settings:'FILL' 1;">memory</span>
+            </div>
+            <h3 class="text-xl font-semibold text-on-surface relative z-10 mb-2">Neural Engine</h3>
+            <p class="text-xs text-on-surface-variant relative z-10">Xử lý giọng nói thời gian thực với độ trễ cực thấp.</p>
+          </div>
+          <!-- Voice Profiles -->
+          <div class="col-span-1 row-span-2 glass-card rounded-2xl p-5 flex flex-col group scale-105">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-semibold text-on-surface">Voice Profiles</span>
+              <span class="material-symbols-outlined text-outline text-sm">more_horiz</span>
+            </div>
+            <div class="space-y-3 mt-auto">
+              <div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-high/50 border border-white/5 hover:border-primary/30 transition-colors cursor-pointer hover:translate-x-1 duration-300">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-white text-sm">face_3</span>
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-on-surface">Minh Hằng</div>
+                  <div class="text-[10px] text-outline">Giọng Nữ - Miền Nam</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg bg-primary-container/20 border border-primary/40 cursor-pointer shadow-[0_0_10px_rgba(208,188,255,0.1)] relative overflow-hidden hover:translate-x-1 duration-300">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-white text-sm">face</span>
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-on-surface">Quốc Bảo</div>
+                  <div class="text-[10px] text-primary-fixed-dim">Giọng Nam - Miền Bắc (Active)</div>
+                </div>
+                <span class="material-symbols-outlined text-primary ml-auto text-sm animate-pulse">volume_up</span>
+              </div>
+            </div>
+          </div>
+          <!-- Stats -->
+          <div class="col-span-1 row-span-1 glass-card rounded-2xl p-4 flex items-center justify-center relative overflow-hidden group scale-105">
+            <div class="text-center relative z-10 group-hover:scale-105 transition-transform duration-300">
+              <div class="text-4xl font-black text-tertiary-fixed-dim mb-1">99.9%</div>
+              <div class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Độ chính xác</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trusted Strip -->
+  <section class="py-10 px-6 bg-surface-container-lowest/30 overflow-hidden">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-6 justify-center">
+      <span class="text-xs font-bold tracking-[0.2em] uppercase text-outline shrink-0">
+        {{ lp.get('trusted', {}).get('label', 'Được tin dùng bởi') }}
+      </span>
+      <div class="h-px w-8 bg-outline/30 hidden sm:block shrink-0"></div>
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        {% for item in lp.get('trusted', {}).get('items', ['Học sinh & sinh viên','Content Creator','Doanh nghiệp','Developer']) %}
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant"
+              style="background:rgba(208,188,255,0.07);border:1px solid rgba(208,188,255,0.15);">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span>
+          {{ item }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-24 px-6 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-bold tracking-widest uppercase mb-6">
+          <span class="material-symbols-outlined text-sm">auto_awesome</span>
+          {{ lp.get('features', {}).get('label', 'TÍNH NĂNG NỔI BẬT') }}
+        </div>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4 leading-tight">
+          {{ lp.get('features', {}).get('title', 'Hiện thực hóa giọng nói trong mơ của bạn bằng AI') }}
+        </h2>
+        <p class="text-lg text-on-surface-variant">
+          {{ lp.get('features', {}).get('subtitle', 'Bộ công cụ TTS toàn diện — từ giọng nói tự nhiên đến cảm xúc phong phú và clone giọng cá nhân') }}
+        </p>
+      </div>
+
+      {% set feat_cards = lp.get('features', {}).get('cards', [
+        {"num":"01","icon":"🎙️","title":"Giọng Nói AI Tự Nhiên","desc":"Công nghệ TTS tiên tiến tạo ra giọng nói nghe tự nhiên như người thật. Hỗ trợ tiếng Việt đa vùng miền và nhiều ngôn ngữ khác."},
+        {"num":"02","icon":"🎭","title":"Emotional TTS","desc":"AI tự động điều chỉnh cảm xúc theo nội dung — vui, buồn, hào hứng, bình thản — cho giọng đọc sống động và chân thật hơn."},
+        {"num":"03","icon":"🧬","title":"Clone Giọng Cá Nhân","desc":"Tải lên vài giây giọng mẫu, AI học và tái tạo chính xác giọng nói của bạn. Công nghệ RVC + viXTTS tiên tiến nhất hiện nay."},
+        {"num":"04","icon":"⚡","title":"Xử Lý Siêu Nhanh","desc":"Hệ thống AI xử lý nền hiệu suất cao. Nhận kết quả trong vài giây, không cần chờ đợi dù văn bản dài hàng nghìn ký tự."}
+      ]) %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for card in feat_cards %}
+        <div class="glass-card rounded-2xl p-7 flex flex-col gap-5 reveal-on-scroll group hover:-translate-y-2 transition-all duration-300" style="transition-delay:{{ loop.index0 * 100 }}ms">
+          <div class="flex items-center justify-between">
+            <span class="text-3xl">{{ card.icon }}</span>
+            <span class="text-4xl font-black text-outline/20 group-hover:text-primary/20 transition-colors">{{ card.num }}</span>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-on-surface mb-2 group-hover:text-primary-fixed-dim transition-colors">{{ card.title }}</h3>
+            <p class="text-sm text-on-surface-variant leading-relaxed">{{ card.desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps Section -->
+  <section class="py-24 px-6 relative overflow-hidden bg-surface-container-lowest/40">
+    <div class="max-w-5xl mx-auto relative z-10">
+      <div class="text-center max-w-2xl mx-auto mb-16 reveal-on-scroll">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-bold tracking-widest uppercase mb-6">
+          <span class="material-symbols-outlined text-sm">bolt</span>
+          {{ lp.get('steps', {}).get('label', 'ĐƠN GIẢN') }}
+        </div>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4">
+          {{ lp.get('steps', {}).get('title', 'Chỉ 3 bước để có giọng nói hoàn hảo') }}
+        </h2>
+        <p class="text-lg text-on-surface-variant">
+          {{ lp.get('steps', {}).get('subtitle', 'Từ văn bản đến âm thanh chuyên nghiệp — nhanh chóng, không cần kỹ năng kỹ thuật.') }}
+        </p>
+      </div>
+
+      {% set step_items = lp.get('steps', {}).get('items', [
+        {"num":"01","icon":"✍️","title":"Nhập văn bản","desc":"Gõ, dán hoặc tải lên file văn bản của bạn. Hỗ trợ TXT, PDF, DOCX."},
+        {"num":"02","icon":"🤖","title":"AI xử lý","desc":"Chọn giọng đọc và nhấn chuyển đổi. AI tạo âm thanh chất lượng cao tự động."},
+        {"num":"03","icon":"📥","title":"Tải về & dùng ngay","desc":"Download file audio chất lượng cao. Sẵn sàng sử dụng cho mọi mục đích."}
+      ]) %}
+      <div class="relative">
+        <!-- Connector line -->
+        <div class="hidden lg:block absolute top-[52px] left-[calc(16.67%+32px)] right-[calc(16.67%+32px)] h-px bg-gradient-to-r from-primary-container/30 via-tertiary/30 to-primary-container/30"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {% for step in step_items %}
+          <div class="flex flex-col items-center text-center gap-5 reveal-on-scroll" style="transition-delay:{{ loop.index0 * 150 }}ms">
+            <div class="relative w-24 h-24 rounded-2xl glass-card flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(160,120,255,0.1)] group-hover:scale-110 border border-primary/20">
+              {{ step.icon }}
+              <span class="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-primary-container text-on-primary text-xs font-black flex items-center justify-center shadow-lg">{{ loop.index }}</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-on-surface mb-2">{{ step.title }}</h3>
+              <p class="text-sm text-on-surface-variant leading-relaxed">{{ step.desc }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase Section -->
+  {% set sc = lp.get('showcase', {}) %}
+  <section class="py-24 px-6 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="glass-panel rounded-3xl p-12 md:p-16 relative overflow-hidden reveal-on-scroll"
+           style="background:linear-gradient(135deg,rgba(109,59,215,0.15) 0%,rgba(18,33,49,0.6) 50%,rgba(47,217,244,0.08) 100%);">
+        <!-- Decorative glow -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+        <div class="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-tertiary-container/10 blur-3xl pointer-events-none"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+          <!-- Left -->
+          <div class="flex flex-col gap-6">
+            <div class="text-6xl">{{ sc.get('icon', '🎤') }}</div>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface leading-tight">
+              {{ sc.get('title', 'Trải nghiệm giọng nói tự nhiên như người thật') }}
+            </h2>
+            <p class="text-lg text-on-surface-variant">
+              {{ sc.get('desc', 'Công nghệ AI tiên tiến kết hợp RVC và viXTTS mang lại chất lượng âm thanh vượt trội, phù hợp cho mọi ứng dụng từ podcast, audio book đến trợ lý ảo.') }}
+            </p>
+            <div class="flex flex-wrap gap-3">
+              {% for badge in sc.get('badges', ['✓ Giọng tiếng Việt tự nhiên','✓ Clone giọng cá nhân','✓ Cảm xúc phong phú','✓ Xử lý nhanh','✓ Chất lượng cao']) %}
+              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-primary-fixed-dim"
+                    style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.2);">
+                {{ badge }}
+              </span>
+              {% endfor %}
+            </div>
+            <div>
+              <a href="{{ url_for('register') }}" class="inline-flex items-center gap-2 h-13 px-8 rounded-full primary-gradient-btn text-white font-bold text-base glow-effect group py-3">
+                <span>{{ sc.get('btn', 'Bắt đầu miễn phí ngay') }}</span>
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Right — animated waveform card -->
+          <div class="flex items-center justify-center">
+            <div class="relative w-full max-w-sm">
+              <div class="glass-card rounded-2xl p-8 flex flex-col gap-6">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                      <span class="material-symbols-outlined text-white text-base" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
+                    </div>
+                    <div>
+                      <div class="text-sm font-bold text-on-surface">VietVoice AI</div>
+                      <div class="text-[11px] text-outline">Neural TTS Engine</div>
+                    </div>
+                  </div>
+                  <span class="flex items-center gap-1 text-[11px] text-tertiary font-semibold">
+                    <span class="w-1.5 h-1.5 bg-tertiary rounded-full animate-pulse inline-block"></span>
+                    LIVE
+                  </span>
+                </div>
+                <!-- Waveform bars -->
+                <div class="flex items-end justify-center gap-1.5 h-20">
+                  {% for h in ['30%','70%','50%','90%','40%','80%','60%','100%','45%','75%','55%','85%','35%','65%','50%'] %}
+                  <div class="flex-1 rounded-t-full animate-pulse"
+                       style="height:{{ h }};background:linear-gradient(to top,#a078ff,#2fd9f4);animation-delay:{{ loop.index0 * 80 }}ms;opacity:0.8"></div>
+                  {% endfor %}
+                </div>
+                <div class="text-center text-sm text-on-surface-variant italic">
+                  "Xin chào! Tôi là giọng nói AI tiên phong của Việt Nam..."
+                </div>
+                <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full animate-pulse" style="width:62%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="py-24 px-6 relative bg-surface-container-lowest/50 overflow-hidden">
+    <div class="max-w-7xl mx-auto relative z-10">
+      <div class="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
+        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4">{{ lp.get('about_new', {}).get('title', 'Về VietVoice AI') }}</h2>
+        <p class="text-lg text-on-surface-variant">{{ lp.get('about_new', {}).get('desc', 'Chúng tôi kiến tạo tương lai của giao tiếp số thông qua công nghệ AI Synthesis hàng đầu, mang đến giải pháp chuyển đổi văn bản thành giọng nói tự nhiên, truyền cảm và đậm chất Việt.') }}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {% set default_cards = [
+          {"icon": "visibility", "title": "Tầm Nhìn", "desc": "Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo nội dung cho hàng triệu doanh nghiệp và cá nhân."},
+          {"icon": "flag", "title": "Sứ Mệnh", "desc": "Cung cấp giải pháp tổng hợp giọng nói chất lượng phòng thu, đa dạng vùng miền, dễ dàng tích hợp và tối ưu chi phí cho thị trường Việt Nam và quốc tế."},
+          {"icon": "handshake", "title": "Cam Kết", "desc": "Liên tục nghiên cứu, ứng dụng các mô hình học sâu (Deep Learning) mới nhất để cải thiện độ tự nhiên, cảm xúc và tốc độ xử lý của hệ thống."}
+        ] %}
+        {% set cards = lp.get('about_new', {}).get('cards', default_cards) %}
+        {% for card in cards %}
+        <div class="glass-card rounded-2xl p-8 hover:-translate-y-2 transition-transform duration-300 reveal-on-scroll group hover:shadow-[0_0_30px_rgba(160,120,255,0.15)]" style="transition-delay:{{ loop.index0 * 100 }}ms">
+          <div class="w-14 h-14 rounded-xl bg-surface-container-high border border-white/10 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <span class="material-symbols-outlined text-3xl text-primary" style="font-variation-settings:'FILL' 1;">{{ card.icon }}</span>
+          </div>
+          <h3 class="text-xl font-semibold text-on-surface mb-3 group-hover:text-primary-fixed-dim transition-colors">{{ card.title }}</h3>
+          <p class="text-base text-on-surface-variant">{{ card.desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  {% set cta = lp.get('final_cta', {}) %}
+  <section class="py-28 px-6 relative overflow-hidden">
+    <div class="max-w-4xl mx-auto text-center relative z-10 reveal-on-scroll">
+      <div class="absolute inset-0 bg-gradient-to-r from-primary-container/5 via-tertiary-container/10 to-primary-container/5 rounded-3xl blur-3xl -z-10 pointer-events-none"></div>
+      <h2 class="text-4xl md:text-5xl font-black text-on-surface mb-5 leading-tight">
+        {{ cta.get('title', 'Bắt đầu tạo giọng nói ngay hôm nay') }}
+      </h2>
+      <p class="text-lg text-on-surface-variant mb-10">
+        {{ cta.get('subtitle', 'Không cần thẻ tín dụng · Miễn phí ngay khi đăng ký · Nâng cấp bất cứ lúc nào') }}
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-5">
+        <a href="{{ url_for('register') }}"
+           class="h-14 px-10 rounded-full primary-gradient-btn text-white font-bold text-lg glow-effect flex items-center gap-2 group">
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">rocket_launch</span>
+          <span>{{ cta.get('btn_primary', 'Đăng ký miễn phí') }}</span>
+        </a>
+        <a href="{{ url_for('login') }}"
+           class="h-14 px-8 rounded-full border border-white/20 text-white font-semibold text-base hover:bg-white/5 transition-all flex items-center gap-2">
+          {{ cta.get('btn_secondary', 'Đã có tài khoản →') }}
+        </a>
+      </div>
+      <p class="mt-6 text-sm text-outline">{{ cta.get('note', 'Bắt đầu với 100.000 ký tự miễn phí khi đăng ký') }}</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<footer class="w-full bg-[#030d1a] mt-auto relative z-10">
+  <!-- Main footer grid -->
+  <div class="max-w-7xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-10">
+
+    <!-- Brand column -->
+    <div class="md:col-span-4 flex flex-col gap-5">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
+        <span class="text-xl font-extrabold text-white tracking-tight">VietVoice</span>
+      </div>
+      <p class="text-sm text-slate-400 leading-relaxed max-w-xs">
+        {{ lp.get('footer', {}).get('brand_desc', 'Nền tảng chuyển văn bản thành giọng nói AI tiên phong — chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.') }}
+      </p>
+      <div>
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
+              style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.2);color:#d0bcff">
+          ✦ BETA
+        </span>
+      </div>
+    </div>
+
+    <!-- Nav columns -->
+    <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
+
+      <!-- Tính năng -->
+      <div>
+        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
+          {{ lp.get('footer', {}).get('col1_title', 'TÍNH NĂNG') }}
+        </h4>
+        <ul class="space-y-3">
+          {% for link in lp.get('footer', {}).get('col1_links', [
+            {'label': 'Chuyển văn bản → Giọng nói', 'href': '#'},
+            {'label': 'Clone giọng cá nhân',         'href': '#'},
+            {'label': 'Emotional TTS',               'href': '#'},
+            {'label': 'Thư viện âm thanh',           'href': '#'},
+            {'label': 'Bảng giá & Nâng cấp',         'href': '#'}
+          ]) %}
+          <li>
+            <a href="{{ link.href }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">
+              {{ link.label }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Hỗ trợ -->
+      <div>
+        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
+          {{ lp.get('footer', {}).get('col2_title', 'HỖ TRỢ') }}
+        </h4>
+        <ul class="space-y-3">
+          {% for link in lp.get('footer', {}).get('col2_links', [
+            {'label': 'Liên hệ hỗ trợ',        'href': '/contact'},
+            {'label': 'Câu hỏi thường gặp',     'href': '#'},
+            {'label': 'Báo lỗi',                'href': '#'},
+            {'label': 'Yêu cầu tính năng',      'href': '#'}
+          ]) %}
+          <li>
+            <a href="{{ link.href }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">
+              {{ link.label }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Tài khoản -->
+      <div>
+        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
+          {{ lp.get('footer', {}).get('col3_title', 'TÀI KHOẢN') }}
+        </h4>
+        <ul class="space-y-3">
+          <li><a href="{{ url_for('login') }}"    class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Đăng nhập</a></li>
+          <li><a href="{{ url_for('register') }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Đăng ký miễn phí</a></li>
+          <li><a href="/pricing" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Nâng cấp tài khoản</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div>
+    <div class="max-w-7xl mx-auto px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <p class="text-xs text-slate-500">
+        {{ lp.get('footer', {}).get('copyright', '© 2024 VietVoice AI · Công ty TNHH Một Thành Viên Công Nghệ Kỹ Thuật Tiên Phong · MST: 1801526082') }}
+      </p>
+      <div class="flex gap-5">
+        <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Chính sách bảo mật</a>
+        <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Điều khoản sử dụng</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('is-visible');
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+});
+</script>
+</body>
+</html>

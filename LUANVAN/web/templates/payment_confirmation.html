@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice AI - Xác nhận thanh toán</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: {
+                "surface-container":          "#122131",
+                "surface-container-low":      "#0d1c2d",
+                "surface-container-lowest":   "#010f1f",
+                "surface-container-high":     "#1c2b3c",
+                "surface-container-highest":  "#273647",
+                "surface-variant":            "#273647",
+                "surface-dim":                "#051424",
+                "surface":                    "#051424",
+                "background":                 "#051424",
+                "on-surface":                 "#d4e4fa",
+                "on-surface-variant":         "#cbc3d7",
+                "on-background":              "#d4e4fa",
+                "primary":                    "#d0bcff",
+                "primary-fixed":              "#e9ddff",
+                "primary-fixed-dim":          "#d0bcff",
+                "primary-container":          "#a078ff",
+                "on-primary":                 "#3c0091",
+                "on-primary-container":       "#340080",
+                "inverse-primary":            "#6d3bd7",
+                "secondary":                  "#bec6e0",
+                "secondary-container":        "#3f465c",
+                "tertiary":                   "#2fd9f4",
+                "tertiary-container":         "#009fb4",
+                "tertiary-fixed-dim":         "#2fd9f4",
+                "on-tertiary":                "#00363e",
+                "on-tertiary-container":      "#002f36",
+                "error":                      "#ffb4ab",
+                "error-container":            "#93000a",
+                "outline":                    "#958ea0",
+                "outline-variant":            "#494454",
+                "inverse-surface":            "#d4e4fa",
+                "surface-tint":               "#d0bcff",
+            }
+        }
+    }
+}
+</script>
+<style>
+body { font-family: 'Manrope', sans-serif; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.copy-btn { cursor: pointer; }
+.copy-btn:hover .copy-icon { color: #d0bcff; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-ring { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.08);opacity:1} }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid rgba(208,188,255,0.2); border-top-color: #d0bcff; border-radius: 50%; animation: spin 0.9s linear infinite; flex-shrink: 0; }
+.pill-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+</style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+
+<!-- Background decorations -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+  <div style="position:absolute;width:600px;height:600px;border-radius:50%;filter:blur(120px);opacity:.12;background:radial-gradient(circle,#a078ff 0%,transparent 70%);top:-10%;left:-10%"></div>
+  <div style="position:absolute;width:500px;height:500px;border-radius:50%;filter:blur(120px);opacity:.10;background:radial-gradient(circle,#2fd9f4 0%,transparent 70%);bottom:-10%;right:-10%"></div>
+</div>
+
+<!-- Header -->
+<div class="w-full max-w-4xl mb-6 flex items-center gap-3">
+  <a href="/pricing" class="flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+    <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 0">arrow_back</span>
+    Quay lại
+  </a>
+  <div class="flex-1 text-center">
+    <a href="/" class="inline-flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary text-2xl">graphic_eq</span>
+      <span class="text-lg font-extrabold text-white tracking-tight">VietVoice AI</span>
+    </a>
+  </div>
+  <div class="w-20"></div><!-- spacer -->
+</div>
+
+<!-- Main Card -->
+<main class="w-full max-w-4xl bg-surface-container/60 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-[0_8px_48px_0_rgba(139,92,246,0.18)] flex flex-col lg:flex-row overflow-hidden">
+
+  <!-- ══ LEFT: Plan Summary ══ -->
+  <section class="p-8 lg:p-10 lg:w-[42%] flex flex-col border-b lg:border-b-0 lg:border-r border-outline-variant/20">
+
+    <header class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-primary-container/20 border border-primary/30 flex items-center justify-center">
+        <span class="material-symbols-outlined text-primary text-xl">account_balance_wallet</span>
+      </div>
+      <h1 class="text-xl font-bold text-on-surface">Xác nhận thanh toán</h1>
+    </header>
+
+    <!-- Package card -->
+    <div class="bg-surface-variant/40 rounded-xl p-6 border border-outline-variant/20 flex-1">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-bold tracking-widest uppercase text-primary">Gói đăng ký</span>
+        <span class="pill-badge" style="background:rgba(47,217,244,0.15);color:#2fd9f4;border:1px solid rgba(47,217,244,0.25)">
+          {{ payment.duration_days }} Ngày
+        </span>
+      </div>
+
+      <div class="text-2xl font-bold text-on-surface mt-3 mb-1" id="pkgName">{{ payment.package_name }}</div>
+      <div class="text-lg text-secondary mb-6">
+        {{ "{:,}".format(payment.amount_vnd).replace(",", ".") }}đ
+        <span class="text-sm text-outline font-normal">/ {{ payment.duration_days }} ngày</span>
+      </div>
+
+      <hr class="border-outline-variant/25 mb-5"/>
+
+      <h3 class="text-xs font-bold uppercase tracking-wider text-on-surface mb-4">Chi tiết quyền lợi:</h3>
+      <ul class="space-y-3 text-sm text-on-surface-variant">
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5">check_circle</span>
+          <span>{{ "{:,.0f}".format(payment.characters_limit).replace(",", ".") }} ký tự</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5">check_circle</span>
+          <span>Tất cả giọng đọc tiếng Việt</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5">check_circle</span>
+          <span>Emotional TTS (cảm xúc)</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5">check_circle</span>
+          <span>Thư viện âm thanh</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="material-symbols-outlined text-tertiary text-[18px] mt-0.5">check_circle</span>
+          <span>Clone giọng cá nhân</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="hidden lg:block mt-6 text-center text-xs text-outline space-y-1">
+      <p>Thanh toán an toàn &amp; bảo mật.</p>
+      <p>Hỗ trợ: <a href="/contact" class="hover:text-primary transition-colors">support@vietvoice.ai</a></p>
+    </div>
+  </section>
+
+  <!-- ══ RIGHT: Payment ══ -->
+  <section class="p-8 lg:p-10 flex-1 flex flex-col items-center justify-start bg-surface-container-low/40">
+
+    <h2 class="text-xl font-bold text-on-surface text-center mb-6">Thanh toán qua QR Code</h2>
+
+    <!-- QR Code -->
+    <div class="relative group mb-7">
+      <div class="bg-white p-3 rounded-xl shadow-[0_0_24px_rgba(47,217,244,0.18)] border border-tertiary/25"
+           id="qrWrapper">
+        <img id="qrImage"
+             src="{{ payment.qr_code }}"
+             alt="QR Code thanh toán"
+             class="w-48 h-48 object-contain rounded-lg"
+             onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ payment.transaction_id }}'"/>
+      </div>
+      <!-- Hover overlay -->
+      <div class="absolute inset-0 bg-primary/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+        <span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings:'FILL' 0">qr_code_scanner</span>
+      </div>
+    </div>
+
+    <!-- Bank details -->
+    <div class="w-full bg-surface-container rounded-xl border border-outline-variant/20 divide-y divide-outline-variant/15 mb-6 text-sm">
+
+      <div class="flex justify-between items-center px-5 py-3">
+        <span class="text-outline">Ngân hàng:</span>
+        <span class="font-semibold text-on-surface">{{ payment.bank_name }}</span>
+      </div>
+
+      <div class="flex flex-col px-5 py-3">
+        <span class="text-outline mb-1">Tên tài khoản:</span>
+        <span class="font-semibold text-on-surface text-xs uppercase">{{ payment.account_name }}</span>
+      </div>
+
+      <div class="flex justify-between items-center px-5 py-3">
+        <span class="text-outline">Số tài khoản:</span>
+        <div class="flex items-center gap-2 copy-btn" onclick="copyText('{{ payment.account_number }}', this)" title="Nhấn để sao chép">
+          <span class="font-bold text-tertiary">{{ payment.account_number }}</span>
+          <span class="material-symbols-outlined copy-icon text-outline text-[15px]" style="font-variation-settings:'FILL' 0">content_copy</span>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center px-5 py-3">
+        <span class="text-outline">Số tiền:</span>
+        <span class="font-bold text-primary text-base">{{ "{:,}".format(payment.amount_vnd).replace(",", ".") }}đ</span>
+      </div>
+
+      <div class="flex flex-col px-5 py-4">
+        <span class="text-outline mb-2">Nội dung chuyển khoản <span class="text-error font-semibold">(Bắt buộc)</span>:</span>
+        <div class="flex items-center justify-between bg-surface-variant rounded-lg px-4 py-3 gap-3"
+             onclick="copyText('{{ payment.transaction_id }}', this)" title="Nhấn để sao chép">
+          <code class="font-bold text-primary tracking-wider text-base">{{ payment.transaction_id }}</code>
+          <span class="material-symbols-outlined copy-icon text-outline text-[16px] shrink-0 cursor-pointer" style="font-variation-settings:'FILL' 0">content_copy</span>
+        </div>
+        <p class="text-[11px] text-outline mt-1.5">Nhấn vào nội dung để sao chép nhanh.</p>
+      </div>
+    </div>
+
+    <!-- Auto-verify status -->
+    <div id="verifySection" class="w-full rounded-xl p-4 mb-5"
+         style="background:rgba(208,188,255,0.06);border:1px solid rgba(208,188,255,0.15)">
+
+      <!-- Waiting state -->
+      <div id="verifyWaiting">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="spinner"></div>
+          <p class="text-sm font-semibold text-on-surface">Đang chờ xác nhận thanh toán...</p>
+        </div>
+        <p class="text-xs text-on-surface-variant ml-8 mb-3">
+          Hệ thống tự động kiểm tra mỗi 5 giây. Sau khi chuyển khoản thành công, gói sẽ được kích hoạt ngay lập tức.
+        </p>
+        <button id="verifyBtn" onclick="manualCheck()"
+          class="ml-8 flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+          style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.25);color:#d0bcff">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">refresh</span>
+          Kiểm tra ngay
+        </button>
+      </div>
+
+      <!-- Success state (hidden) -->
+      <div id="verifySuccess" class="hidden flex items-center gap-3">
+        <span class="text-3xl" style="animation:pulse-ring 1s ease-in-out 2">🎉</span>
+        <div>
+          <p class="text-sm font-bold" style="color:#6ee7b7">Thanh toán thành công!</p>
+          <p id="verifySuccessMsg" class="text-xs text-on-surface-variant mt-0.5"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="w-full flex flex-col sm:flex-row gap-3">
+      <a href="/pricing"
+         class="flex-1 py-3 px-6 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+         style="background:transparent;border:1px solid rgba(148,142,160,0.4);color:#cbc3d7"
+         onmouseover="this.style.background='rgba(39,54,71,0.5)'" onmouseout="this.style.background='transparent'">
+        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 0">arrow_back</span>
+        Quay lại
+      </a>
+      <button id="goWorkspace" onclick="window.location.href='/'" style="display:none"
+         class="flex-1 py-3 px-6 rounded-xl text-sm font-bold flex items-center justify-center gap-2 text-white"
+         style="background:linear-gradient(135deg,#a078ff,#009fb4)">
+        <span class="material-symbols-outlined text-base">workspace_premium</span>
+        Bắt đầu sử dụng
+      </button>
+    </div>
+
+    <p class="lg:hidden mt-5 text-center text-xs text-outline">
+      Hỗ trợ: <a href="/contact" class="hover:text-primary transition-colors">support@vietvoice.ai</a>
+    </p>
+  </section>
+
+</main>
+
+<script>
+const PAYMENT_ID    = {{ payment.payment_id }};
+const POLL_INTERVAL = 5000;
+let   pollTimer     = null;
+let   isPaid        = false;
+
+// Xóa pending payment cũ khỏi localStorage để PaymentTracker không restore lại
+localStorage.removeItem('vv_pending_payment');
+
+// ── Copy to clipboard ──
+function copyText(text, el) {
+    navigator.clipboard.writeText(text).then(() => {
+        const icon = el.querySelector('.copy-icon') || el;
+        const orig = icon.textContent;
+        icon.textContent = 'check';
+        icon.style.color = '#6ee7b7';
+        setTimeout(() => { icon.textContent = orig; icon.style.color = ''; }, 1800);
+    });
+}
+
+// ── Poll payment status ──
+async function poll() {
+    if (isPaid) return;
+    try {
+        const res  = await fetch(`/api/payment/status/${PAYMENT_ID}`);
+        const data = await res.json();
+        // API trả về data.payment.status (không phải data.status)
+        const status = data?.payment?.status || data?.status;
+        if (status === 'completed') {
+            // Gộp thông tin để onPaymentSuccess dùng
+            const enriched = {
+                ...data,
+                status: 'completed',
+                package_info: data?.payment?.package_info,
+                characters_remaining: data?.user_characters?.characters_remaining
+            };
+            onPaymentSuccess(enriched);
+        }
+    } catch(e) {
+        console.warn('[Poll error]', e);
+    }
+}
+
+function startPolling() {
+    poll(); // immediate first check
+    pollTimer = setInterval(poll, POLL_INTERVAL);
+}
+
+function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// ── Manual check button ──
+async function manualCheck() {
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner" style="width:13px;height:13px;border-width:2px;margin-right:6px;vertical-align:middle;display:inline-block"></span>Đang kiểm tra...`;
+    await poll();
+    setTimeout(() => {
+        if (!isPaid && btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 0">refresh</span> Kiểm tra ngay`;
+        }
+    }, 2500);
+}
+
+// ── On success ──
+function onPaymentSuccess(data) {
+    if (isPaid) return;
+    isPaid = true;
+    stopPolling();
+    // Xóa pending payment khỏi localStorage để không hiện lại thông báo
+    localStorage.removeItem('vv_pending_payment');
+
+    document.getElementById('verifyWaiting').style.display  = 'none';
+    const succ = document.getElementById('verifySuccess');
+    succ.classList.remove('hidden');
+    succ.style.display = 'flex';
+
+    let msg = '';
+    if (data.package_info) {
+        const c = data.package_info.characters_limit;
+        msg += `+${Number(c).toLocaleString('vi-VN')} ký tự đã được cộng vào tài khoản.`;
+    }
+    if (data.characters_remaining != null) {
+        msg += ` Còn lại: ${Number(data.characters_remaining).toLocaleString('vi-VN')} ký tự.`;
+    }
+    document.getElementById('verifySuccessMsg').textContent = msg || 'Gói dịch vụ đã được kích hoạt!';
+
+    // Show "Go to workspace" button
+    const goBtn = document.getElementById('goWorkspace');
+    if (goBtn) { goBtn.style.display = 'flex'; goBtn.removeAttribute('style'); goBtn.style.display = 'flex'; }
+
+    // Add glow to verify section
+    document.getElementById('verifySection').style.border = '1px solid rgba(110,231,183,0.35)';
+    document.getElementById('verifySection').style.background = 'rgba(110,231,183,0.06)';
+}
+
+// ── Start on load ──
+document.addEventListener('DOMContentLoaded', startPolling);
+
+// ── Listen for payment.js PaymentTracker events ──
+window.addEventListener('vv:paymentSuccess', (e) => {
+    onPaymentSuccess(e.detail || {});
+});
+</script>
+
+<!-- PaymentTracker không dùng ở đây — trang đã có cơ chế poll riêng -->
+</body>
+</html>

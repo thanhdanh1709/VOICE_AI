@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTimeBasedStatistics();
     loadTopRankings();
     loadUsers();
+    loadPayments();
     
     // Refresh button
     const refreshBtn = document.getElementById('refreshUsersBtn');
@@ -21,6 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
             loadTimeBasedStatistics();
             loadTopRankings();
         });
+    }
+    
+    // Refresh payments button
+    const refreshPaymentsBtn = document.getElementById('refreshPaymentsBtn');
+    if (refreshPaymentsBtn) {
+        refreshPaymentsBtn.addEventListener('click', loadPayments);
+    }
+    
+    // Auto-approve button
+    const autoApproveBtn = document.getElementById('autoApproveBtn');
+    if (autoApproveBtn) {
+        autoApproveBtn.addEventListener('click', autoApprovePayments);
     }
     
     // Generate samples button
@@ -146,41 +159,78 @@ async function loadTopRankings() {
     }
 }
 
+// ── Bảng màu theo design system của VietVoice (dark theme) ──
+const VV_COLORS = {
+    primary:    '#d0bcff',  // primary
+    primaryDim: '#a078ff',  // primary-container
+    tertiary:   '#2fd9f4',  // cyan
+    violet:     '#9b72ff',
+    teal:       '#00d4c8',
+    rose:       '#f472b6',
+    amber:      '#fbbf24',
+    sky:        '#38bdf8',
+    emerald:    '#34d399',
+    fuchsia:    '#e879f9',
+    coral:      '#fb7185',
+    lime:       '#a3e635',
+    indigo:     '#818cf8',
+    orange:     '#fb923c',
+    mint:       '#6ee7b7',
+};
+
+// Palette cho doughnut — đủ tương phản trên nền tối
+const DONUT_COLORS = [
+    '#a078ff',  // violet (primary-container)
+    '#2fd9f4',  // cyan (tertiary)
+    '#34d399',  // emerald
+    '#f472b6',  // rose
+    '#fbbf24',  // amber
+    '#e879f9',  // fuchsia
+    '#38bdf8',  // sky
+    '#fb7185',  // coral
+    '#818cf8',  // indigo
+    '#a3e635',  // lime
+    '#fb923c',  // orange
+    '#6ee7b7',  // mint
+    '#9b72ff',  // soft violet
+    '#00d4c8',  // teal
+    '#d0bcff',  // primary light
+];
+
+const DONUT_BORDERS = '#0d1c2d'; // surface-container-low — viền tách slice
+
 function renderTrendChart(chartData) {
     const ctx = document.getElementById('trendChart');
     if (!ctx) return;
-    
-    // Destroy existing chart if exists
-    if (trendChart) {
-        trendChart.destroy();
-    }
-    
-    // Create gradient
-    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
-    gradient.addColorStop(0.5, 'rgba(102, 126, 234, 0.15)');
-    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
-    
+
+    if (trendChart) trendChart.destroy();
+
+    const canvas = ctx.getContext('2d');
+    const gradient = canvas.createLinearGradient(0, 0, 0, 320);
+    gradient.addColorStop(0,   'rgba(160, 120, 255, 0.35)');
+    gradient.addColorStop(0.5, 'rgba(160, 120, 255, 0.12)');
+    gradient.addColorStop(1,   'rgba(160, 120, 255, 0.02)');
+
     trendChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: chartData.map(d => d.label),
             datasets: [{
-                label: '📊 Số chuyển đổi',
+                label: 'Số chuyển đổi',
                 data: chartData.map(d => d.conversions),
-                borderColor: '#667eea',
+                borderColor: '#d0bcff',
                 backgroundColor: gradient,
-                borderWidth: 3,
-                tension: 0.4,
+                borderWidth: 2.5,
+                tension: 0.45,
                 fill: true,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#667eea',
-                pointBorderWidth: 3,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointHoverBackgroundColor: '#667eea',
-                pointHoverBorderColor: '#fff',
-                pointHoverBorderWidth: 3
+                pointBackgroundColor: '#0d1c2d',
+                pointBorderColor: '#d0bcff',
+                pointBorderWidth: 2.5,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#d0bcff',
+                pointHoverBorderColor: '#0d1c2d',
+                pointHoverBorderWidth: 2
             }]
         },
         options: {
@@ -191,27 +241,24 @@ function renderTrendChart(chartData) {
                     display: true,
                     position: 'top',
                     labels: {
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        },
-                        color: '#4a5568',
+                        font: { size: 13, weight: '600', family: 'Manrope' },
+                        color: '#cbc3d7',
                         usePointStyle: true,
-                        padding: 15
+                        pointStyle: 'circle',
+                        padding: 16
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: '#667eea',
-                    borderWidth: 2,
+                    backgroundColor: 'rgba(18,33,49,0.95)',
+                    titleColor: '#d0bcff',
+                    bodyColor: '#cbc3d7',
+                    borderColor: 'rgba(208,188,255,0.25)',
+                    borderWidth: 1,
                     padding: 12,
+                    cornerRadius: 10,
                     displayColors: false,
                     callbacks: {
-                        label: function(context) {
-                            return `Chuyển đổi: ${context.parsed.y}`;
-                        }
+                        label: (ctx) => `Chuyển đổi: ${ctx.parsed.y}`
                     }
                 }
             },
@@ -220,28 +267,20 @@ function renderTrendChart(chartData) {
                     beginAtZero: true,
                     ticks: {
                         stepSize: 1,
-                        font: {
-                            size: 12,
-                            weight: '600'
-                        },
-                        color: '#718096'
+                        font: { size: 12, family: 'Manrope' },
+                        color: '#958ea0'
                     },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
+                        color: 'rgba(255,255,255,0.05)',
                         drawBorder: false
                     }
                 },
                 x: {
                     ticks: {
-                        font: {
-                            size: 12,
-                            weight: '600'
-                        },
-                        color: '#718096'
+                        font: { size: 12, family: 'Manrope' },
+                        color: '#958ea0'
                     },
-                    grid: {
-                        display: false
-                    }
+                    grid: { display: false }
                 }
             }
         }
@@ -251,49 +290,25 @@ function renderTrendChart(chartData) {
 function renderVoiceDistributionChart(voiceData) {
     const ctx = document.getElementById('voiceDistributionChart');
     if (!ctx) return;
-    
-    // Destroy existing chart if exists
-    if (voiceDistributionChart) {
-        voiceDistributionChart.destroy();
-    }
-    
-    // Beautiful diverse colors
-    const colors = [
-        '#667eea', // Purple
-        '#4facfe', // Blue
-        '#43e97b', // Green
-        '#fa709a', // Pink
-        '#fee140', // Yellow
-        '#f093fb', // Light Pink
-        '#00f2fe', // Cyan
-        '#38f9d7', // Teal
-        '#764ba2', // Dark Purple
-        '#ff6a88', // Coral
-        '#ffd89b', // Peach
-        '#84fab0', // Mint
-        '#ff99ac', // Rose
-        '#7f7fd5', // Indigo
-        '#30cfd0'  // Turquoise
-    ];
-    
-    const hoverColors = [
-        '#5568d3', '#3f8fe0', '#2fd063', '#e55f88', '#efd030',
-        '#df79eb', '#00d8e4', '#28e9c7', '#6a3f8f', '#e55876',
-        '#edc88b', '#74eaa0', '#e88998', '#6f6fc5', '#20bfc0'
-    ];
-    
+
+    if (voiceDistributionChart) voiceDistributionChart.destroy();
+
+    const sliceColors  = DONUT_COLORS.slice(0, voiceData.length);
+    // Hover: tăng độ sáng nhẹ bằng cách dùng opacity cao hơn
+    const hoverColors  = sliceColors.map(c => c + 'dd');
+
     voiceDistributionChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: voiceData.map(d => d.voice_name),
             datasets: [{
                 data: voiceData.map(d => d.count),
-                backgroundColor: colors.slice(0, voiceData.length),
-                hoverBackgroundColor: hoverColors.slice(0, voiceData.length),
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverBorderWidth: 4,
-                hoverBorderColor: '#fff'
+                backgroundColor:      sliceColors,
+                hoverBackgroundColor: hoverColors,
+                borderWidth: 2,
+                borderColor: DONUT_BORDERS,
+                hoverBorderWidth: 3,
+                hoverBorderColor: DONUT_BORDERS
             }]
         },
         options: {
@@ -304,40 +319,40 @@ function renderVoiceDistributionChart(voiceData) {
                     display: true,
                     position: 'right',
                     labels: {
-                        font: {
-                            size: 13,
-                            weight: '600'
-                        },
-                        color: '#4a5568',
-                        padding: 12,
+                        font: { size: 12, weight: '600', family: 'Manrope' },
+                        color: '#cbc3d7',
+                        padding: 14,
                         usePointStyle: true,
-                        pointStyle: 'circle'
+                        pointStyle: 'circle',
+                        boxWidth: 10
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderWidth: 2,
+                    backgroundColor: 'rgba(18,33,49,0.95)',
+                    titleColor: '#d0bcff',
+                    bodyColor: '#cbc3d7',
+                    borderColor: 'rgba(208,188,255,0.25)',
+                    borderWidth: 1,
                     padding: 12,
+                    cornerRadius: 10,
                     displayColors: true,
                     callbacks: {
                         label: function(context) {
-                            const label = context.label || '';
                             const value = context.parsed || 0;
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return `${label}: ${value} lần (${percentage}%)`;
+                            const pct   = ((value / total) * 100).toFixed(1);
+                            return `  ${context.label}: ${value} lần (${pct}%)`;
                         }
                     }
                 }
             },
-            cutout: '60%',
-            radius: '90%',
+            cutout: '62%',
+            radius: '88%',
             animation: {
                 animateRotate: true,
-                animateScale: true,
-                duration: 1000
+                animateScale: false,
+                duration: 800,
+                easing: 'easeOutQuart'
             }
         }
     });
@@ -529,6 +544,109 @@ async function deleteUser(userId, username) {
         }
     } catch (error) {
         console.error('Error deleting user:', error);
+        alert(`Lỗi: ${error.message}`);
+    }
+}
+
+async function loadPayments() {
+    const tbody = document.getElementById('paymentsTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Đang tải...</td></tr>';
+    
+    try {
+        const response = await fetch('/api/admin/payments');
+        const data = await response.json();
+        
+        if (data.success) {
+            const countEl = document.getElementById('paymentsCount');
+            if (countEl) countEl.textContent = `Tổng: ${data.total} giao dịch`;
+            
+            if (data.payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Chưa có giao dịch nào</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.payments.map(p => {
+                const statusBadge = {
+                    'pending': '<span style="color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">⏳ Chờ duyệt</span>',
+                    'completed': '<span style="color:#10b981;background:rgba(16,185,129,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">✅ Hoàn thành</span>',
+                    'failed': '<span style="color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">❌ Thất bại</span>',
+                    'cancelled': '<span style="color:#6b7280;background:rgba(107,114,128,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">🚫 Hủy</span>'
+                }[p.payment_status] || p.payment_status;
+                
+                const approveBtn = p.payment_status === 'pending' 
+                    ? `<button class="btn btn-sm" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:4px 12px;font-size:0.8rem;cursor:pointer;border-radius:6px;" onclick="approvePayment(${p.id})">✓ Duyệt</button>`
+                    : '';
+                
+                return `
+                    <tr>
+                        <td>#${p.id}</td>
+                        <td>${p.username || '-'}</td>
+                        <td>${p.package_name || '-'}</td>
+                        <td style="font-weight:600;color:#10b981;">${formatNumber(p.amount_vnd)}₫</td>
+                        <td>${p.payment_method || '-'}</td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size:0.8rem;color:var(--text-tertiary);">${p.transaction_id ? p.transaction_id.substring(0,16)+'...' : '-'}</td>
+                        <td style="font-size:0.8rem;">${p.created_at || '-'}</td>
+                        <td>${approveBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = `<tr><td colspan="9" class="error-text">Lỗi: ${data.message}</td></tr>`;
+        }
+    } catch (error) {
+        console.error('Error loading payments:', error);
+        tbody.innerHTML = `<tr><td colspan="9" class="error-text">Lỗi kết nối</td></tr>`;
+    }
+}
+
+async function approvePayment(paymentId) {
+    if (!confirm(`Duyệt payment #${paymentId}?\n\nHệ thống sẽ kiểm tra SePay để xác minh giao dịch trước khi duyệt.`)) return;
+
+    try {
+        const response = await fetch('/api/admin/payment/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_id: paymentId })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            alert(`✅ Duyệt thành công!\n${data.message || ''}`);
+            loadPayments();
+        } else if (data.failed) {
+            // SePay không verify được → payment đã bị mark FAILED
+            alert(`${data.message}`);
+            loadPayments();  // Reload để hiển thị trạng thái FAILED
+        } else {
+            alert(`❌ Lỗi: ${data.message}`);
+        }
+    } catch (error) {
+        alert(`Lỗi kết nối: ${error.message}`);
+    }
+}
+
+async function autoApprovePayments() {
+    if (!confirm('Tự động duyệt tất cả các payment đã chờ ≥ 5 phút?')) return;
+    
+    try {
+        const response = await fetch('/api/admin/auto-approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ minutes_threshold: 5 })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`✅ Hoàn thành!\n${data.message || ''}\nĐã duyệt: ${data.approved_count || 0} giao dịch`);
+            loadPayments();
+            loadAdminStatistics();
+        } else {
+            alert(`Lỗi: ${data.message}`);
+        }
+    } catch (error) {
         alert(`Lỗi: ${error.message}`);
     }
 }

@@ -1,24 +1,75 @@
 {% extends "base.html" %}
 
-{% block title %}Đăng nhập - TTS System{% endblock %}
+{% block title %}Đăng nhập - VietVoice{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-container { display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 200px); padding: 2rem; }
+.auth-box { background: var(--bg-white); padding: 2.5rem; border-radius: 1.25rem; box-shadow: var(--shadow-xl); width: 100%; max-width: 440px; animation: scaleIn 0.4s ease; border: 1px solid rgba(255,255,255,0.10); }
+.auth-logo { text-align: center; margin-bottom: 1.5rem; font-size: 3rem; }
+.auth-box h2 { text-align: center; margin-bottom: 0.5rem; background: linear-gradient(135deg,#a78bfa,#60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 1.75rem; font-weight: 700; }
+.auth-subtitle { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.75rem; }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
+.form-group input { width: 100%; padding: 0.75rem 1rem; border: 1.5px solid rgba(255,255,255,0.12); border-radius: 0.75rem; background: rgba(255,255,255,0.05); color: inherit; font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+.form-group input:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+.btn-auth { width: 100%; padding: 0.8rem; background: linear-gradient(135deg,#7c3aed,#3b82f6); color: white; border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+.btn-auth:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.45); }
+.btn-google { width: 100%; padding: 0.78rem; background: rgba(255,255,255,0.07); color: #e2e8f0; border: 1.5px solid rgba(255,255,255,0.13); border-radius: 0.75rem; font-size: 0.97rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+.btn-google:hover { background: rgba(255,255,255,0.12); box-shadow: 0 2px 14px rgba(0,0,0,0.3); transform: translateY(-1px); color: #fff; }
+.btn-google svg { flex-shrink: 0; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 1.2rem 0; color: var(--text-secondary); font-size: 0.82rem; }
+.auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background: rgba(255,255,255,0.1); }
+.auth-link { text-align: center; margin-top: 1.25rem; color: var(--text-secondary); font-size: 0.9rem; }
+.auth-link a { color: #a78bfa; font-weight: 600; text-decoration: none; }
+.auth-link a:hover { text-decoration: underline; }
+.message { margin-top: 1rem; text-align: center; font-size: 0.9rem; }
+.message.success { color: #10b981; }
+.message.error { color: #ef4444; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-box">
+        <div class="auth-logo">🎤</div>
         <h2>Đăng nhập</h2>
+        <p class="auth-subtitle">Chào mừng trở lại VietVoice</p>
+
         <form id="loginForm">
             <div class="form-group">
-                <label for="username">Tên đăng nhập:</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username"><span>👤</span> Tên đăng nhập</label>
+                <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
             </div>
             <div class="form-group">
-                <label for="password">Mật khẩu:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password"><span>🔒</span> Mật khẩu</label>
+                <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
             </div>
-            <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            <button type="submit" class="btn-auth">🚀 Đăng nhập</button>
         </form>
+
+        <div class="auth-divider">hoặc</div>
+
+        <!-- Nút Google -->
+        <a href="{{ url_for('google_login') }}" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            Đăng nhập với Google
+        </a>
+
+        {% if request.args.get('error') == 'google_not_configured' %}
+        <div class="message error">Google OAuth chưa được cấu hình. Vui lòng dùng đăng nhập thường.</div>
+        {% elif request.args.get('error') == 'google_auth_failed' %}
+        <div class="message error">Đăng nhập Google thất bại. Vui lòng thử lại.</div>
+        {% endif %}
+
         <p class="auth-link">
-            Chưa có tài khoản? <a href="{{ url_for('register') }}">Đăng ký ngay</a>
+            Chưa có tài khoản? <a href="{{ url_for('register') }}">Đăng ký miễn phí →</a>
         </p>
         <div id="message" class="message"></div>
     </div>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice AI - Chỉnh sửa Landing Page</title>
+
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "inverse-primary":   "#6d3bd7",
+        "tertiary":          "#2fd9f4",
+        "error":             "#ffb4ab",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+      },
+    },
+  },
+}
+</script>
+
+<style>
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  .glass-panel {
+    background: rgba(18,33,49,0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* ── Form fields ── */
+  .alp-field { margin-bottom: 14px; }
+  .alp-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #958ea0;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .alp-field input,
+  .alp-field textarea {
+    width: 100%;
+    background: rgba(18,33,49,0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #d4e4fa;
+    font-size: 14px;
+    transition: border-color 0.2s, background 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .alp-field input:focus,
+  .alp-field textarea:focus {
+    outline: none;
+    border-color: #d0bcff;
+    background: rgba(160,120,255,0.06);
+  }
+  .alp-field textarea { resize: vertical; min-height: 72px; }
+
+  .alp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .alp-row { grid-template-columns: 1fr; } }
+
+  /* ── Repeat items ── */
+  .alp-repeat-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .alp-repeat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #a078ff;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Section card ── */
+  .alp-section {
+    background: rgba(18,33,49,0.5);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .alp-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a078ff;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .alp-section-title::before {
+    content: '';
+    display: block;
+    width: 3px; height: 14px;
+    background: #7c3aed;
+    border-radius: 2px;
+  }
+
+  /* ── Save bar ── */
+  .alp-save-bar {
+    position: sticky;
+    bottom: 0;
+    background: rgba(5,20,36,0.92);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    z-index: 100;
+  }
+
+  .alp-status { font-size: 13px; padding: 8px 14px; border-radius: 8px; display: none; }
+  .alp-status.success { background: rgba(16,185,129,0.15); color: #34d399; display: flex; align-items: center; gap: 6px; }
+  .alp-status.error   { background: rgba(239,68,68,0.15);  color: #f87171; display: flex; align-items: center; gap: 6px; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
+</style>
+</head>
+
+<body class="min-h-screen flex bg-background text-on-surface">
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav class="h-screen w-64 fixed left-0 top-0 bg-[#0F172A] hidden md:flex flex-col z-40">
+  <div class="px-6 pt-6 pb-4">
+    <a href="{{ url_for('index') }}" class="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">graphic_eq</span>
+      <span class="text-xl font-black tracking-tighter text-white">VietVoice</span>
+    </a>
+    <p class="text-xs text-on-surface-variant mt-1 font-medium">Admin Dashboard</p>
+  </div>
+
+  <div class="flex flex-col gap-1 p-4 flex-1">
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}">
+      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
+      Bảng điều khiển
+    </a>
+    <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin_landing') }}">
+      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">palette</span>
+      Landing Page
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-users">
+      <span class="material-symbols-outlined" style="font-size:18px">group</span>
+      Quản lý người dùng
+    </a>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-payments">
+      <span class="material-symbols-outlined" style="font-size:18px">payments</span>
+      Quản lý thanh toán
+    </a>
+    <div class="my-2"></div>
+    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+      Về trang chính
+    </a>
+  </div>
+
+  <div class="p-4 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
+      {{ (session.full_name or session.username or 'A')[0] | upper }}
+    </div>
+    <div class="min-w-0">
+      <div class="text-sm font-semibold text-white truncate">{{ session.full_name or session.username }}</div>
+      <div class="text-xs text-slate-400">Administrator</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ MAIN WRAPPER ═══ -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+
+  <!-- ═══ TOP NAVBAR ═══ -->
+  <header class="fixed top-0 left-0 right-0 md:left-64 z-50 bg-[#0F172A]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.3)]">
+    <div class="px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-violet-400" style="font-size:20px;font-variation-settings:'FILL' 1">palette</span>
+        <div>
+          <h1 class="text-sm font-bold text-white">Chỉnh sửa Landing Page</h1>
+          <p class="text-xs text-slate-400">Nội dung được lưu và hiển thị ngay lập tức</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('landing') }}" target="_blank"
+           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/10 border border-tertiary/25 text-tertiary text-xs font-semibold hover:bg-tertiary/20 transition-colors no-underline">
+          <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>
+          Xem Landing
+        </a>
+        <a href="{{ url_for('admin') }}"
+           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold hover:bg-surface-container-high transition-colors no-underline">
+          <span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>
+          Quay lại Admin
+        </a>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ CONTENT ═══ -->
+  <main class="flex-1 pt-[80px] pb-24 px-6 md:px-10 max-w-4xl mx-auto w-full">
+
+    <!-- ── HERO ── -->
+    <div class="alp-section mt-6">
+      <div class="alp-section-title">Hero Section</div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Tag nhỏ phía trên tiêu đề</label>
+          <input type="text" id="hero_tag" value="{{ content.get('hero', {}).get('tag', '') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Nút CTA chính (Bắt đầu ngay)</label>
+          <input type="text" id="hero_btn_primary" value="{{ content.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}"/>
+        </div>
+      </div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Dòng tiêu đề 1</label>
+          <input type="text" id="hero_title_line1" value="{{ content.get('hero', {}).get('title_line1', '') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Dòng gradient (màu tím-xanh)</label>
+          <input type="text" id="hero_title_grad" value="{{ content.get('hero', {}).get('title_grad', '') }}"/>
+        </div>
+      </div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Dòng tiêu đề 3</label>
+          <input type="text" id="hero_title_line2" value="{{ content.get('hero', {}).get('title_line2', '') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Ghi chú miễn phí dưới nút</label>
+          <input type="text" id="hero_free_note" value="{{ content.get('hero', {}).get('free_note', '') }}"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── THÔNG TIN CÔNG TY ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Thông tin Công ty (Hero Card)</div>
+      <div class="alp-field">
+        <label>Tên công ty</label>
+        <input type="text" id="company_name" value="{{ content.get('company', {}).get('name', '') }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả công ty</label>
+        <textarea id="company_desc">{{ content.get('company', {}).get('desc', '') }}</textarea>
+      </div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Mã số thuế (MST)</label>
+          <input type="text" id="company_mst" value="{{ content.get('company', {}).get('mst', '') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Người đại diện</label>
+          <input type="text" id="company_representative" value="{{ content.get('company', {}).get('representative', '') }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Địa chỉ</label>
+        <input type="text" id="company_address" value="{{ content.get('company', {}).get('address', '') }}"/>
+      </div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Hotline</label>
+          <input type="text" id="company_phone" value="{{ content.get('company', {}).get('phone', '') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Hoạt động từ</label>
+          <input type="text" id="company_since" value="{{ content.get('company', {}).get('since', '') }}"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VỀ VIETVOICE (SECTION MỚI) ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Section "Về VietVoice AI"</div>
+      <div class="alp-field">
+        <label>Tiêu đề section</label>
+        <input type="text" id="about_new_title" value="{{ content.get('about_new', {}).get('title', 'Về VietVoice AI') }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả section</label>
+        <textarea id="about_new_desc">{{ content.get('about_new', {}).get('desc', '') }}</textarea>
+      </div>
+      {% set default_cards = [{"icon":"visibility","title":"Tầm Nhìn","desc":""},{"icon":"flag","title":"Sứ Mệnh","desc":""},{"icon":"handshake","title":"Cam Kết","desc":""}] %}
+      {% set about_cards = content.get('about_new', {}).get('cards', default_cards) %}
+      {% for card in about_cards %}
+      <div class="alp-repeat-item">
+        <div class="alp-repeat-label">Card {{ loop.index }}: {{ card.title }}</div>
+        <div class="alp-row">
+          <div class="alp-field">
+            <label>Icon (Material Symbol name)</label>
+            <input type="text" id="about_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
+          </div>
+          <div class="alp-field">
+            <label>Tiêu đề</label>
+            <input type="text" id="about_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
+          </div>
+        </div>
+        <div class="alp-field">
+          <label>Mô tả</label>
+          <textarea id="about_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── FOOTER ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Footer</div>
+
+      <div class="alp-field">
+        <label>Mô tả thương hiệu (cột trái)</label>
+        <textarea id="footer_brand_desc" style="min-height:70px">{{ content.get('footer', {}).get('brand_desc', '') }}</textarea>
+      </div>
+
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Tiêu đề cột 1</label>
+          <input type="text" id="footer_col1_title" value="{{ content.get('footer', {}).get('col1_title', 'TÍNH NĂNG') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Tiêu đề cột 2</label>
+          <input type="text" id="footer_col2_title" value="{{ content.get('footer', {}).get('col2_title', 'HỖ TRỢ') }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Tiêu đề cột 3</label>
+          <input type="text" id="footer_col3_title" value="{{ content.get('footer', {}).get('col3_title', 'TÀI KHOẢN') }}"/>
+        </div>
+      </div>
+
+      <div class="alp-field">
+        <label>Links cột 1 – Tính năng (mỗi dòng: Nhãn|/url)</label>
+        <textarea id="footer_col1_links" style="min-height:110px">{% for lnk in content.get('footer', {}).get('col1_links', []) %}{{ lnk.label }}|{{ lnk.href }}
+{% endfor %}</textarea>
+      </div>
+
+      <div class="alp-field">
+        <label>Links cột 2 – Hỗ trợ (mỗi dòng: Nhãn|/url)</label>
+        <textarea id="footer_col2_links" style="min-height:90px">{% for lnk in content.get('footer', {}).get('col2_links', []) %}{{ lnk.label }}|{{ lnk.href }}
+{% endfor %}</textarea>
+      </div>
+
+      <div class="alp-field">
+        <label>Copyright text</label>
+        <input type="text" id="footer_copyright" value="{{ content.get('footer', {}).get('copyright', '') }}"/>
+      </div>
+    </div>
+
+    <!-- ── TRUSTED ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Dải "Được tin dùng bởi"</div>
+      <div class="alp-field">
+        <label>Label</label>
+        <input type="text" id="trusted_label" value="{{ content.trusted.label }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Các nhóm (mỗi dòng một nhóm)</label>
+        <textarea id="trusted_items" style="min-height:90px">{{ content.trusted['items'] | join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- ── FEATURES ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Tính năng nổi bật</div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Label nhỏ</label>
+          <input type="text" id="feat_label" value="{{ content.features.label }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Tiêu đề section</label>
+        <input type="text" id="feat_title" value="{{ content.features.title }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả section</label>
+        <textarea id="feat_subtitle">{{ content.features.subtitle }}</textarea>
+      </div>
+      {% for card in content.features.cards %}
+      <div class="alp-repeat-item">
+        <div class="alp-repeat-label">Card {{ loop.index }}</div>
+        <div class="alp-row">
+          <div class="alp-field">
+            <label>Icon (emoji)</label>
+            <input type="text" id="feat_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
+          </div>
+          <div class="alp-field">
+            <label>Tiêu đề card</label>
+            <input type="text" id="feat_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
+          </div>
+        </div>
+        <div class="alp-field">
+          <label>Mô tả</label>
+          <textarea id="feat_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── STEPS ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Hướng dẫn 3 bước</div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Label nhỏ</label>
+          <input type="text" id="steps_label" value="{{ content.steps.label }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Tiêu đề section</label>
+        <input type="text" id="steps_title" value="{{ content.steps.title }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả section</label>
+        <textarea id="steps_subtitle">{{ content.steps.subtitle }}</textarea>
+      </div>
+      {% for step in content.steps['items'] %}
+      <div class="alp-repeat-item">
+        <div class="alp-repeat-label">Bước {{ loop.index }}</div>
+        <div class="alp-row">
+          <div class="alp-field">
+            <label>Icon (emoji)</label>
+            <input type="text" id="step_{{ loop.index0 }}_icon" value="{{ step.icon }}"/>
+          </div>
+          <div class="alp-field">
+            <label>Tiêu đề bước</label>
+            <input type="text" id="step_{{ loop.index0 }}_title" value="{{ step.title }}"/>
+          </div>
+        </div>
+        <div class="alp-field">
+          <label>Mô tả</label>
+          <textarea id="step_{{ loop.index0 }}_desc">{{ step.desc }}</textarea>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── SHOWCASE ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Showcase Section</div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Icon (emoji)</label>
+          <input type="text" id="showcase_icon" value="{{ content.showcase.icon }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Nút CTA</label>
+          <input type="text" id="showcase_btn" value="{{ content.showcase.btn }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Tiêu đề</label>
+        <input type="text" id="showcase_title" value="{{ content.showcase.title }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả</label>
+        <textarea id="showcase_desc">{{ content.showcase.desc }}</textarea>
+      </div>
+      <div class="alp-field">
+        <label>Các badge (mỗi dòng một badge)</label>
+        <textarea id="showcase_badges" style="min-height:100px">{{ content.showcase.badges | join('\n') }}</textarea>
+      </div>
+    </div>
+
+    <!-- ── FINAL CTA ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Final CTA</div>
+      <div class="alp-field">
+        <label>Tiêu đề</label>
+        <input type="text" id="fcta_title" value="{{ content.final_cta.title }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả</label>
+        <input type="text" id="fcta_subtitle" value="{{ content.final_cta.subtitle }}"/>
+      </div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Nút chính</label>
+          <input type="text" id="fcta_btn_primary" value="{{ content.final_cta.btn_primary }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Nút phụ</label>
+          <input type="text" id="fcta_btn_secondary" value="{{ content.final_cta.btn_secondary }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Ghi chú nhỏ dưới nút</label>
+        <input type="text" id="fcta_note" value="{{ content.final_cta.note }}"/>
+      </div>
+    </div>
+
+    <!-- ── ABOUT ── -->
+    <div class="alp-section">
+      <div class="alp-section-title">Về chúng tôi</div>
+      <div class="alp-row">
+        <div class="alp-field">
+          <label>Label nhỏ</label>
+          <input type="text" id="about_label" value="{{ content.about.label }}"/>
+        </div>
+        <div class="alp-field">
+          <label>Nút CTA</label>
+          <input type="text" id="about_btn" value="{{ content.about.btn }}"/>
+        </div>
+      </div>
+      <div class="alp-field">
+        <label>Tiêu đề</label>
+        <input type="text" id="about_title" value="{{ content.about.title }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Mô tả công ty</label>
+        <textarea id="about_company_desc">{{ content.about.company_desc }}</textarea>
+      </div>
+      <div class="alp-field">
+        <label>Thông tin dòng 1 (MST · Người đại diện)</label>
+        <input type="text" id="about_info1" value="{{ content.about.info_row1 }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Thông tin dòng 2 (Địa chỉ)</label>
+        <input type="text" id="about_info2" value="{{ content.about.info_row2 }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Thông tin dòng 3 (SĐT · Ngày)</label>
+        <input type="text" id="about_info3" value="{{ content.about.info_row3 }}"/>
+      </div>
+      <div class="alp-field">
+        <label>Ghi chú nhỏ</label>
+        <input type="text" id="about_note" value="{{ content.about.note }}"/>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══ STICKY SAVE BAR ═══ -->
+  <div class="alp-save-bar md:ml-0">
+    <div class="alp-status" id="saveStatus"></div>
+    <button id="saveBtn" onclick="saveContent()"
+      class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold hover:opacity-90 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">save</span>
+      Lưu thay đổi
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script>
+function g(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function saveContent() {
+  const btn    = document.getElementById('saveBtn');
+  const status = document.getElementById('saveStatus');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 0.8s linear infinite">progress_activity</span> Đang lưu...';
+
+  const data = {
+    hero: {
+      tag        : g('hero_tag'),
+      title_line1: g('hero_title_line1'),
+      title_grad : g('hero_title_grad'),
+      title_line2: g('hero_title_line2'),
+      btn_primary: g('hero_btn_primary'),
+      free_note  : g('hero_free_note')
+    },
+    company: {
+      name          : g('company_name'),
+      desc          : g('company_desc'),
+      mst           : g('company_mst'),
+      representative: g('company_representative'),
+      address       : g('company_address'),
+      phone         : g('company_phone'),
+      since         : g('company_since')
+    },
+    about_new: {
+      title: g('about_new_title'),
+      desc : g('about_new_desc'),
+      cards: [0,1,2].map(i => ({
+        icon : g(`about_card_${i}_icon`),
+        title: g(`about_card_${i}_title`),
+        desc : g(`about_card_${i}_desc`)
+      }))
+    },
+    footer: {
+      brand_desc : g('footer_brand_desc') || '',
+      col1_title : g('footer_col1_title') || 'TÍNH NĂNG',
+      col2_title : g('footer_col2_title') || 'HỖ TRỢ',
+      col3_title : g('footer_col3_title') || 'TÀI KHOẢN',
+      col1_links : (g('footer_col1_links') || '').split('\n').map(s => s.trim()).filter(Boolean).map(s => { const p = s.split('|'); return { label: p[0] || '', href: p[1] || '#' }; }),
+      col2_links : (g('footer_col2_links') || '').split('\n').map(s => s.trim()).filter(Boolean).map(s => { const p = s.split('|'); return { label: p[0] || '', href: p[1] || '#' }; }),
+      copyright  : g('footer_copyright')
+    },
+    // Giữ lại các field cũ để không mất data
+    trusted: {
+      label : g('trusted_label') || 'Được tin dùng bởi',
+      items : (g('trusted_items') || '').split('\n').map(s => s.trim()).filter(Boolean)
+    },
+    features: {
+      label    : g('feat_label') || 'TÍNH NĂNG NỔI BẬT',
+      title    : g('feat_title') || '',
+      subtitle : g('feat_subtitle') || '',
+      cards    : [0,1,2,3].map(i => ({
+        num  : String(i+1).padStart(2,'0'),
+        icon : g(`feat_card_${i}_icon`),
+        title: g(`feat_card_${i}_title`),
+        desc : g(`feat_card_${i}_desc`)
+      })).filter(c => c.title)
+    },
+    steps: {
+      label   : g('steps_label') || 'ĐƠN GIẢN',
+      title   : g('steps_title') || '',
+      subtitle: g('steps_subtitle') || '',
+      items   : [0,1,2].map(i => ({
+        num  : String(i+1).padStart(2,'0'),
+        icon : g(`step_${i}_icon`),
+        title: g(`step_${i}_title`),
+        desc : g(`step_${i}_desc`)
+      })).filter(s => s.title)
+    },
+    showcase: {
+      icon  : g('showcase_icon'),
+      title : g('showcase_title'),
+      desc  : g('showcase_desc'),
+      badges: (g('showcase_badges') || '').split('\n').map(s => s.trim()).filter(Boolean),
+      btn   : g('showcase_btn')
+    },
+    final_cta: {
+      title        : g('fcta_title'),
+      subtitle     : g('fcta_subtitle'),
+      btn_primary  : g('fcta_btn_primary'),
+      btn_secondary: g('fcta_btn_secondary'),
+      note         : g('fcta_note')
+    },
+    about: {
+      label       : g('about_label'),
+      title       : g('about_title'),
+      company_desc: g('about_company_desc'),
+      info_row1   : g('about_info1'),
+      info_row2   : g('about_info2'),
+      info_row3   : g('about_info3'),
+      btn         : g('about_btn'),
+      note        : g('about_note')
+    }
+  };
+
+  fetch('/admin/landing/save', {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify(data)
+  })
+  .then(r => r.json())
+  .then(res => {
+    status.className = res.success ? 'alp-status success' : 'alp-status error';
+    status.innerHTML = res.success
+      ? '✅ ' + res.message
+      : '❌ ' + res.message;
+    status.style.display = 'flex';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+  })
+  .catch(() => {
+    status.className = 'alp-status error';
+    status.innerHTML = '❌ Lỗi kết nối máy chủ';
+    status.style.display = 'flex';
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:\'FILL\' 1">save</span> Lưu thay đổi';
+  });
+}
+</script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</body>
+</html>

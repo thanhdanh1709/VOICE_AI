@@ -35,25 +35,33 @@
 .payment-result-card {
     max-width: 600px;
     margin: 5rem auto;
-    background: white;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     padding: 3rem;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-2xl);
     text-align: center;
 }
 
 .result-icon {
     font-size: 5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .result-success h2 {
-    color: #28a745;
+    color: var(--success);
     margin-bottom: 1rem;
 }
 
 .result-error h2 {
-    color: #dc3545;
+    color: var(--error);
+    margin-bottom: 1rem;
+}
+
+.result-success p,
+.result-error p {
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
     margin-bottom: 1rem;
 }
 
@@ -62,15 +70,7 @@
     display: flex;
     gap: 1rem;
     justify-content: center;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 5px;
-    text-decoration: none;
-    display: inline-block;
+    flex-wrap: wrap;
 }
 </style>
 {% endblock %}

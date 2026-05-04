@@ -1,79 +1,564 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="light">
+<html lang="vi" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}VoiceAI TTS - Biến văn bản thành giọng nói tự nhiên{% endblock %}</title>
-    
+    <title>{% block title %}VietVoice - Biến văn bản thành giọng nói tự nhiên{% endblock %}</title>
+
+    <!-- Anti-flash: apply saved theme ASAP before paint -->
+    <script>
+        (function(){
+            var t = localStorage.getItem('tts-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <!-- Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
-    
-    <!-- Legacy CSS (will be gradually replaced) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+
     {% block extra_css %}{% endblock %}
+
+    <style>
+        html, body { margin: 0 !important; padding: 0 !important; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: #0a0a14;
+            color: #f1f5f9;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ── Background orbs ── */
+        .bg-orbs {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.1;
+        }
+        .bg-orb-1 {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, #7c3aed, transparent);
+            top: -200px; left: -200px;
+            animation: orb-float-1 18s ease-in-out infinite;
+        }
+        .bg-orb-2 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #3b82f6, transparent);
+            bottom: -100px; right: -100px;
+            animation: orb-float-2 22s ease-in-out infinite;
+        }
+        .bg-orb-3 {
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, #a78bfa, transparent);
+            top: 40%; left: 55%;
+            animation: orb-float-1 15s ease-in-out infinite reverse;
+        }
+
+        main.main-content, footer.site-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; right: 0 !important;
+            height: 64px;
+            pointer-events: auto !important;
+            background: rgba(10, 10, 20, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            z-index: 9999;
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(10, 10, 20, 0.94);
+            border-bottom-color: rgba(124,58,237,0.18);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+        .navbar *, .navbar a, .navbar button {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 10000;
+        }
+
+        .navbar .container {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .nav-brand { display: flex; align-items: center; }
+
+        .nav-brand h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            list-style: none;
+            padding: 0; margin: 0;
+            flex-wrap: nowrap;
+        }
+
+        .nav-menu li a {
+            display: block;
+            padding: 6px 12px;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.8125rem;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav-menu li a:hover,
+        .nav-menu li a.active {
+            color: #f1f5f9;
+            background: rgba(255,255,255,0.07);
+            text-decoration: none;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            white-space: nowrap;
+        }
+
+        .user-info span { color: #94a3b8; }
+
+        .btn-logout {
+            padding: 4px 12px;
+            background: rgba(239,68,68,0.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.18);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-logout:hover {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            text-decoration: none;
+        }
+
+        .nav-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 18px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            color: white !important;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            text-decoration: none;
+            box-shadow: 0 2px 14px rgba(124,58,237,0.4);
+            transition: all 0.2s ease;
+            margin-left: 6px;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(124,58,237,0.6);
+            color: white !important;
+            text-decoration: none;
+        }
+
+        .theme-toggle {
+            width: 40px; height: 24px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 9999px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle::before { left: 18px; background: #334155; }
+        [data-theme="light"] .theme-toggle::before { left: 2px; }
+
+        .theme-toggle:hover { border-color: #7c3aed; background: rgba(124,58,237,0.12); }
+        .theme-icon { display: none; }
+
+        /* ── MAIN ── */
+        .main-content {
+            min-height: calc(100vh - 64px - 280px);
+            padding-top: calc(64px + 2rem);
+            padding-bottom: 2rem;
+        }
+
+        /* ══════════════════════════════════════
+           FOOTER — Zephyr Style
+        ══════════════════════════════════════ */
+        .site-footer {
+            background: #07070f;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 56px 0 0;
+            margin-top: 0;
+        }
+
+        .footer-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Top row */
+        .footer-top {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr;
+            gap: 48px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        @media (max-width: 900px) {
+            .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+        }
+
+        @media (max-width: 540px) {
+            .footer-top { grid-template-columns: 1fr; }
+        }
+
+        .footer-brand-col {}
+
+        .footer-logo {
+            font-size: 1.1rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .footer-tagline {
+            font-size: 0.8125rem;
+            color: #475569;
+            line-height: 1.65;
+            margin-bottom: 20px;
+            max-width: 240px;
+        }
+
+        .footer-beta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(124,58,237,0.1);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 9999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #c4b5fd;
+        }
+
+        .footer-col-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0; margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-links li a {
+            font-size: 0.8125rem;
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.15s ease;
+            line-height: 1.5;
+        }
+
+        .footer-links li a:hover {
+            color: #c4b5fd;
+            text-decoration: none;
+        }
+
+        /* Bottom row */
+        .footer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-copy {
+            font-size: 0.775rem;
+            color: #334155;
+        }
+
+        .footer-copy a {
+            color: #475569;
+            text-decoration: none;
+        }
+
+        .footer-copy a:hover { color: #94a3b8; }
+
+        .footer-disclaimer {
+            font-size: 0.72rem;
+            color: #1e293b;
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-bottom-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 2px 14px rgba(124,58,237,0.4);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .footer-bottom-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(124,58,237,0.6);
+            color: white;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
+    <!-- Background orbs -->
+    <div class="bg-orbs" aria-hidden="true">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- ══ NAVBAR ══ -->
+    <nav class="navbar" id="mainNavbar">
         <div class="container">
             <div class="nav-brand">
-                <h1>🎤 VoiceAI TTS</h1>
+                <h1>🎤 VietVoice</h1>
             </div>
             <ul class="nav-menu">
                 {% if session.user_id %}
-                <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
-                <li><a href="{{ url_for('audio_library') }}">Thư viện</a></li>
-                <li><a href="{{ url_for('history') }}">Lịch sử</a></li>
-                <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
-                <li><a href="{{ url_for('pricing') }}">Thanh toán</a></li>
-                <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
-                {% if session.user_role == 'admin' %}
-                <li><a href="{{ url_for('admin') }}">Quản trị</a></li>
-                {% endif %}
-                <li class="user-info">
-                    <span>Xin chào, {{ session.full_name or session.username }}</span>
-                    <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
-                </li>
-                <li>
-                    <button id="themeToggle" class="theme-toggle" title="Chuyển đổi chế độ sáng/tối">
-                        <span class="theme-icon sun">☀️</span>
-                        <span class="theme-icon moon">🌙</span>
-                    </button>
-                </li>
+                    <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
+                    <li><a href="{{ url_for('audio_library') }}">Thư viện</a></li>
+                    <li><a href="{{ url_for('history') }}">Lịch sử</a></li>
+                    <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
+                    <li><a href="{{ url_for('pricing') }}">Thanh toán</a></li>
+                    <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                    {% if session.user_role == 'admin' %}
+                    <li><a href="{{ url_for('admin') }}">Quản trị</a></li>
+                    {% endif %}
+                    <li class="user-info">
+                        <span>{{ session.full_name or session.username }}</span>
+                        <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
+                    </li>
                 {% else %}
-                <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
-                <li><a href="{{ url_for('register') }}">Đăng ký</a></li>
-                <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                    <li><a href="{{ url_for('landing') }}">Tính năng</a></li>
+                    <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                    <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
+                    <li><a href="{{ url_for('register') }}" class="nav-cta">✦ Bắt đầu miễn phí</a></li>
+                {% endif %}
                 <li>
-                    <button id="themeToggle" class="theme-toggle" title="Chuyển đổi chế độ sáng/tối">
-                        <span class="theme-icon sun">☀️</span>
-                        <span class="theme-icon moon">🌙</span>
+                    <button id="themeToggle" class="theme-toggle" title="Chuyển sáng/tối" aria-label="Toggle theme">
+                        <span class="theme-icon"></span>
                     </button>
                 </li>
-                {% endif %}
             </ul>
         </div>
     </nav>
 
+    <!-- ══ MAIN CONTENT ══ -->
     <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 TTS System. All rights reserved.</p>
+    <!-- ══ FOOTER — Zephyr Style ══ -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+
+            <!-- Top grid -->
+            <div class="footer-top">
+
+                <!-- Brand col -->
+                <div class="footer-brand-col">
+                    <div class="footer-logo">🎤 VietVoice</div>
+                    <p class="footer-tagline">
+                        Nền tảng chuyển văn bản thành giọng nói AI tiên phong — 
+                        chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.
+                    </p>
+                    <span class="footer-beta">● BETA</span>
+                </div>
+
+                <!-- Tính năng col -->
+                <div>
+                    <div class="footer-col-title">Tính năng</div>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('index') if session.user_id else url_for('landing') }}">Chuyển văn bản → Giọng nói</a></li>
+                        <li><a href="{{ url_for('my_voices') if session.user_id else url_for('register') }}">Clone giọng cá nhân</a></li>
+                        <li><a href="{{ url_for('index') if session.user_id else url_for('register') }}">Emotional TTS</a></li>
+                        <li><a href="{{ url_for('audio_library') if session.user_id else url_for('register') }}">Thư viện âm thanh</a></li>
+                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}">Bảng giá & Nâng cấp</a></li>
+                    </ul>
+                </div>
+
+                <!-- Hỗ trợ col -->
+                <div>
+                    <div class="footer-col-title">Hỗ trợ</div>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('contact') }}">Liên hệ hỗ trợ</a></li>
+                        <li><a href="{{ url_for('contact') }}">Câu hỏi thường gặp</a></li>
+                        <li><a href="{{ url_for('contact') }}">Báo lỗi</a></li>
+                        <li><a href="{{ url_for('contact') }}">Yêu cầu tính năng</a></li>
+                    </ul>
+                </div>
+
+                <!-- Tài khoản col -->
+                <div>
+                    <div class="footer-col-title">Tài khoản</div>
+                    <ul class="footer-links">
+                        {% if session.user_id %}
+                        <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
+                        <li><a href="{{ url_for('history') }}">Lịch sử chuyển đổi</a></li>
+                        <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
+                        <li><a href="{{ url_for('logout') }}">Đăng xuất</a></li>
+                        {% else %}
+                        <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
+                        <li><a href="{{ url_for('register') }}">Đăng ký miễn phí</a></li>
+                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}">Nâng cấp tài khoản</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom row -->
+            <div class="footer-bottom">
+                <span class="footer-copy">
+                    © 2026 VietVoice · Công nghệ AI ·
+                    <a href="{{ url_for('contact') }}">Điều khoản dịch vụ</a> &amp;
+                    <a href="{{ url_for('contact') }}">Chính sách bảo mật</a>
+                </span>
+
+                <span class="footer-disclaimer">
+                    Hệ thống đang trong giai đoạn thử nghiệm (beta). Mọi phản hồi đều giúp cải thiện trải nghiệm.
+                </span>
+
+                {% if session.user_id %}
+                <a href="{{ url_for('index') }}" class="footer-bottom-cta">✦ Bảng điều khiển</a>
+                {% else %}
+                <a href="{{ url_for('register') }}" class="footer-bottom-cta">✦ Bắt đầu miễn phí</a>
+                {% endif %}
+            </div>
+
         </div>
     </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+
+    <script>
+        // Navbar scroll effect
+        const navbar = document.getElementById('mainNavbar');
+        if (navbar) {
+            window.addEventListener('scroll', () => {
+                navbar.classList.toggle('scrolled', window.scrollY > 20);
+            }, { passive: true });
+        }
+
+        // Scroll reveal
+        const revealObs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    revealObs.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+        // Active nav link
+        const path = window.location.pathname;
+        document.querySelectorAll('.nav-menu li a').forEach(a => {
+            if (a.getAttribute('href') === path) a.classList.add('active');
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

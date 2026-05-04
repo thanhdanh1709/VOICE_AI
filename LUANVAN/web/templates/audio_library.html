@@ -1,309 +1,390 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice - Thư viện Audio</title>
 
-{% block title %}Thư viện Audio - VoiceAI TTS{% endblock %}
+<!-- Anti-flash -->
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
-{% block extra_css %}
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface-dim":  "#051424",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "surface-variant":"#273647",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "on-background":     "#d4e4fa",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-fixed":     "#e9ddff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "on-primary-container":"#340080",
+        "inverse-primary":   "#6d3bd7",
+        "secondary":         "#bec6e0",
+        "secondary-container":"#3f465c",
+        "on-secondary":      "#283044",
+        "on-secondary-container":"#adb4ce",
+        "tertiary":          "#2fd9f4",
+        "tertiary-container":"#009fb4",
+        "on-tertiary":       "#00363e",
+        "error":             "#ffb4ab",
+        "error-container":   "#93000a",
+        "on-error":          "#690005",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+        "inverse-surface":   "#d4e4fa",
+        "inverse-on-surface":"#233143",
+        "surface-tint":      "#d0bcff",
+      },
+    },
+  },
+}
+</script>
+
 <style>
-/* Filter Grid */
-.filter-grid-modern {
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .glass-panel {
+    background: rgba(5, 20, 36, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
+
+  /* Audio card play button animation */
+  .play-btn.playing .play-icon { display: none; }
+  .play-btn.playing .pause-icon { display: flex; }
+  .play-btn .pause-icon { display: none; }
+  .play-btn .play-icon { display: flex; }
+
+  /* Waveform animation during playback */
+  .waveform-bar.playing {
+    animation: waveAnim 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes waveAnim {
+    from { transform: scaleY(0.6); }
+    to { transform: scaleY(1.2); }
+  }
+
+  /* View toggle classes used by JS */
+  .audio-grid-modern {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-4);
-    margin-top: var(--space-6);
-}
+    grid-template-columns: repeat(1, 1fr);
+  }
+  @media (min-width: 768px) {
+    .audio-grid-modern { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .audio-grid-modern { grid-template-columns: repeat(3, 1fr); }
+  }
+  .audio-list-modern { display: flex; flex-direction: column; }
 
-.filter-item-modern {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
+  /* Table for list view */
+  .audio-table-modern { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .audio-table-modern th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #958ea0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .audio-table-modern td { padding: 12px 16px; font-size: 13px; color: #cbc3d7; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  .audio-table-modern tbody tr:hover td { background: rgba(208,188,255,0.04); }
+  .audio-table-modern .mini-player { width: 140px; height: 32px; }
+  .audio-table-modern .text-col { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d4e4fa; }
+  .audio-table-modern .actions-col { display: flex; align-items: center; gap: 8px; }
 
-.filter-label-modern {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    color: var(--text-secondary);
-}
+  [color-scheme="dark"] input[type="date"] { color-scheme: dark; }
+  input[type="date"] { color-scheme: dark; }
 
-/* View Controls */
-.library-controls-modern {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: var(--space-6) 0;
-    padding: var(--space-4);
-    background-color: var(--bg-secondary);
-    border-radius: var(--radius-lg);
-}
+  /* Hide audio element (used as controller) */
+  .audio-ctrl { display: none; }
+</style>
+</head>
 
-.view-toggle-modern {
-    display: flex;
-    gap: var(--space-2);
-}
+<body class="min-h-screen flex flex-col">
 
-.view-btn-modern {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
-    background-color: var(--bg-primary);
-    color: var(--text-secondary);
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
-}
+<!-- ═══ TOP NAVBAR ═══ -->
+<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+  <div class="flex justify-between items-center px-6 h-16 max-w-[1360px] mx-auto">
+    <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
+      VietVoice
+    </a>
+    <div class="hidden md:flex items-center space-x-1">
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
+      <a href="{{ url_for('audio_library') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">Library</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      {% if session.user_role == 'admin' %}
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
+        <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+        <span id="charsNavCount">...</span>
+      </a>
+      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <a href="{{ url_for('contact') }}" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
+        <span class="material-symbols-outlined">help_outline</span>
+      </a>
+      <div class="flex items-center gap-2 pl-2 border-l border-white/10">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+          {{ (session.full_name or session.username or 'U')[0] | upper }}
+        </div>
+        <div class="hidden sm:flex flex-col">
+          <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
+          <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
 
-.view-btn-modern:hover {
-    color: var(--primary);
-    background-color: var(--bg-tertiary);
-}
+<!-- ═══ LAYOUT: Sidebar + Main ═══ -->
+<div class="flex flex-1 pt-16 min-h-screen">
 
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-60 fixed left-0 top-16 bottom-0 bg-[#051424] pt-6">
+    <div class="px-4 mb-4">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white">VietVoice Pro</div>
+          <div class="text-xs text-primary">AI Synthesis Active</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+        Tạo Audio mới
+      </a>
+      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('audio_library') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
+        Thư viện Audio
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+        Giọng của tôi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">history</span>
+        Lịch sử chuyển đổi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+        Bảng giá
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
+        Liên hệ
+      </a>
+    </nav>
+
+    <div class="p-4 mt-auto">
+      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+        Nâng cấp gói
+      </a>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="flex-1 md:ml-60 p-6 md:p-8 min-h-0">
+
+    <!-- Page Header -->
+    <header class="mb-8">
+      <h1 class="text-4xl font-extrabold text-on-surface mb-2 tracking-tight">Thư viện Audio</h1>
+      <p class="text-base text-on-surface-variant">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
+    </header>
+
+    <!-- Filter Bar -->
+    <section class="glass-panel rounded-xl p-4 mb-6">
+      <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
+        <!-- Search -->
+        <div class="relative flex-1">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px">search</span>
+          <input id="searchInput" type="search"
+            class="w-full bg-surface-container border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors placeholder-on-surface-variant/60"
+            placeholder="Tìm kiếm theo nội dung âm thanh..."/>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 items-center">
+          <select id="voiceFilter" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+            <option value="">Tất cả giọng đọc</option>
+          </select>
+
+          <input id="dateFrom" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+
+          <span class="text-on-surface-variant text-sm">—</span>
+
+          <input id="dateTo" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+
+          <select id="sortBy" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="duration">Thời lượng</option>
+            <option value="size">Kích thước</option>
+          </select>
+
+          <button id="filterBtn" class="px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors flex items-center gap-1.5">
+            <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+            Lọc
+          </button>
+
+          <button id="resetBtn" class="px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant text-sm font-medium hover:bg-white/10 transition-colors">
+            Đặt lại
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- View Toggles & Stats -->
+    <div class="flex items-center justify-between mb-5">
+      <div class="inline-flex bg-surface-container rounded-lg p-1 border border-outline-variant gap-1">
+        <button class="view-btn-modern active flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="grid">
+          <span class="material-symbols-outlined" style="font-size:16px">grid_view</span>
+          Lưới
+        </button>
+        <button class="view-btn-modern flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="list">
+          <span class="material-symbols-outlined" style="font-size:16px">view_list</span>
+          Danh sách
+        </button>
+      </div>
+      <div id="audioCount" class="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-primary/20 flex items-center gap-1.5">
+        <span class="material-symbols-outlined" style="font-size:14px">folder</span>
+        Tổng: <strong>0</strong> audio
+      </div>
+    </div>
+
+    <!-- Audio Container (populated by JS) -->
+    <div id="audioContainer" class="audio-grid-modern gap-5 mb-8">
+      <!-- Loading state -->
+      <div style="grid-column:1/-1" class="flex flex-col items-center justify-center py-16 gap-3 text-on-surface-variant">
+        <div style="width:32px;height:32px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <p class="text-sm">Đang tải thư viện...</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="flex items-center justify-center gap-4 mt-4" style="display:none!important">
+      <button id="prevBtn" disabled
+        class="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span> Trước
+      </button>
+      <span id="pageInfo" class="text-sm font-semibold text-on-surface px-4 py-2 bg-surface-container rounded-lg border border-outline-variant">Trang 1 / 1</span>
+      <button id="nextBtn" disabled
+        class="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+        Sau <span class="material-symbols-outlined" style="font-size:18px">chevron_right</span>
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="w-full border-t border-white/5 py-6 bg-[#051424] md:pl-60">
+  <div class="max-w-[1360px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="text-xs font-bold text-slate-500">© 2026 VietVoice AI · Powered by Neural Synthesis</div>
+    <div class="flex gap-5 text-xs text-slate-500">
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Hỗ trợ</a>
+      <a href="{{ url_for('pricing') }}" class="hover:text-primary transition-colors no-underline">Bảng giá</a>
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Điều khoản</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* View button active state */
 .view-btn-modern.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+  background: #273647;
+  color: #d0bcff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
-
-.audio-count-badge-modern {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-5);
-    background: var(--primary-gradient);
-    color: white;
-    border-radius: var(--radius-full);
-    font-weight: var(--font-medium);
+.view-btn-modern:not(.active) {
+  color: #958ea0;
 }
-
-/* Audio Grid */
-.audio-grid-modern {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-6);
-    margin-bottom: var(--space-8);
-}
-
-.audio-list-modern {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-/* Audio Card */
-.audio-card-modern {
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    padding: var(--space-5);
-    box-shadow: var(--shadow-md);
-    transition: all var(--duration-base) var(--ease-out);
-}
-
-.audio-card-modern:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-}
-
-.audio-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--space-4);
-}
-
-.audio-text-preview {
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    line-height: var(--leading-relaxed);
-    margin-bottom: var(--space-4);
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.audio-meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.audio-meta-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: var(--text-xs);
-    color: var(--text-tertiary);
-}
-
-.audio-player-wrapper {
-    margin-bottom: var(--space-3);
-}
-
-.audio-player-wrapper audio {
-    width: 100%;
-    height: 40px;
-    border-radius: var(--radius-md);
-}
-
-.audio-actions-row {
-    display: flex;
-    gap: var(--space-2);
-}
-
-/* Pagination */
-.pagination-modern {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: var(--space-4);
-    margin: var(--space-8) 0;
-}
-
-.page-info-modern {
-    padding: var(--space-3) var(--space-5);
-    background-color: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    font-weight: var(--font-medium);
-}
-
-/* Loading */
-.loading-library-modern {
-    text-align: center;
-    padding: var(--space-12);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .library-controls-modern {
-        flex-direction: column;
-        gap: var(--space-4);
-    }
-    
-    .audio-grid-modern {
-        grid-template-columns: 1fr;
-    }
+.view-btn-modern:not(.active):hover {
+  color: #d4e4fa;
+  background: rgba(255,255,255,0.05);
 }
 </style>
-{% endblock %}
 
-{% block content %}
-<div class="container">
-    <div class="main-content">
-        <!-- Hero Section -->
-        <div style="margin-bottom: var(--space-8); text-align: center;">
-            <h1 class="gradient-text">🎵 Thư viện Audio</h1>
-            <p style="color: var(--text-secondary); font-size: var(--text-lg);">Quản lý và tìm kiếm các file âm thanh đã tạo</p>
-        </div>
+<script>
+// ── Characters remaining (nav badge) ─────────────────────────
+async function loadCharsRemaining() {
+  try {
+    const r = await fetch('/api/user/characters');
+    const d = await r.json();
+    if (d.success) {
+      const n = d.characters_remaining;
+      const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+      const el = document.getElementById('charsNavCount');
+      if (el) el.textContent = fmt + ' ký tự';
+    }
+  } catch(e) {}
+}
+loadCharsRemaining();
 
-        <!-- Filter Card -->
-        <div class="card card-elevated animate-fadeIn" style="margin-bottom: var(--space-6);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
-                <h3 style="margin: 0;">🔍 Tìm kiếm & Lọc</h3>
-                <button id="resetBtn" class="btn btn-ghost btn-sm">
-                    Đặt lại
-                </button>
-            </div>
-            
-            <!-- Search Bar -->
-            <div class="form-group">
-                <div style="display: flex; gap: var(--space-2);">
-                    <input type="search" id="searchInput" placeholder="🔍 Tìm kiếm theo nội dung văn bản..." class="form-input" style="flex: 1;">
-                    <button id="filterBtn" class="btn btn-primary btn-md">Tìm kiếm</button>
-                </div>
-            </div>
-
-            <!-- Filters Grid -->
-            <div class="filter-grid-modern">
-                <div class="filter-item-modern">
-                    <label class="filter-label-modern">
-                        <span>🎤</span>
-                        <span>Giọng đọc</span>
-                    </label>
-                    <select id="voiceFilter" class="form-select">
-                        <option value="">Tất cả giọng đọc</option>
-                    </select>
-                </div>
-
-                <div class="filter-item-modern">
-                    <label class="filter-label-modern">
-                        <span>📅</span>
-                        <span>Từ ngày</span>
-                    </label>
-                    <input type="date" id="dateFrom" class="form-input">
-                </div>
-
-                <div class="filter-item-modern">
-                    <label class="filter-label-modern">
-                        <span>📅</span>
-                        <span>Đến ngày</span>
-                    </label>
-                    <input type="date" id="dateTo" class="form-input">
-                </div>
-
-                <div class="filter-item-modern">
-                    <label class="filter-label-modern">
-                        <span>📊</span>
-                        <span>Sắp xếp theo</span>
-                    </label>
-                    <select id="sortBy" class="form-select">
-                        <option value="newest">Mới nhất</option>
-                        <option value="oldest">Cũ nhất</option>
-                        <option value="duration">Thời lượng</option>
-                        <option value="size">Kích thước</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- View Controls -->
-        <div class="library-controls-modern animate-slideUp">
-            <div class="view-toggle-modern">
-                <button class="view-btn-modern active" data-view="grid">
-                    <span>⊞</span>
-                    <span>Lưới</span>
-                </button>
-                <button class="view-btn-modern" data-view="list">
-                    <span>☰</span>
-                    <span>Danh sách</span>
-                </button>
-            </div>
-            <div class="audio-count-badge-modern" id="audioCount">
-                <span>📁</span>
-                <span>Tổng: <strong>0</strong> audio</span>
-            </div>
-        </div>
-
-        <!-- Audio Container -->
-        <div id="audioContainer" class="audio-grid-modern">
-            <div class="loading-library-modern">
-                <div class="spinner spinner-lg" style="margin: 0 auto var(--space-4);"></div>
-                <p style="color: var(--text-secondary);">Đang tải thư viện...</p>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        <div class="pagination-modern" id="pagination" style="display: none;">
-            <button id="prevBtn" class="btn btn-ghost btn-md" disabled>
-                <span>←</span>
-                <span>Trước</span>
-            </button>
-            <span class="page-info-modern" id="pageInfo">Trang 1 / 1</span>
-            <button id="nextBtn" class="btn btn-ghost btn-md" disabled>
-                <span>Sau</span>
-                <span>→</span>
-            </button>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
+// ── Theme toggle ─────────────────────────────────────────────
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+updateThemeIcon();
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+    localStorage.setItem('tts-theme', next);
+    updateThemeIcon();
+  });
+}
+</script>
 <script src="{{ url_for('static', filename='js/audio-library.js') }}"></script>
-{% endblock %}
+</body>
+</html>

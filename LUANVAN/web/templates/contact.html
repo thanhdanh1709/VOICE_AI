@@ -1,199 +1,466 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Liên hệ với chúng tôi - VietVoice</title>
 
-{% block title %}Liên hệ - TTS System{% endblock %}
+<!-- Anti-flash -->
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
-{% block content %}
-<div class="container">
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <h1>Liên hệ với chúng tôi</h1>
-        <p>Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7</p>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface-dim":  "#051424",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "surface-variant":"#273647",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "on-background":     "#d4e4fa",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-fixed":     "#e9ddff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "on-primary-container":"#340080",
+        "inverse-primary":   "#6d3bd7",
+        "secondary":         "#bec6e0",
+        "secondary-container":"#3f465c",
+        "on-secondary":      "#283044",
+        "tertiary":          "#2fd9f4",
+        "tertiary-container":"#009fb4",
+        "on-tertiary":       "#00363e",
+        "error":             "#ffb4ab",
+        "error-container":   "#93000a",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+        "inverse-surface":   "#d4e4fa",
+        "inverse-on-surface":"#233143",
+      },
+    },
+  },
+}
+</script>
+
+<style>
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .gradient-text {
+    background: linear-gradient(to right, #a078ff, #2fd9f4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Alert status boxes */
+  #contactSuccess, #contactError {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 16px;
+  }
+  #contactSuccess {
+    background: rgba(47,217,244,0.1);
+    border: 1px solid rgba(47,217,244,0.3);
+    color: #2fd9f4;
+  }
+  #contactError {
+    background: rgba(147,0,10,0.15);
+    border: 1px solid rgba(255,180,171,0.3);
+    color: #ffb4ab;
+  }
+
+  /* FAQ card hover accent */
+  .faq-card:nth-child(odd) { border-left-color: #a078ff; }
+  .faq-card:nth-child(even) { border-left-color: #2fd9f4; }
+  .faq-card:nth-child(odd):hover h4 { color: #a078ff; }
+  .faq-card:nth-child(even):hover h4 { color: #2fd9f4; }
+
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+  .animate-in { animation: fadeInUp 0.4s ease-out both; }
+</style>
+</head>
+
+<body class="min-h-screen flex flex-col bg-background text-on-background">
+
+<!-- ═══ TOP NAVBAR ═══ -->
+<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+  <div class="flex justify-between items-center px-6 h-16 max-w-[1360px] mx-auto">
+    <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
+      VietVoice
+    </a>
+    <div class="hidden md:flex items-center space-x-1">
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      {% if session.user_role == 'admin' %}
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
+        <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+        <span id="charsNavCount">...</span>
+      </a>
+      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <a href="{{ url_for('contact') }}" class="text-primary p-2 rounded-full transition-all" title="Liên hệ">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">help</span>
+      </a>
+      <div class="flex items-center gap-2 pl-2 border-l border-white/10">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+          {{ (session.full_name or session.username or 'U')[0] | upper }}
+        </div>
+        <div class="hidden sm:flex flex-col">
+          <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
+          <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ LAYOUT: Sidebar + Main ═══ -->
+<div class="flex flex-1 pt-16 min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-60 fixed left-0 top-16 bottom-0 bg-[#051424] pt-6 z-40">
+    <div class="px-4 mb-4">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white">VietVoice Pro</div>
+          <div class="text-xs text-primary">AI Synthesis Active</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Contact Info Bar - 4 Cards Ngang -->
-    <div class="contact-info-bar">
-        <div class="contact-info-item">
-            <div class="contact-icon-circle email-circle">
-                <span>📧</span>
-            </div>
-            <div class="contact-item-content">
-                <h3>Email</h3>
-                <p>danhvt388@gmail.com</p>
-                <a href="mailto:danhvt388@gmail.com" class="contact-quick-link">Gửi email →</a>
-            </div>
-        </div>
+    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+        Tạo Audio mới
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
+        Thư viện Audio
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+        Giọng của tôi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">history</span>
+        Lịch sử chuyển đổi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+        Bảng giá
+      </a>
+      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('contact') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
+        Liên hệ
+      </a>
+    </nav>
 
-        <div class="contact-info-item">
-            <div class="contact-icon-circle phone-circle">
-                <span>📞</span>
-            </div>
-            <div class="contact-item-content">
-                <h3>Điện thoại</h3>
-                <p>0866005541</p>
-                <a href="tel:0866005541" class="contact-quick-link">Gọi ngay →</a>
-            </div>
-        </div>
+    <div class="p-4 mt-auto">
+      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+        Nâng cấp gói
+      </a>
+    </div>
+  </aside>
 
-        <div class="contact-info-item">
-            <div class="contact-icon-circle location-circle">
-                <span>📍</span>
-            </div>
-            <div class="contact-item-content">
-                <h3>Địa chỉ</h3>
-                <p>146/MO, Long Tuyền<br>Bình Thủy, Cần Thơ</p>
-                <a href="https://maps.google.com/?q=146/MO,Long+Tuyền,Bình+Thủy,Cần+Thơ" target="_blank" class="contact-quick-link">Bản đồ →</a>
-            </div>
-        </div>
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="flex-1 md:ml-60 px-6 md:px-10 py-10 pb-16 max-w-[1360px] mx-auto w-full">
 
-        <div class="contact-info-item">
-            <div class="contact-icon-circle time-circle">
-                <span>⏰</span>
-            </div>
-            <div class="contact-item-content">
-                <h3>Giờ làm việc</h3>
-                <p>T2 - T6: 9:00 - 18:00<br>T7: 9:00 - 12:00</p>
-                <span class="contact-status-badge">Đang hoạt động</span>
-            </div>
-        </div>
+    <!-- Page Header -->
+    <div class="text-center mb-12 animate-in">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
+        Liên hệ với <span class="gradient-text">chúng tôi</span>
+      </h1>
+      <p class="text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+        Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7. Hãy gửi câu hỏi, phản hồi hoặc yêu cầu hỗ trợ kỹ thuật cho đội ngũ chuyên gia AI của chúng tôi.
+      </p>
     </div>
 
-    <!-- Contact Form - Centered -->
-    <div class="contact-form-wrapper">
-        <div class="contact-form-card card-elevated">
-            <div class="form-header-centered">
-                <span class="form-header-icon">💬</span>
-                <h2>Gửi tin nhắn cho chúng tôi</h2>
-                <p>Điền thông tin bên dưới và chúng tôi sẽ phản hồi sớm nhất</p>
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+
+      <!-- Left: Contact Info + Form -->
+      <div class="lg:col-span-7 flex flex-col gap-7">
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in" style="animation-delay:0.05s">
+          <div class="glass-card p-5 rounded-xl flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-primary-container" style="font-variation-settings:'FILL' 1;font-size:20px">mail</span>
             </div>
-            
-            <form id="contactForm" class="contact-form">
-                <div class="form-row">
-                    <div class="form-group-modern">
-                        <label for="contactName" class="form-label-icon">
-                            <span class="label-icon">👤</span>
-                            Họ và tên
-                        </label>
-                        <input type="text" id="contactName" class="form-input-modern" placeholder="Nguyễn Văn A" required>
-                    </div>
-
-                    <div class="form-group-modern">
-                        <label for="contactEmail" class="form-label-icon">
-                            <span class="label-icon">📧</span>
-                            Email
-                        </label>
-                        <input type="email" id="contactEmail" class="form-input-modern" placeholder="email@example.com" required>
-                    </div>
-                </div>
-
-                <div class="form-group-modern">
-                    <label for="contactSubject" class="form-label-icon">
-                        <span class="label-icon">📝</span>
-                        Chủ đề
-                    </label>
-                    <select id="contactSubject" class="form-input-modern" required>
-                        <option value="">Chọn chủ đề...</option>
-                        <option value="support">🔧 Hỗ trợ kỹ thuật</option>
-                        <option value="pricing">💳 Câu hỏi về giá</option>
-                        <option value="feature">✨ Yêu cầu tính năng</option>
-                        <option value="bug">🐛 Báo lỗi</option>
-                        <option value="partnership">🤝 Hợp tác</option>
-                        <option value="other">📋 Khác</option>
-                    </select>
-                </div>
-
-                <div class="form-group-modern">
-                    <label for="contactMessage" class="form-label-icon">
-                        <span class="label-icon">💬</span>
-                        Nội dung tin nhắn
-                    </label>
-                    <textarea id="contactMessage" class="form-textarea-modern" rows="6" placeholder="Nhập nội dung chi tiết tin nhắn của bạn..." required></textarea>
-                    <div class="char-counter-contact">
-                        <span id="messageCharCount">0</span> / 1000 ký tự
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit-contact" id="submitContactBtn">
-                    <span class="btn-icon">📤</span>
-                    <span class="btn-text">Gửi tin nhắn ngay</span>
-                </button>
-
-                <!-- Status Messages -->
-                <div id="contactSuccess" class="alert-success-contact" style="display: none;">
-                    <span class="alert-icon">✓</span>
-                    <span class="alert-text"></span>
-                </div>
-                <div id="contactError" class="alert-error-contact" style="display: none;">
-                    <span class="alert-icon">✕</span>
-                    <span class="alert-text"></span>
-                </div>
-            </form>
+            <div>
+              <h3 class="text-sm font-semibold text-white mb-1">Email Hỗ Trợ</h3>
+              <a href="mailto:danhvt388@gmail.com" class="text-sm text-slate-400 hover:text-primary transition-colors no-underline">danhvt388@gmail.com</a>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;font-size:20px">call</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white mb-1">Hotline</h3>
+              <a href="tel:0866005541" class="text-sm text-slate-400 hover:text-tertiary transition-colors no-underline">0866 005 541</a>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-primary-container" style="font-variation-settings:'FILL' 1;font-size:20px">location_on</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white mb-1">Văn Phòng</h3>
+              <p class="text-sm text-slate-400">146/MO Long Tuyền,<br/>Bình Thủy, Cần Thơ</p>
+            </div>
+          </div>
+          <div class="glass-card p-5 rounded-xl flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;font-size:20px">schedule</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white mb-1">Giờ Làm Việc</h3>
+              <p class="text-sm text-slate-400">T2 - T6: 9:00 - 18:00<br/>T7: 9:00 - 12:00</p>
+              <span class="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-tertiary bg-tertiary/10 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Đang hoạt động
+              </span>
+            </div>
+          </div>
         </div>
-    </div>
 
-    <!-- FAQ Section -->
-    <div class="faq-section">
-        <div class="section-header-centered">
-            <span class="section-icon">❓</span>
-            <h2 class="section-title">Câu hỏi thường gặp</h2>
-            <p class="section-subtitle">Tìm câu trả lời nhanh cho các thắc mắc phổ biến</p>
+        <!-- Contact Form -->
+        <div class="glass-card p-7 rounded-xl relative overflow-hidden animate-in" style="animation-delay:0.1s">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container/8 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+          <h2 class="text-xl font-bold text-white mb-6">Gửi Tin Nhắn</h2>
+
+          <form id="contactForm" class="space-y-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-1.5">
+                <label for="contactName" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide">Họ và tên</label>
+                <input type="text" id="contactName" required
+                  placeholder="Nguyễn Văn A"
+                  class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500"/>
+              </div>
+              <div class="space-y-1.5">
+                <label for="contactEmail" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide">Email</label>
+                <input type="email" id="contactEmail" required
+                  placeholder="email@example.com"
+                  class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500"/>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="contactSubject" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide">Chủ đề</label>
+              <select id="contactSubject" required
+                class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all appearance-none">
+                <option value="" disabled selected class="text-slate-500">Chọn chủ đề cần hỗ trợ</option>
+                <option value="support">Hỗ trợ kỹ thuật / Lỗi hệ thống</option>
+                <option value="billing">Thanh toán &amp; Gói cước</option>
+                <option value="feature">Yêu cầu tính năng mới</option>
+                <option value="bug">Báo lỗi</option>
+                <option value="partnership">Hợp tác</option>
+                <option value="api">Tích hợp API</option>
+                <option value="other">Yêu cầu khác</option>
+              </select>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="contactMessage" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide">Nội dung tin nhắn</label>
+              <textarea id="contactMessage" rows="5" required
+                placeholder="Mô tả chi tiết vấn đề của bạn..."
+                class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500 resize-none"></textarea>
+              <div class="text-xs text-on-surface-variant text-right">
+                <span id="messageCharCount" class="font-semibold text-on-surface">0</span> / 1000 ký tự
+              </div>
+            </div>
+
+            <button type="submit" id="submitContactBtn"
+              class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg bg-gradient-to-r from-[#6d3bd7] to-[#009fb4] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-[0_0_15px_rgba(109,59,215,0.35)]">
+              <span class="btn-icon material-symbols-outlined" style="font-size:18px">send</span>
+              <span class="btn-text">Gửi tin nhắn ngay</span>
+            </button>
+
+            <!-- Status alerts — controlled by contact.js -->
+            <div id="contactSuccess">
+              <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">check_circle</span>
+              <span class="alert-text"></span>
+            </div>
+            <div id="contactError">
+              <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">error</span>
+              <span class="alert-text"></span>
+            </div>
+          </form>
         </div>
-        
-        <div class="faq-grid">
-            <div class="faq-card card-subtle">
-                <div class="faq-icon">🚀</div>
-                <h4>Làm sao để bắt đầu sử dụng?</h4>
-                <p>Bạn chỉ cần đăng ký tài khoản miễn phí, sau đó có thể bắt đầu chuyển đổi văn bản thành giọng nói ngay lập tức với gói Free.</p>
-            </div>
+      </div>
 
-            <div class="faq-card card-subtle">
-                <div class="faq-icon">💳</div>
-                <h4>Phương thức thanh toán nào được hỗ trợ?</h4>
-                <p>Chúng tôi hỗ trợ thanh toán qua chuyển khoản ngân hàng với QR code tiện lợi, nhanh chóng và bảo mật.</p>
-            </div>
+      <!-- Right: FAQs -->
+      <div class="lg:col-span-5 flex flex-col gap-5 animate-in" style="animation-delay:0.15s">
+        <h2 class="text-xl font-bold text-white">Câu Hỏi Thường Gặp</h2>
 
-            <div class="faq-card card-subtle">
-                <div class="faq-icon">🎤</div>
-                <h4>Có bao nhiêu giọng đọc?</h4>
-                <p>Hệ thống có đa dạng giọng đọc tiếng Việt miền Nam, Bắc, Trung với chất lượng tự nhiên, cảm xúc phong phú.</p>
-            </div>
-
-            <div class="faq-card card-subtle">
-                <div class="faq-icon">📱</div>
-                <h4>Có ứng dụng mobile không?</h4>
-                <p>Website được tối ưu responsive hoàn hảo cho mọi thiết bị, bạn có thể sử dụng mượt mà trên điện thoại, tablet.</p>
-            </div>
+        <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors">Làm thế nào để bắt đầu sử dụng?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Bạn chỉ cần đăng ký tài khoản miễn phí, sau đó có thể bắt đầu chuyển đổi văn bản thành giọng nói ngay lập tức với gói Free.</p>
         </div>
-    </div>
-
-    <!-- Social Media -->
-    <div class="social-section card-subtle">
-        <div class="social-header">
-            <span class="social-emoji">🌐</span>
-            <h3>Kết nối với chúng tôi</h3>
-            <p>Theo dõi để cập nhật tin tức và tính năng mới nhất</p>
+        <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors">Các phương thức thanh toán được hỗ trợ?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Chúng tôi hỗ trợ thanh toán qua QR Code chuyển khoản ngân hàng – nhanh chóng, tiện lợi và bảo mật.</p>
         </div>
-        <div class="social-links">
-            <a href="#" class="social-btn facebook" title="Facebook">
-                <span class="social-icon">f</span>
-                <span>Facebook</span>
+        <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors">Có bao nhiêu tùy chọn giọng nói?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Hệ thống cung cấp đa dạng giọng đọc AI tiếng Việt miền Nam, Bắc, Trung với cảm xúc phong phú và chất lượng tự nhiên cao.</p>
+        </div>
+        <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors">Ứng dụng di động có khả dụng không?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed">Website được tối ưu responsive hoàn hảo. Ứng dụng VietVoice mobile đang trong giai đoạn phát triển và sẽ sớm ra mắt trên iOS &amp; Android.</p>
+        </div>
+
+        <!-- Map area -->
+        <div class="rounded-xl overflow-hidden h-44 border border-white/10 relative mt-1">
+          <div class="w-full h-full bg-surface-container-high flex items-center justify-center">
+            <div class="text-center text-on-surface-variant">
+              <span class="material-symbols-outlined" style="font-size:40px;opacity:0.4">map</span>
+              <p class="text-xs mt-1 opacity-50">Bình Thủy, Cần Thơ</p>
+            </div>
+          </div>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <a href="https://maps.google.com/?q=Bình+Thủy,Cần+Thơ" target="_blank"
+               class="bg-surface-container-high/85 backdrop-blur text-white text-sm font-semibold px-4 py-2 rounded-full border border-white/20 hover:bg-surface-container-highest transition-colors flex items-center gap-2 no-underline">
+              <span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:'FILL' 1">map</span>
+              Xem trên bản đồ
             </a>
-            <a href="#" class="social-btn twitter" title="Twitter">
-                <span class="social-icon">🐦</span>
-                <span>Twitter</span>
-            </a>
-            <a href="#" class="social-btn linkedin" title="LinkedIn">
-                <span class="social-icon">in</span>
-                <span>LinkedIn</span>
-            </a>
-            <a href="#" class="social-btn youtube" title="YouTube">
-                <span class="social-icon">▶</span>
-                <span>YouTube</span>
-            </a>
+          </div>
         </div>
+      </div>
     </div>
+
+    <!-- Bottom CTA / Newsletter -->
+    <div class="glass-card rounded-2xl p-8 md:p-12 text-center relative overflow-hidden animate-in" style="animation-delay:0.2s">
+      <div class="absolute inset-0 bg-gradient-to-br from-primary-container/5 to-tertiary/5 pointer-events-none rounded-2xl"></div>
+      <h2 class="text-2xl font-bold text-white mb-3">Kết nối với chúng tôi</h2>
+      <p class="text-sm text-slate-400 max-w-md mx-auto mb-7 leading-relaxed">
+        Đăng ký nhận bản tin để cập nhật những công nghệ tổng hợp giọng nói AI mới nhất từ VietVoice.
+      </p>
+      <div class="flex flex-col sm:flex-row justify-center items-center gap-3 max-w-md mx-auto mb-8">
+        <input type="email" placeholder="Nhập địa chỉ email của bạn"
+          class="w-full sm:flex-1 bg-surface-container border border-outline-variant text-white rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500"/>
+        <button class="w-full sm:w-auto bg-white text-surface-dim text-sm font-semibold py-2.5 px-6 rounded-full hover:bg-slate-200 transition-colors whitespace-nowrap">
+          Đăng ký
+        </button>
+      </div>
+      <div class="flex justify-center gap-4">
+        <a href="#" class="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary-container/20 border border-transparent hover:border-primary-container transition-all">
+          <span class="material-symbols-outlined" style="font-size:18px">language</span>
+        </a>
+        <a href="#" class="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-slate-400 hover:text-white hover:bg-tertiary/20 border border-transparent hover:border-tertiary transition-all">
+          <span class="material-symbols-outlined" style="font-size:18px">forum</span>
+        </a>
+        <a href="#" class="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-slate-400 hover:text-white hover:bg-primary-container/20 border border-transparent hover:border-primary-container transition-all">
+          <span class="material-symbols-outlined" style="font-size:18px">share</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- ═══ FOOTER ═══ -->
+<footer class="w-full border-t border-white/5 py-6 bg-[#051424] md:pl-60">
+  <div class="max-w-[1360px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="text-xs font-bold text-slate-500">© 2026 VietVoice AI · Powered by Neural Synthesis</div>
+    <div class="flex gap-5 text-xs text-slate-500">
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Hỗ trợ</a>
+      <a href="{{ url_for('pricing') }}" class="hover:text-primary transition-colors no-underline">Bảng giá</a>
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Điều khoản</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+// ── Characters remaining (nav badge) ─────────────────────────
+async function loadCharsRemaining() {
+  try {
+    const r = await fetch('/api/user/characters');
+    const d = await r.json();
+    if (d.success) {
+      const n = d.characters_remaining;
+      const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+      const el = document.getElementById('charsNavCount');
+      if (el) el.textContent = fmt + ' ký tự';
+    }
+  } catch(e) {}
+}
+loadCharsRemaining();
+
+// Theme toggle
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+updateThemeIcon();
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+    localStorage.setItem('tts-theme', next);
+    updateThemeIcon();
+  });
+}
+</script>
 <script src="{{ url_for('static', filename='js/contact.js') }}"></script>
-{% endblock %}
+</body>
+</html>

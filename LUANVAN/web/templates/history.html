@@ -1,201 +1,364 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lịch sử chuyển đổi - VietVoice</title>
 
-{% block title %}Lịch sử chuyển đổi - VoiceAI TTS{% endblock %}
+<!-- Anti-flash -->
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
-{% block extra_css %}
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-lowest": "#010f1f",
+        "surface-container-low":    "#0d1c2d",
+        "surface-container":        "#122131",
+        "surface-container-high":   "#1c2b3c",
+        "surface-container-highest":"#273647",
+        "surface-dim":  "#051424",
+        "surface":      "#051424",
+        "surface-bright":"#2c3a4c",
+        "surface-variant":"#273647",
+        "on-surface":        "#d4e4fa",
+        "on-surface-variant":"#cbc3d7",
+        "on-background":     "#d4e4fa",
+        "background":        "#051424",
+        "primary":           "#d0bcff",
+        "primary-fixed":     "#e9ddff",
+        "primary-container": "#a078ff",
+        "on-primary":        "#3c0091",
+        "on-primary-container":"#340080",
+        "inverse-primary":   "#6d3bd7",
+        "secondary":         "#bec6e0",
+        "secondary-container":"#3f465c",
+        "on-secondary":      "#283044",
+        "on-secondary-container":"#adb4ce",
+        "tertiary":          "#2fd9f4",
+        "tertiary-container":"#009fb4",
+        "on-tertiary":       "#00363e",
+        "error":             "#ffb4ab",
+        "error-container":   "#93000a",
+        "on-error":          "#690005",
+        "outline":           "#958ea0",
+        "outline-variant":   "#494454",
+        "inverse-surface":   "#d4e4fa",
+        "inverse-on-surface":"#233143",
+        "surface-tint":      "#d0bcff",
+      },
+    },
+  },
+}
+</script>
+
 <style>
-/* Table Styles */
-.history-table-modern {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
 
-.history-table-modern thead {
-    background-color: var(--bg-secondary);
-}
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+  }
 
-.history-table-modern th {
-    padding: var(--space-4);
-    text-align: left;
-    font-weight: var(--font-semibold);
-    color: var(--text-secondary);
-    font-size: var(--text-sm);
-    border-bottom: 2px solid var(--border-color);
-}
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
 
-.history-table-modern tbody tr {
-    transition: all var(--duration-fast) var(--ease-out);
-}
+  /* Table row actions hidden by default, shown on hover via JS class */
+  .row-actions { opacity: 0; transition: opacity 0.15s ease; }
+  tr:hover .row-actions { opacity: 1; }
 
-.history-table-modern tbody tr:hover {
-    background-color: var(--bg-secondary);
-}
+  /* Status badge styles */
+  .status-completed {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 9999px;
+    background: rgba(0,159,180,0.15);
+    border: 1px solid rgba(47,217,244,0.3);
+    font-size: 12px; font-weight: 500; color: #2fd9f4;
+  }
+  .status-pending, .status-processing {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 9999px;
+    background: rgba(160,120,255,0.15);
+    border: 1px solid rgba(208,188,255,0.3);
+    font-size: 12px; font-weight: 500; color: #d0bcff;
+  }
+  .status-failed {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 9999px;
+    background: rgba(147,0,10,0.2);
+    border: 1px solid rgba(255,180,171,0.3);
+    font-size: 12px; font-weight: 500; color: #ffb4ab;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .status-completed .status-dot { background: #2fd9f4; }
+  .status-pending .status-dot, .status-processing .status-dot { background: #d0bcff; animation: pulse 1.5s infinite; }
+  .status-failed .status-dot { background: #ffb4ab; }
 
-.history-table-modern td {
-    padding: var(--space-4);
-    border-bottom: 1px solid var(--border-color);
-    font-size: var(--text-sm);
-}
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes spin  { to { transform: rotate(360deg); } }
 
-.text-preview-cell {
-    max-width: 300px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.table-loading-modern {
-    text-align: center;
-    padding: var(--space-12) !important;
-}
-
-/* Empty State */
-.empty-history-modern {
-    text-align: center;
-    padding: var(--space-16) var(--space-8);
-}
-
-.empty-history-modern .empty-icon {
-    font-size: 5rem;
-    margin-bottom: var(--space-4);
-    opacity: 0.5;
-}
-
-.empty-history-modern .empty-title {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    margin-bottom: var(--space-2);
-}
-
-.empty-history-modern .empty-subtitle {
-    color: var(--text-secondary);
-}
-
-/* Table Actions */
-.table-actions {
-    display: flex;
-    gap: var(--space-2);
-}
-
-.btn-table-action {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-sm);
-    border-radius: var(--radius-md);
-    border: none;
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
-}
-
-.btn-table-action:hover {
-    transform: translateY(-2px);
-}
-
-.btn-play {
-    background-color: var(--success);
-    color: white;
-}
-
-.btn-download {
-    background-color: var(--info);
-    color: white;
-}
-
-.btn-delete-table {
-    background-color: var(--bg-tertiary);
-    color: var(--text-secondary);
-}
-
-.btn-delete-table:hover {
-    background-color: var(--error);
-    color: white;
-}
-
-/* Responsive Table */
-@media (max-width: 768px) {
-    .history-table-modern {
-        font-size: var(--text-xs);
-    }
-    
-    .history-table-modern th,
-    .history-table-modern td {
-        padding: var(--space-3);
-    }
-    
-    .text-preview-cell {
-        max-width: 150px;
-    }
-}
+  /* Pagination active page */
+  .page-btn.active {
+    background: rgba(160,120,255,0.2);
+    border-color: rgba(208,188,255,0.4);
+    color: #d0bcff;
+  }
 </style>
-{% endblock %}
+</head>
 
-{% block content %}
-<div class="container">
-    <div class="main-content">
-        <!-- Hero Section -->
-        <div style="margin-bottom: var(--space-8); text-align: center;">
-            <h1 class="gradient-text">📜 Lịch sử chuyển đổi</h1>
-            <p style="color: var(--text-secondary); font-size: var(--text-lg);">Xem lại và quản lý các file âm thanh đã tạo</p>
-        </div>
+<body class="min-h-screen flex flex-col bg-background text-on-background">
 
-        <!-- Search Card -->
-        <div class="card card-elevated animate-fadeIn" style="margin-bottom: var(--space-6);">
-            <div class="form-group" style="margin: 0;">
-                <div style="display: flex; gap: var(--space-2);">
-                    <input type="text" id="searchInput" class="form-input" placeholder="🔍 Tìm kiếm theo nội dung văn bản..." style="flex: 1;">
-                    <button id="searchBtn" class="btn btn-primary btn-md">Tìm kiếm</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- History Table Card -->
-        <div class="card card-elevated animate-slideUp">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6);">
-                <h2 style="margin: 0;">📊 Danh sách lịch sử</h2>
-                <div class="badge badge-primary">
-                    Tổng: <strong id="totalRecords">0</strong> bản ghi
-                </div>
-            </div>
-            
-            <div style="overflow-x: auto;">
-                <table class="history-table-modern">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Văn bản</th>
-                            <th>Giọng đọc</th>
-                            <th>Trạng thái</th>
-                            <th>Thời gian</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody">
-                        <tr>
-                            <td colspan="6" class="table-loading-modern">
-                                <div class="spinner" style="margin: 0 auto var(--space-3);"></div>
-                                <p style="color: var(--text-secondary);">Đang tải dữ liệu...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Empty State -->
-            <div id="emptyHistoryState" class="empty-history-modern" style="display: none;">
-                <div class="empty-icon">📋</div>
-                <p class="empty-title">Chưa có lịch sử</p>
-                <p class="empty-subtitle">Các lần chuyển đổi của bạn sẽ xuất hiện ở đây</p>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        <div style="margin-top: var(--space-8);">
-            <div class="pagination-modern" id="pagination"></div>
-        </div>
+<!-- ═══ TOP NAVBAR ═══ -->
+<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+  <div class="flex justify-between items-center px-6 h-16 max-w-[1360px] mx-auto">
+    <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
+      VietVoice
+    </a>
+    <div class="hidden md:flex items-center space-x-1">
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
+      <a href="{{ url_for('history') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      {% if session.user_role == 'admin' %}
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      {% endif %}
     </div>
-</div>
-{% endblock %}
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
+        <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
+        <span id="charsNavCount">...</span>
+      </a>
+      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <a href="{{ url_for('contact') }}" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
+        <span class="material-symbols-outlined">help_outline</span>
+      </a>
+      <div class="flex items-center gap-2 pl-2 border-l border-white/10">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+          {{ (session.full_name or session.username or 'U')[0] | upper }}
+        </div>
+        <div class="hidden sm:flex flex-col">
+          <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
+          <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
+        </div>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
 
-{% block extra_js %}
+<!-- ═══ LAYOUT: Sidebar + Main ═══ -->
+<div class="flex flex-1 pt-16 min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-60 fixed left-0 top-16 bottom-0 bg-[#051424] pt-6">
+    <div class="px-4 mb-4">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white">VietVoice Pro</div>
+          <div class="text-xs text-primary">AI Synthesis Active</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+        Tạo Audio mới
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
+        Thư viện Audio
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+        Giọng của tôi
+      </a>
+      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('history') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">history</span>
+        Lịch sử chuyển đổi
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+        Bảng giá
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
+        Liên hệ
+      </a>
+    </nav>
+
+    <div class="p-4 mt-auto">
+      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+        Nâng cấp gói
+      </a>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="flex-1 md:ml-60 p-6 md:p-8 min-h-0 flex flex-col gap-6">
+
+    <!-- Header -->
+    <header class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold text-on-surface tracking-tight">Lịch sử chuyển đổi</h1>
+      <p class="text-sm text-on-surface-variant">Quản lý, theo dõi và tải xuống các tệp âm thanh đã được tổng hợp từ văn bản.</p>
+    </header>
+
+    <!-- Controls Toolbar -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+      <!-- Search -->
+      <div class="relative w-full md:w-96">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" style="font-size:18px">search</span>
+        <input id="searchInput" type="text"
+          class="w-full bg-surface-container border border-outline-variant text-on-surface rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline/60"
+          placeholder="Tìm kiếm văn bản hoặc ID..."/>
+      </div>
+      <!-- Buttons -->
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <button id="searchBtn"
+          class="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-colors text-primary text-sm font-semibold">
+          <span class="material-symbols-outlined" style="font-size:18px">filter_list</span>
+          Tìm kiếm
+        </button>
+        <button onclick="resetSearch()"
+          class="flex items-center gap-2 px-4 py-2.5 bg-surface-container border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant text-sm font-medium">
+          <span class="material-symbols-outlined" style="font-size:18px">restart_alt</span>
+          Đặt lại
+        </button>
+        <!-- Total badge -->
+        <div class="ml-auto flex items-center gap-1.5 bg-surface-container border border-outline-variant/50 rounded-full px-3 py-1.5 text-xs font-semibold text-on-surface-variant">
+          <span class="material-symbols-outlined" style="font-size:13px">list_alt</span>
+          Tổng: <strong id="totalRecords" class="text-on-surface">0</strong> bản ghi
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="w-full bg-surface/40 backdrop-blur-xl border border-outline-variant/30 rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
+      <div class="overflow-x-auto w-full">
+        <table class="w-full text-left">
+          <thead class="bg-surface-container/80 border-b border-outline-variant/50">
+            <tr>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant w-24">ID</th>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Văn bản</th>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Giọng đọc</th>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Trạng thái</th>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Thời gian</th>
+              <th class="px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-on-surface-variant text-right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y divide-outline-variant/20">
+            <tr>
+              <td colspan="6" class="px-5 py-14 text-center">
+                <div class="flex flex-col items-center gap-3 text-on-surface-variant">
+                  <div style="width:28px;height:28px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+                  <p class="text-sm">Đang tải dữ liệu...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State (hidden initially, shown by JS) -->
+      <div id="emptyHistoryState" class="hidden flex-col items-center justify-center py-20 gap-4 text-on-surface-variant">
+        <span class="material-symbols-outlined" style="font-size:56px;opacity:0.3">history</span>
+        <div class="text-center">
+          <p class="text-base font-semibold text-on-surface">Chưa có lịch sử</p>
+          <p class="text-sm mt-1">Các lần chuyển đổi của bạn sẽ xuất hiện ở đây</p>
+        </div>
+        <a href="{{ url_for('index') }}" class="mt-1 px-5 py-2.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors no-underline flex items-center gap-2">
+          <span class="material-symbols-outlined" style="font-size:16px">add_circle</span>
+          Tạo Audio đầu tiên
+        </a>
+      </div>
+
+      <!-- Pagination footer -->
+      <div class="px-5 py-3.5 border-t border-outline-variant/30 bg-surface-container/30 flex items-center justify-between gap-4 flex-wrap">
+        <span id="paginationInfo" class="text-xs text-on-surface-variant">—</span>
+        <div id="pagination" class="flex items-center gap-1.5"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="w-full border-t border-white/5 py-6 bg-[#051424] md:pl-60">
+  <div class="max-w-[1360px] mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-3">
+    <div class="text-xs font-bold text-slate-500">© 2026 VietVoice AI · Powered by Neural Synthesis</div>
+    <div class="flex gap-5 text-xs text-slate-500">
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Hỗ trợ</a>
+      <a href="{{ url_for('pricing') }}" class="hover:text-primary transition-colors no-underline">Bảng giá</a>
+      <a href="{{ url_for('contact') }}" class="hover:text-primary transition-colors no-underline">Điều khoản</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+// ── Theme toggle ──────────────────────────────────────────
+// ── Characters remaining (nav badge) ─────────────────────────
+async function loadCharsRemaining() {
+  try {
+    const r = await fetch('/api/user/characters');
+    const d = await r.json();
+    if (d.success) {
+      const n = d.characters_remaining;
+      const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+      const el = document.getElementById('charsNavCount');
+      if (el) el.textContent = fmt + ' ký tự';
+    }
+  } catch(e) {}
+}
+loadCharsRemaining();
+
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+function updateThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+}
+updateThemeIcon();
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+    localStorage.setItem('tts-theme', next);
+    updateThemeIcon();
+  });
+}
+function resetSearch() {
+  const input = document.getElementById('searchInput');
+  if (input) { input.value = ''; }
+  if (window.historyReset) window.historyReset();
+}
+</script>
 <script src="{{ url_for('static', filename='js/history.js') }}"></script>
-{% endblock %}
+</body>
+</html>

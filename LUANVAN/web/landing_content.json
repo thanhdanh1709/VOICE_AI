@@ -1,0 +1,147 @@
+{
+  "hero": {
+    "tag": "Giải pháp AI Tiên Phong",
+    "title_line1": "VietVoice: Chuyển đổi",
+    "title_grad": "văn bản thành giọng nói AI",
+    "title_line2": "tự nhiên &amp; truyền cảm",
+    "subtitle": "Nền tảng TTS AI tiên phong — tạo giọng nói chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân, chỉ trong vài giây.",
+    "btn_primary": "Bắt đầu ngay",
+    "btn_secondary": "Đăng nhập →",
+    "free_note": "Không cần thẻ tín dụng - 100.000 ký tự miễn phí khi đăng ký"
+  },
+  "company": {
+    "name": "CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG",
+    "desc": "CHUYÊN CUNG CẤP GIẢI PHÁP CÔNG NGHỆ KỸ THUẬT CAO VÀ XUẤT NHẬP KHẨU CÁC MẶT HÀNG CÔNG NGHỆ TIÊN TIẾN.",
+    "mst": "1801526082",
+    "representative": "NGÔ HỒ ANH KHÔI",
+    "address": "P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, P. Cái Răng, TP. Cần Thơ",
+    "phone": "0916 416 409",
+    "since": "05/04/2017"
+  },
+  "about_new": {
+    "title": "Về VietVoice AI",
+    "desc": "Chúng tôi kiến tạo tương lai của giao tiếp số thông qua công nghệ AI Synthesis hàng đầu, mang đến giải pháp chuyển đổi văn bản thành giọng nói tự nhiên, truyền cảm và đậm chất Việt.",
+    "cards": [
+      {"icon": "visibility", "title": "Tầm Nhìn", "desc": "Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo nội dung cho hàng triệu doanh nghiệp và cá nhân."},
+      {"icon": "flag", "title": "Sứ Mệnh", "desc": "Cung cấp giải pháp tổng hợp giọng nói chất lượng phòng thu, đa dạng vùng miền, dễ dàng tích hợp và tối ưu chi phí cho thị trường Việt Nam và quốc tế."},
+      {"icon": "handshake", "title": "Cam Kết", "desc": "Liên tục nghiên cứu, ứng dụng các mô hình học sâu (Deep Learning) mới nhất để cải thiện độ tự nhiên, cảm xúc và tốc độ xử lý của hệ thống."}
+    ]
+  },
+  "footer": {
+    "brand_desc": "Nền tảng chuyển văn bản thành giọng nói AI tiên phong — chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.",
+    "col1_title": "TÍNH NĂNG",
+    "col1_links": [
+      {"label": "Chuyển văn bản → Giọng nói", "href": "/#features"},
+      {"label": "Clone giọng cá nhân",         "href": "/#features"},
+      {"label": "Emotional TTS",               "href": "/#features"},
+      {"label": "Thư viện âm thanh",           "href": "/audio-library"},
+      {"label": "Bảng giá & Nâng cấp",         "href": "/pricing"}
+    ],
+    "col2_title": "HỖ TRỢ",
+    "col2_links": [
+      {"label": "Liên hệ hỗ trợ",     "href": "/contact"},
+      {"label": "Câu hỏi thường gặp", "href": "#"},
+      {"label": "Báo lỗi",            "href": "/contact"},
+      {"label": "Yêu cầu tính năng",  "href": "/contact"}
+    ],
+    "col3_title": "TÀI KHOẢN",
+    "privacy_link": "Chính sách bảo mật",
+    "terms_link": "Điều khoản sử dụng",
+    "copyright": "© 2024 VietVoice AI · Công ty TNHH Một Thành Viên Công Nghệ Kỹ Thuật Tiên Phong · MST: 1801526082"
+  },
+  "trusted": {
+    "label": "Được tin dùng bởi",
+    "items": [
+      "Học sinh & sinh viên",
+      "Content Creator",
+      "Doanh nghiệp",
+      "Developer"
+    ]
+  },
+  "features": {
+    "label": "TÍNH NĂNG NỔI BẬT",
+    "title": "Hiện thực hóa giọng nói trong mơ của bạn bằng AI",
+    "subtitle": "Bộ công cụ TTS toàn diện — từ giọng nói tự nhiên đến cảm xúc phong phú và clone giọng cá nhân",
+    "cards": [
+      {
+        "num": "01",
+        "icon": "🎙️",
+        "title": "Giọng Nói AI Tự Nhiên",
+        "desc": "Công nghệ TTS tiên tiến tạo ra giọng nói nghe tự nhiên như người thật. Hỗ trợ tiếng Việt đa vùng miền và nhiều ngôn ngữ khác."
+      },
+      {
+        "num": "02",
+        "icon": "🎭",
+        "title": "Emotional TTS",
+        "desc": "AI tự động điều chỉnh cảm xúc theo nội dung — vui, buồn, hào hứng, bình thản — cho giọng đọc sống động và chân thật hơn."
+      },
+      {
+        "num": "03",
+        "icon": "🧬",
+        "title": "Clone Giọng Cá Nhân",
+        "desc": "Tải lên vài giây giọng mẫu, AI học và tái tạo chính xác giọng nói của bạn. Công nghệ RVC + viXTTS tiên tiến nhất hiện nay."
+      },
+      {
+        "num": "04",
+        "icon": "⚡",
+        "title": "Xử Lý Siêu Nhanh",
+        "desc": "Hệ thống AI xử lý nền hiệu suất cao. Nhận kết quả trong vài giây, không cần chờ đợi dù văn bản dài hàng nghìn ký tự."
+      }
+    ]
+  },
+  "steps": {
+    "label": "ĐƠN GIẢN",
+    "title": "Chỉ 3 bước để có giọng nói hoàn hảo",
+    "subtitle": "Từ văn bản đến âm thanh chuyên nghiệp — nhanh chóng, không cần kỹ năng kỹ thuật.",
+    "items": [
+      {
+        "num": "01",
+        "icon": "✍️",
+        "title": "Nhập văn bản",
+        "desc": "Gõ, dán hoặc tải lên file văn bản của bạn. Hỗ trợ TXT, PDF, DOCX."
+      },
+      {
+        "num": "02",
+        "icon": "🤖",
+        "title": "AI xử lý",
+        "desc": "Chọn giọng đọc và nhấn chuyển đổi. AI tạo âm thanh chất lượng cao tự động."
+      },
+      {
+        "num": "03",
+        "icon": "📥",
+        "title": "Tải về & dùng ngay",
+        "desc": "Download file audio chất lượng cao. Sẵn sàng sử dụng cho mọi mục đích."
+      }
+    ]
+  },
+  "showcase": {
+    "icon": "🎤",
+    "title": "Trải nghiệm giọng nói tự nhiên như người thật",
+    "desc": "Công nghệ AI tiên tiến kết hợp RVC và viXTTS mang lại chất lượng âm thanh vượt trội, phù hợp cho mọi ứng dụng từ podcast, audio book đến trợ lý ảo.",
+    "badges": [
+      "✓ Giọng tiếng Việt tự nhiên",
+      "✓ Clone giọng cá nhân",
+      "✓ Cảm xúc phong phú",
+      "✓ Xử lý nhanh",
+      "✓ Chất lượng cao"
+    ],
+    "btn": "Bắt đầu miễn phí ngay"
+  },
+  "final_cta": {
+    "title": "Bắt đầu tạo giọng nói ngay hôm nay",
+    "subtitle": "Không cần thẻ tín dụng · Miễn phí ngay khi đăng ký · Nâng cấp bất cứ lúc nào",
+    "btn_primary": "Đăng ký miễn phí",
+    "btn_secondary": "Đã có tài khoản →",
+    "note": "Bắt đầu với 500 ký tự miễn phí mỗi lần chuyển đổi"
+  },
+  "about": {
+    "label": "VỀ CHÚNG TÔI",
+    "title": "VietVoice, bộ công cụ công nghệ AI toàn diện",
+    "company_desc": "CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG — chuyên cung cấp giải pháp công nghệ kỹ thuật cao và xuất nhập khẩu các mặt hàng công nghệ tiên tiến.",
+    "info_row1": "MST: 1801526082 · Người đại diện: NGÔ HỒ ANH KHÔI",
+    "info_row2": "P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, Phường Cái Răng, TP. Cần Thơ",
+    "info_row3": "0916 416 409 · Hoạt động từ 05/04/2017",
+    "btn": "Bắt đầu ngay",
+    "note": "Không cần thẻ tín dụng · 100 000 ký tự miễn phí khi đăng ký"
+  }
+}
