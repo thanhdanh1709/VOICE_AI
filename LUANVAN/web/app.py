@@ -7,6 +7,16 @@ import sys
 import traceback
 import time
 
+# Load .env.local for local development (not pushed to GitHub)
+_env_file = os.path.join(os.path.dirname(__file__), '.env.local')
+if os.path.exists(_env_file):
+    with open(_env_file, encoding='utf-8') as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line and not _line.startswith('#') and '=' in _line:
+                _k, _v = _line.split('=', 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 # Set UTF-8 encoding for console output on Windows
 if sys.platform == 'win32':
     import codecs
