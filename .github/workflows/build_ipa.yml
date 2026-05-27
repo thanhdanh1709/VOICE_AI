@@ -13,24 +13,32 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: Show project files
         run: |
-          HOMEBREW_NO_AUTO_UPDATE=1 brew install --cask flutter
-          flutter doctor
+          pwd
+          ls -la
+          ls -la app_web_view
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Check Flutter
+        run: flutter doctor -v
 
       - name: Install dependencies
-        working-directory: ./app_web_view
+        working-directory: app_web_view
         run: |
           flutter pub get
-          cd ios
-          pod install
 
-      - name: Build iOS no-codesign
-        working-directory: ./app_web_view
-        run: flutter build ios --release --no-codesign
+      - name: Build iOS no codesign
+        working-directory: app_web_view
+        run: |
+          flutter build ios --release --no-codesign
 
       - name: Package IPA
-        working-directory: ./app_web_view
+        working-directory: app_web_view
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
