@@ -1,0 +1,59 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ✅ Quyền truy cập Internet -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:label="TTS Tiếng Việt"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <!-- Launcher intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- (Intent filter login đã được chuyển sang CallbackActivity bên dưới) -->
+        </activity>
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+
+        <!-- ✅ Đăng ký CallbackActivity của thư viện flutter_web_auth_2 -->
+        <activity android:name="com.linusu.flutter_web_auth_2.CallbackActivity" android:exported="true">
+            <intent-filter android:label="flutter_web_auth">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Chỉ để scheme để Chrome dễ bắt link và tự đóng tab hơn -->
+                <data android:scheme="ttsvietnam" />
+            </intent-filter>
+        </activity>
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- ✅ Cho phép mở Chrome Custom Tab -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+    </queries>
+</manifest>
