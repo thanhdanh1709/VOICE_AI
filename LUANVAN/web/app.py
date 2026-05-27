@@ -111,6 +111,10 @@ app = Flask(__name__,
             template_folder='templates')
 app.secret_key = 'dev-secret-key-change-in-production'
 
+# Hỗ trợ reverse proxy (ngrok, nginx...) - đọc X-Forwarded headers
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 # ── Google OAuth ──────────────────────────────────────────
 oauth = OAuth(app)
 google = oauth.register(

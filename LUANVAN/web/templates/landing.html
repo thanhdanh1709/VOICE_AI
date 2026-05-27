@@ -1,621 +1,961 @@
 <!DOCTYPE html>
 <html class="dark" lang="vi">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
 <title>VietVoice AI - Bộ công cụ công nghệ AI toàn diện</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script id="tailwind-config">
-tailwind.config = {
-    darkMode: "class",
-    theme: {
-        extend: {
-            colors: {
-                "outline": "#958ea0",
-                "primary-fixed-dim": "#d0bcff",
-                "on-tertiary-container": "#002f36",
-                "on-primary-fixed-variant": "#5516be",
-                "on-background": "#d4e4fa",
-                "tertiary-fixed-dim": "#2fd9f4",
-                "on-surface-variant": "#cbc3d7",
-                "on-primary": "#3c0091",
-                "primary-container": "#a078ff",
-                "on-primary-container": "#340080",
-                "on-error-container": "#ffdad6",
-                "primary-fixed": "#e9ddff",
-                "on-secondary": "#283044",
-                "on-error": "#690005",
-                "on-tertiary-fixed-variant": "#004e5a",
-                "on-surface": "#d4e4fa",
-                "on-tertiary-fixed": "#001f25",
-                "surface-tint": "#d0bcff",
-                "surface-container": "#122131",
-                "secondary-fixed": "#dae2fd",
-                "inverse-on-surface": "#233143",
-                "on-secondary-fixed-variant": "#3f465c",
-                "secondary-fixed-dim": "#bec6e0",
-                "on-secondary-container": "#adb4ce",
-                "tertiary": "#2fd9f4",
-                "surface-container-highest": "#273647",
-                "surface-container-high": "#1c2b3c",
-                "surface-bright": "#2c3a4c",
-                "error-container": "#93000a",
-                "tertiary-fixed": "#a2eeff",
-                "surface-container-low": "#0d1c2d",
-                "on-secondary-fixed": "#131b2e",
-                "inverse-primary": "#6d3bd7",
-                "surface-variant": "#273647",
-                "primary": "#d0bcff",
-                "error": "#ffb4ab",
-                "surface-container-lowest": "#010f1f",
-                "secondary-container": "#3f465c",
-                "background": "#051424",
-                "on-primary-fixed": "#23005c",
-                "inverse-surface": "#d4e4fa",
-                "on-tertiary": "#00363e",
-                "surface": "#051424",
-                "surface-dim": "#051424",
-                "outline-variant": "#494454",
-                "tertiary-container": "#009fb4",
-                "secondary": "#bec6e0"
-            },
-            borderRadius: { DEFAULT:"0.25rem", lg:"0.5rem", xl:"0.75rem", full:"9999px" },
-            fontFamily: { body: ["Manrope"] },
-            animation: {
-                "float": "float 6s ease-in-out infinite",
-                "float-delayed": "float 6s ease-in-out 3s infinite",
-                "pulse-slow": "pulse 4s cubic-bezier(0.4,0,0.6,1) infinite",
-            },
-            keyframes: {
-                float: { "0%,100%":{transform:"translateY(0px)"}, "50%":{transform:"translateY(-20px)"} }
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "outline": "#958ea0",
+                    "primary-fixed-dim": "#d0bcff",
+                    "on-tertiary-container": "#002f36",
+                    "on-primary-fixed-variant": "#5516be",
+                    "on-background": "#d4e4fa",
+                    "tertiary-fixed-dim": "#2fd9f4",
+                    "on-surface-variant": "#cbc3d7",
+                    "on-primary": "#3c0091",
+                    "primary-container": "#a078ff",
+                    "on-primary-container": "#340080",
+                    "on-error-container": "#ffdad6",
+                    "primary-fixed": "#e9ddff",
+                    "on-secondary": "#283044",
+                    "on-error": "#690005",
+                    "on-tertiary-fixed-variant": "#004e5a",
+                    "on-surface": "#d4e4fa",
+                    "on-tertiary-fixed": "#001f25",
+                    "surface-tint": "#d0bcff",
+                    "surface-container": "#122131",
+                    "secondary-fixed": "#dae2fd",
+                    "inverse-on-surface": "#233143",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "on-secondary-container": "#adb4ce",
+                    "tertiary": "#2fd9f4",
+                    "surface-container-highest": "#273647",
+                    "surface-container-high": "#1c2b3c",
+                    "surface-bright": "#2c3a4c",
+                    "error-container": "#93000a",
+                    "tertiary-fixed": "#a2eeff",
+                    "surface-container-low": "#0d1c2d",
+                    "on-secondary-fixed": "#131b2e",
+                    "inverse-primary": "#6d3bd7",
+                    "surface-variant": "#273647",
+                    "primary": "#d0bcff",
+                    "error": "#ffb4ab",
+                    "surface-container-lowest": "#010f1f",
+                    "secondary-container": "#3f465c",
+                    "background": "#051424",
+                    "on-primary-fixed": "#23005c",
+                    "inverse-surface": "#d4e4fa",
+                    "on-tertiary": "#00363e",
+                    "surface": "#051424",
+                    "surface-dim": "#051424",
+                    "outline-variant": "#494454",
+                    "tertiary-container": "#009fb4",
+                    "secondary": "#bec6e0"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "gutter": "24px",
+                    "unit": "8px",
+                    "container-max": "1280px",
+                    "section-gap": "80px",
+                    "margin": "32px"
+                },
+                "fontFamily": {
+                    "body-md": ["Manrope"],
+                    "body-lg": ["Manrope"],
+                    "label-md": ["Manrope"],
+                    "headline-sm": ["Manrope"],
+                    "headline-lg": ["Manrope"],
+                    "label-sm": ["Manrope"],
+                    "headline-md": ["Manrope"]
+                },
+                "fontSize": {
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "label-md": ["14px", { "lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                    "headline-sm": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "headline-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                    "label-sm": ["12px", { "lineHeight": "1.2", "fontWeight": "500" }],
+                    "headline-md": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }]
+                },
+                "animation": {
+                    "float": "float 6s ease-in-out infinite",
+                    "float-delayed": "float 6s ease-in-out 3s infinite",
+                    "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                    "slide-up": "slideUp 0.8s ease-out forwards"
+                },
+                "keyframes": {
+                    "float": {
+                        "0%, 100%": { transform: "translateY(0px)" },
+                        "50%": { transform: "translateY(-20px)" }
+                    },
+                    "slideUp": {
+                        "0%": { transform: "translateY(40px)", opacity: "0" },
+                        "100%": { transform: "translateY(0)", opacity: "1" }
+                    }
+                }
             }
         }
     }
-}
 </script>
 <style>
-body { background-color:#051424; color:#d4e4fa; font-family:'Manrope',sans-serif; overflow-x:hidden; }
-.glass-panel { background:rgba(18,33,49,0.6); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.1); }
-.glass-card { background:rgba(18,33,49,0.4); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(208,188,255,0.15); box-shadow:0 8px 32px 0 rgba(0,0,0,0.2); transition:all 0.3s ease; }
-.glass-card:hover { border-color:rgba(208,188,255,0.4); box-shadow:0 12px 48px 0 rgba(160,120,255,0.15); }
-.gradient-text { background:linear-gradient(to right,#d0bcff,#2fd9f4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-.primary-gradient-btn { background:linear-gradient(135deg,#a078ff 0%,#6d3bd7 100%); transition:all 0.3s ease; position:relative; overflow:hidden; }
-.primary-gradient-btn::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg,#d0bcff 0%,#a078ff 100%); opacity:0; transition:opacity 0.3s ease; }
-.primary-gradient-btn:hover::before { opacity:1; }
-.primary-gradient-btn > * { position:relative; z-index:1; }
-.glow-effect { box-shadow:0 0 24px rgba(160,120,255,0.2); }
-.hero-glow { position:absolute; width:600px; height:600px; background:radial-gradient(circle,rgba(109,59,215,0.15) 0%,rgba(5,20,36,0) 70%); top:50%; left:50%; transform:translate(-50%,-50%); z-index:-1; pointer-events:none; }
-.reveal-on-scroll { opacity:0; transform:translateY(40px); transition:all 0.8s ease-out; }
-.reveal-on-scroll.is-visible { opacity:1; transform:translateY(0); }
-.delay-100 { transition-delay:100ms; }
-.delay-200 { transition-delay:200ms; }
-.delay-300 { transition-delay:300ms; }
-@keyframes drift { 0%{transform:translate(0,0) scale(1);} 33%{transform:translate(10%,15%) scale(1.1);} 66%{transform:translate(-5%,20%) scale(0.9);} 100%{transform:translate(0,0) scale(1);} }
-@keyframes pulse-grid { 0%,100%{opacity:0.15;} 50%{opacity:0.25;} }
-.bg-blob { position:fixed; border-radius:50%; filter:blur(100px); z-index:-2; opacity:0.15; pointer-events:none; }
-.blob-1 { width:600px; height:600px; background:radial-gradient(circle,#a078ff 0%,transparent 70%); top:-10%; left:-10%; animation:drift 25s ease-in-out infinite; }
-.blob-2 { width:800px; height:800px; background:radial-gradient(circle,#2fd9f4 0%,transparent 70%); bottom:-20%; right:-10%; animation:drift 35s ease-in-out infinite; }
-.grid-overlay { position:fixed; inset:0; background-image:radial-gradient(circle at 1px 1px,rgba(212,228,250,0.1) 1px,transparent 0); background-size:40px 40px; z-index:-1; pointer-events:none; animation:pulse-grid 8s ease-in-out infinite; }
+    body {
+        background-color: #051424;
+        color: #d4e4fa;
+        font-family: 'Manrope', sans-serif;
+        overflow-x: hidden;
+    }
+
+    .glass-panel {
+        background: rgba(18, 33, 49, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card {
+        background: rgba(18, 33, 49, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(208, 188, 255, 0.15);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+        border-color: rgba(208, 188, 255, 0.4);
+        box-shadow: 0 12px 48px 0 rgba(160, 120, 255, 0.15);
+    }
+
+    .primary-gradient-btn {
+        background: linear-gradient(135deg, #a078ff 0%, #6d3bd7 100%);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .primary-gradient-btn::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, #d0bcff 0%, #a078ff 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .primary-gradient-btn:hover::before {
+        opacity: 1;
+    }
+
+    .primary-gradient-btn > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .glow-effect {
+        box-shadow: 0 0 24px rgba(160, 120, 255, 0.2);
+    }
+
+    .hero-glow {
+        position: absolute;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(109, 59, 215, 0.12) 0%, rgba(5, 20, 36, 0) 70%);
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .dot-pattern {
+        background-image: radial-gradient(rgba(208, 188, 255, 0.1) 1px, transparent 1px);
+        background-size: 32px 32px;
+    }
+
+    .reveal-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .reveal-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .delay-100 { transition-delay: 100ms; }
+    .delay-200 { transition-delay: 200ms; }
+    .delay-300 { transition-delay: 300ms; }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .wavebar {
+        width: 4px;
+        border-radius: 2px;
+        background: linear-gradient(to top, #6d3bd7, #2fd9f4);
+        transition: height 0.15s ease;
+    }
+    .wavebar.active {
+        animation: wavePulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes wavePulse {
+        from { transform: scaleY(0.3); opacity: 0.6; }
+        to   { transform: scaleY(1);   opacity: 1; }
+    }
 </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container relative">
+<body class="antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container dot-pattern">
 
-<!-- Animated BG -->
-<div class="fixed inset-0 pointer-events-none overflow-hidden">
-  <div class="bg-blob blob-1"></div>
-  <div class="bg-blob blob-2"></div>
-  <div class="grid-overlay"></div>
-</div>
-
-<!-- Navbar -->
-<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 max-w-7xl mx-auto left-0 right-0 bg-[#051424]/80 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
-  <div class="flex items-center gap-2">
-    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
-    <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
-  </div>
-  <div class="hidden md:flex items-center gap-8">
-    <a class="text-sm font-medium text-violet-400 border-b-2 border-violet-500 pb-1 transition-all duration-300 hover:text-cyan-400" href="#features">Tính năng</a>
-    <a class="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#about">Về chúng tôi</a>
-    <a class="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="{{ url_for('login') }}">Tài khoản</a>
-  </div>
-  <div class="flex items-center gap-4">
-    <a href="{{ url_for('register') }}" class="hidden md:inline-flex items-center justify-center h-10 px-6 rounded-full primary-gradient-btn text-white font-semibold text-sm hover:shadow-[0_0_15px_rgba(160,120,255,0.4)]">
-      <span>{{ lp.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}</span>
-    </a>
-    <a href="{{ url_for('login') }}" class="hidden md:inline-flex items-center justify-center h-10 px-5 rounded-full border border-white/20 text-white font-semibold text-sm hover:bg-white/5 transition-all">
-      Đăng nhập
-    </a>
-  </div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 max-w-7xl mx-auto left-0 right-0 bg-[#051424]/80 backdrop-blur-md border-b border-white/10">
+    <div class="flex items-center gap-2 cursor-pointer">
+        <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+        <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8">
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#features">Tính năng</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#pricing">Bảng giá</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#about">Về chúng tôi</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="{{ url_for('contact') }}">Hỗ trợ</a>
+    </div>
+    <div class="flex items-center gap-4">
+        <a href="{{ url_for('login') }}" class="hidden md:inline-flex items-center justify-center h-11 px-6 rounded-full primary-gradient-btn text-white font-label-md hover:shadow-[0_0_15px_rgba(160,120,255,0.4)]">
+            <span>Bắt đầu ngay</span>
+        </a>
+        <button class="md:hidden text-on-surface" id="mobile-menu-btn">
+            <span class="material-symbols-outlined text-3xl">menu</span>
+        </button>
+    </div>
 </nav>
 
-<!-- Main -->
+<!-- Mobile Menu -->
+<div class="fixed inset-0 z-40 hidden" id="mobile-menu">
+    <div class="absolute inset-0 bg-black/60" id="mobile-menu-overlay"></div>
+    <div class="absolute top-0 right-0 w-72 h-full glass-panel border-l border-white/10 flex flex-col p-8 gap-6 pt-24">
+        <a class="text-on-surface font-medium text-lg hover:text-primary transition-colors" href="#features" onclick="closeMobileMenu()">Tính năng</a>
+        <a class="text-on-surface font-medium text-lg hover:text-primary transition-colors" href="#pricing" onclick="closeMobileMenu()">Bảng giá</a>
+        <a class="text-on-surface font-medium text-lg hover:text-primary transition-colors" href="#about" onclick="closeMobileMenu()">Về chúng tôi</a>
+        <a class="text-on-surface font-medium text-lg hover:text-primary transition-colors" href="{{ url_for('contact') }}" onclick="closeMobileMenu()">Hỗ trợ</a>
+        <div class="border-t border-white/10 pt-6 flex flex-col gap-3">
+            <a href="{{ url_for('login') }}" class="h-12 px-6 rounded-full glass-panel border border-white/10 text-on-surface font-label-md flex items-center justify-center hover:bg-white/5 transition-colors">Đăng nhập</a>
+            <a href="{{ url_for('register') }}" class="h-12 px-6 rounded-full primary-gradient-btn text-white font-label-md flex items-center justify-center">Đăng ký</a>
+        </div>
+    </div>
+</div>
+
 <main class="flex-grow pt-[100px]">
-
-  <!-- Hero Section -->
-  <section class="relative min-h-[920px] flex items-center justify-center px-6 py-20 overflow-hidden">
-    <div class="hero-glow animate-pulse-slow"></div>
-    <div class="absolute top-20 left-10 w-64 h-64 bg-primary-container/5 rounded-full blur-3xl animate-float"></div>
-    <div class="absolute bottom-20 right-10 w-80 h-80 bg-tertiary-container/5 rounded-full blur-3xl animate-float-delayed"></div>
-
-    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center z-10">
-      <!-- Left -->
-      <div class="lg:col-span-7 flex flex-col items-start gap-8">
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-semibold tracking-widest uppercase">
-          <span class="material-symbols-outlined text-sm">rocket_launch</span>
-          {{ lp.get('hero', {}).get('tag', 'Giải pháp AI Tiên Phong') }}
+    <!-- Hero Section -->
+    <section class="relative min-h-[85vh] flex flex-col items-center justify-center px-6 py-20 overflow-hidden text-center">
+        <div class="hero-glow animate-pulse-slow"></div>
+        <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+            <div class="absolute top-[-10%] left-[15%] w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] animate-float"></div>
+            <div class="absolute bottom-[5%] right-[10%] w-[500px] h-[500px] bg-tertiary/10 rounded-full blur-[120px] animate-float-delayed"></div>
         </div>
-
-        <h1 class="font-extrabold tracking-tight leading-tight text-4xl md:text-5xl xl:text-6xl text-on-surface">
-          {{ lp.get('hero', {}).get('title_line1', 'VietVoice: Chuyển đổi') }}<br class="hidden md:block"/>
-          <span class="bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400 bg-[length:200%_auto] animate-pulse-slow bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(160,120,255,0.3)]">
-            {{ lp.get('hero', {}).get('title_grad', 'văn bản thành giọng nói AI') }}
-          </span><br class="hidden md:block"/>
-          {{ lp.get('hero', {}).get('title_line2', 'tự nhiên &amp; truyền cảm') | safe }}
-        </h1>
-
-        <!-- Company Info Card -->
-        <div class="glass-card p-6 rounded-xl border-l-4 border-l-primary-container max-w-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity duration-300">
-            <span class="material-symbols-outlined text-6xl" style="font-variation-settings:'FILL' 1;">corporate_fare</span>
-          </div>
-          <h2 class="font-semibold text-on-surface mb-2 relative z-10 text-lg">{{ lp.get('company', {}).get('name', 'CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG') }}</h2>
-          <p class="text-sm text-on-surface-variant mb-4 relative z-10">{{ lp.get('company', {}).get('desc', 'CHUYÊN CUNG CẤP GIẢI PHÁP CÔNG NGHỆ KỸ THUẬT CAO VÀ XUẤT NHẬP KHẨU CÁC MẶT HÀNG CÔNG NGHỆ TIÊN TIẾN.') }}</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-4 border-t border-outline-variant/30 relative z-10">
-            <div class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-primary mt-0.5">badge</span>
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-outline">MST / NGƯỜI ĐẠI DIỆN</p>
-                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('mst', '1801526082') }}<br/>{{ lp.get('company', {}).get('representative', 'NGÔ HỒ ANH KHÔI') }}</p>
-              </div>
+        <div class="max-w-4xl mx-auto z-10 animate-[slideUp_0.8s_ease-out_forwards]">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim font-label-sm mb-8">
+                <span class="material-symbols-outlined text-sm">rocket_launch</span>
+                {{ lp.get('hero', {}).get('tag', 'Thế hệ AI Voice mới nhất 2024') }}
             </div>
-            <div class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-primary mt-0.5">location_on</span>
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-outline">ĐỊA CHỈ</p>
-                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('address', 'P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, P. Cái Răng, TP. Cần Thơ') }}</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-primary mt-0.5">call</span>
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-outline">HOTLINE</p>
-                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('phone', '0916 416 409') }}</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <span class="material-symbols-outlined text-primary mt-0.5">calendar_today</span>
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-widest text-outline">HOẠT ĐỘNG TỪ</p>
-                <p class="text-sm text-on-surface mt-1">{{ lp.get('company', {}).get('since', '05/04/2017') }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-center gap-6 mt-4">
-          <a href="{{ url_for('register') }}" class="w-full sm:w-auto h-14 px-8 rounded-full primary-gradient-btn text-white font-semibold text-lg glow-effect flex items-center justify-center gap-2 group">
-            <span>{{ lp.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}</span>
-            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-          </a>
-          <div class="flex items-center gap-2 text-on-surface-variant text-sm opacity-80">
-            <span class="material-symbols-outlined text-tertiary-fixed-dim">verified</span>
-            <span>{{ lp.get('hero', {}).get('free_note', 'Không cần thẻ tín dụng - 100.000 ký tự miễn phí khi đăng ký') }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Bento -->
-      <div class="mt-16 lg:mt-0 relative h-full min-h-[500px] lg:col-span-5 opacity-0" style="animation:slideUp 0.8s ease-out 0.2s forwards;animation-fill-mode:forwards;">
-        <style>@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}</style>
-        <div class="absolute inset-0 grid grid-cols-2 grid-rows-3 gap-6">
-          <!-- Audio Visualizer -->
-          <div class="col-span-1 row-span-1 glass-card rounded-2xl p-4 flex flex-col justify-between overflow-hidden relative group scale-105">
-            <div class="absolute inset-0 bg-gradient-to-br from-primary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings:'FILL' 1;">audiotrack</span>
-            <div class="mt-auto">
-              <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden mb-2">
-                <div class="h-full bg-primary-container w-3/4 animate-pulse"></div>
-              </div>
-              <div class="flex items-end gap-1 h-8">
-                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-3/4 animate-pulse"></div>
-                <div class="w-1/6 bg-violet-400 rounded-t-sm h-full animate-pulse" style="animation-delay:.1s"></div>
-                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-1/2 animate-pulse" style="animation-delay:.2s"></div>
-                <div class="w-1/6 bg-violet-400 rounded-t-sm h-4/5 animate-pulse" style="animation-delay:.3s"></div>
-                <div class="w-1/6 bg-cyan-400 rounded-t-sm h-1/4 animate-pulse" style="animation-delay:.4s"></div>
-                <div class="w-1/6 bg-violet-400 rounded-t-sm h-2/3 animate-pulse" style="animation-delay:.5s"></div>
-              </div>
-            </div>
-          </div>
-          <!-- Neural Engine -->
-          <div class="col-span-1 row-span-2 glass-card rounded-2xl p-6 relative overflow-hidden flex flex-col items-center justify-center text-center group scale-105">
-            <div class="absolute inset-0 bg-gradient-to-b from-surface-container/50 to-surface-container-lowest/80 z-0"></div>
-            <div class="relative z-10 w-20 h-20 rounded-full border-2 border-tertiary/30 flex items-center justify-center mb-4 bg-surface-container-low/80 backdrop-blur-sm shadow-[0_0_30px_rgba(47,217,244,0.2)] group-hover:scale-110 transition-transform duration-500">
-              <span class="material-symbols-outlined text-4xl text-tertiary animate-pulse" style="font-variation-settings:'FILL' 1;">memory</span>
-            </div>
-            <h3 class="text-xl font-semibold text-on-surface relative z-10 mb-2">Neural Engine</h3>
-            <p class="text-xs text-on-surface-variant relative z-10">Xử lý giọng nói thời gian thực với độ trễ cực thấp.</p>
-          </div>
-          <!-- Voice Profiles -->
-          <div class="col-span-1 row-span-2 glass-card rounded-2xl p-5 flex flex-col group scale-105">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-semibold text-on-surface">Voice Profiles</span>
-              <span class="material-symbols-outlined text-outline text-sm">more_horiz</span>
-            </div>
-            <div class="space-y-3 mt-auto">
-              <div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-high/50 border border-white/5 hover:border-primary/30 transition-colors cursor-pointer hover:translate-x-1 duration-300">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-white text-sm">face_3</span>
-                </div>
-                <div>
-                  <div class="text-sm font-semibold text-on-surface">Minh Hằng</div>
-                  <div class="text-[10px] text-outline">Giọng Nữ - Miền Nam</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-2 rounded-lg bg-primary-container/20 border border-primary/40 cursor-pointer shadow-[0_0_10px_rgba(208,188,255,0.1)] relative overflow-hidden hover:translate-x-1 duration-300">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-white text-sm">face</span>
-                </div>
-                <div>
-                  <div class="text-sm font-semibold text-on-surface">Quốc Bảo</div>
-                  <div class="text-[10px] text-primary-fixed-dim">Giọng Nam - Miền Bắc (Active)</div>
-                </div>
-                <span class="material-symbols-outlined text-primary ml-auto text-sm animate-pulse">volume_up</span>
-              </div>
-            </div>
-          </div>
-          <!-- Stats -->
-          <div class="col-span-1 row-span-1 glass-card rounded-2xl p-4 flex items-center justify-center relative overflow-hidden group scale-105">
-            <div class="text-center relative z-10 group-hover:scale-105 transition-transform duration-300">
-              <div class="text-4xl font-black text-tertiary-fixed-dim mb-1">99.9%</div>
-              <div class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Độ chính xác</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Trusted Strip -->
-  <section class="py-10 px-6 bg-surface-container-lowest/30 overflow-hidden">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-6 justify-center">
-      <span class="text-xs font-bold tracking-[0.2em] uppercase text-outline shrink-0">
-        {{ lp.get('trusted', {}).get('label', 'Được tin dùng bởi') }}
-      </span>
-      <div class="h-px w-8 bg-outline/30 hidden sm:block shrink-0"></div>
-      <div class="flex flex-wrap items-center justify-center gap-3">
-        {% for item in lp.get('trusted', {}).get('items', ['Học sinh & sinh viên','Content Creator','Doanh nghiệp','Developer']) %}
-        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-on-surface-variant"
-              style="background:rgba(208,188,255,0.07);border:1px solid rgba(208,188,255,0.15);">
-          <span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span>
-          {{ item }}
-        </span>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section id="features" class="py-24 px-6 relative overflow-hidden">
-    <div class="max-w-7xl mx-auto relative z-10">
-      <div class="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-bold tracking-widest uppercase mb-6">
-          <span class="material-symbols-outlined text-sm">auto_awesome</span>
-          {{ lp.get('features', {}).get('label', 'TÍNH NĂNG NỔI BẬT') }}
-        </div>
-        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4 leading-tight">
-          {{ lp.get('features', {}).get('title', 'Hiện thực hóa giọng nói trong mơ của bạn bằng AI') }}
-        </h2>
-        <p class="text-lg text-on-surface-variant">
-          {{ lp.get('features', {}).get('subtitle', 'Bộ công cụ TTS toàn diện — từ giọng nói tự nhiên đến cảm xúc phong phú và clone giọng cá nhân') }}
-        </p>
-      </div>
-
-      {% set feat_cards = lp.get('features', {}).get('cards', [
-        {"num":"01","icon":"🎙️","title":"Giọng Nói AI Tự Nhiên","desc":"Công nghệ TTS tiên tiến tạo ra giọng nói nghe tự nhiên như người thật. Hỗ trợ tiếng Việt đa vùng miền và nhiều ngôn ngữ khác."},
-        {"num":"02","icon":"🎭","title":"Emotional TTS","desc":"AI tự động điều chỉnh cảm xúc theo nội dung — vui, buồn, hào hứng, bình thản — cho giọng đọc sống động và chân thật hơn."},
-        {"num":"03","icon":"🧬","title":"Clone Giọng Cá Nhân","desc":"Tải lên vài giây giọng mẫu, AI học và tái tạo chính xác giọng nói của bạn. Công nghệ RVC + viXTTS tiên tiến nhất hiện nay."},
-        {"num":"04","icon":"⚡","title":"Xử Lý Siêu Nhanh","desc":"Hệ thống AI xử lý nền hiệu suất cao. Nhận kết quả trong vài giây, không cần chờ đợi dù văn bản dài hàng nghìn ký tự."}
-      ]) %}
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {% for card in feat_cards %}
-        <div class="glass-card rounded-2xl p-7 flex flex-col gap-5 reveal-on-scroll group hover:-translate-y-2 transition-all duration-300" style="transition-delay:{{ loop.index0 * 100 }}ms">
-          <div class="flex items-center justify-between">
-            <span class="text-3xl">{{ card.icon }}</span>
-            <span class="text-4xl font-black text-outline/20 group-hover:text-primary/20 transition-colors">{{ card.num }}</span>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-on-surface mb-2 group-hover:text-primary-fixed-dim transition-colors">{{ card.title }}</h3>
-            <p class="text-sm text-on-surface-variant leading-relaxed">{{ card.desc }}</p>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <!-- Steps Section -->
-  <section class="py-24 px-6 relative overflow-hidden bg-surface-container-lowest/40">
-    <div class="max-w-5xl mx-auto relative z-10">
-      <div class="text-center max-w-2xl mx-auto mb-16 reveal-on-scroll">
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim text-xs font-bold tracking-widest uppercase mb-6">
-          <span class="material-symbols-outlined text-sm">bolt</span>
-          {{ lp.get('steps', {}).get('label', 'ĐƠN GIẢN') }}
-        </div>
-        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4">
-          {{ lp.get('steps', {}).get('title', 'Chỉ 3 bước để có giọng nói hoàn hảo') }}
-        </h2>
-        <p class="text-lg text-on-surface-variant">
-          {{ lp.get('steps', {}).get('subtitle', 'Từ văn bản đến âm thanh chuyên nghiệp — nhanh chóng, không cần kỹ năng kỹ thuật.') }}
-        </p>
-      </div>
-
-      {% set step_items = lp.get('steps', {}).get('items', [
-        {"num":"01","icon":"✍️","title":"Nhập văn bản","desc":"Gõ, dán hoặc tải lên file văn bản của bạn. Hỗ trợ TXT, PDF, DOCX."},
-        {"num":"02","icon":"🤖","title":"AI xử lý","desc":"Chọn giọng đọc và nhấn chuyển đổi. AI tạo âm thanh chất lượng cao tự động."},
-        {"num":"03","icon":"📥","title":"Tải về & dùng ngay","desc":"Download file audio chất lượng cao. Sẵn sàng sử dụng cho mọi mục đích."}
-      ]) %}
-      <div class="relative">
-        <!-- Connector line -->
-        <div class="hidden lg:block absolute top-[52px] left-[calc(16.67%+32px)] right-[calc(16.67%+32px)] h-px bg-gradient-to-r from-primary-container/30 via-tertiary/30 to-primary-container/30"></div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {% for step in step_items %}
-          <div class="flex flex-col items-center text-center gap-5 reveal-on-scroll" style="transition-delay:{{ loop.index0 * 150 }}ms">
-            <div class="relative w-24 h-24 rounded-2xl glass-card flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(160,120,255,0.1)] group-hover:scale-110 border border-primary/20">
-              {{ step.icon }}
-              <span class="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-primary-container text-on-primary text-xs font-black flex items-center justify-center shadow-lg">{{ loop.index }}</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-on-surface mb-2">{{ step.title }}</h3>
-              <p class="text-sm text-on-surface-variant leading-relaxed">{{ step.desc }}</p>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Showcase Section -->
-  {% set sc = lp.get('showcase', {}) %}
-  <section class="py-24 px-6 relative overflow-hidden">
-    <div class="max-w-7xl mx-auto relative z-10">
-      <div class="glass-panel rounded-3xl p-12 md:p-16 relative overflow-hidden reveal-on-scroll"
-           style="background:linear-gradient(135deg,rgba(109,59,215,0.15) 0%,rgba(18,33,49,0.6) 50%,rgba(47,217,244,0.08) 100%);">
-        <!-- Decorative glow -->
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
-        <div class="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-tertiary-container/10 blur-3xl pointer-events-none"></div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-          <!-- Left -->
-          <div class="flex flex-col gap-6">
-            <div class="text-6xl">{{ sc.get('icon', '🎤') }}</div>
-            <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface leading-tight">
-              {{ sc.get('title', 'Trải nghiệm giọng nói tự nhiên như người thật') }}
-            </h2>
-            <p class="text-lg text-on-surface-variant">
-              {{ sc.get('desc', 'Công nghệ AI tiên tiến kết hợp RVC và viXTTS mang lại chất lượng âm thanh vượt trội, phù hợp cho mọi ứng dụng từ podcast, audio book đến trợ lý ảo.') }}
+            <h1 class="font-headline-lg text-on-surface leading-[1.1] font-extrabold tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
+                {{ lp.get('hero', {}).get('title_line1', 'VietVoice: Chuyển đổi') }} <br>
+                <span class="bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400 bg-[length:200%_auto] animate-pulse-slow bg-clip-text text-transparent">{{ lp.get('hero', {}).get('title_grad', 'văn bản thành giọng nói AI') }}</span> <br>
+                {{ lp.get('hero', {}).get('title_line2', 'tự nhiên & truyền cảm') }}
+            </h1>
+            <p class="font-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10 text-lg md:text-xl">
+                {{ lp.get('hero', {}).get('subtitle', 'Kiến tạo trải nghiệm âm thanh sống động với công nghệ Neural Synthesis đỉnh cao. Tốc độ xử lý tức thì, chất lượng chuẩn phòng thu chỉ trong vài giây.') }}
             </p>
-            <div class="flex flex-wrap gap-3">
-              {% for badge in sc.get('badges', ['✓ Giọng tiếng Việt tự nhiên','✓ Clone giọng cá nhân','✓ Cảm xúc phong phú','✓ Xử lý nhanh','✓ Chất lượng cao']) %}
-              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-primary-fixed-dim"
-                    style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.2);">
-                {{ badge }}
-              </span>
-              {% endfor %}
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <a href="{{ url_for('register') }}" class="w-full sm:w-auto h-14 px-10 rounded-full primary-gradient-btn text-white font-label-md text-lg glow-effect flex items-center justify-center gap-2 group">
+                    <span>{{ lp.get('hero', {}).get('btn_primary', 'Bắt đầu miễn phí') }}</span>
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </a>
+                <button onclick="scrollToFeatures()" class="w-full sm:w-auto h-14 px-10 rounded-full glass-panel border border-white/10 text-on-surface font-label-md text-lg hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    <span>Xem tính năng</span>
+                </button>
             </div>
-            <div>
-              <a href="{{ url_for('register') }}" class="inline-flex items-center gap-2 h-13 px-8 rounded-full primary-gradient-btn text-white font-bold text-base glow-effect group py-3">
-                <span>{{ sc.get('btn', 'Bắt đầu miễn phí ngay') }}</span>
-                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </a>
-            </div>
-          </div>
 
-          <!-- Right — animated waveform card -->
-          <div class="flex items-center justify-center">
-            <div class="relative w-full max-w-sm">
-              <div class="glass-card rounded-2xl p-8 flex flex-col gap-6">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                      <span class="material-symbols-outlined text-white text-base" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
+            <!-- Hero Visual: TTS Demo Mockup -->
+            <div class="relative w-full max-w-4xl mx-auto mt-12 px-4 reveal-on-scroll delay-200 is-visible">
+                <div class="glass-card rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                    <!-- Window chrome -->
+                    <div class="flex items-center gap-3 px-5 py-3 border-b border-white/5 bg-surface-container/60">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-red-500/60"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500/60"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500/60"></div>
+                        </div>
+                        <div class="flex-grow text-center text-xs text-outline">VietVoice AI — Chuyển văn bản thành giọng nói</div>
                     </div>
-                    <div>
-                      <div class="text-sm font-bold text-on-surface">VietVoice AI</div>
-                      <div class="text-[11px] text-outline">Neural TTS Engine</div>
+
+                    <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- LEFT: Input panel -->
+                        <div class="flex flex-col gap-4">
+                            <!-- Voice selector -->
+                            <div class="flex items-center gap-3">
+                                <div class="glass-panel rounded-lg px-3 py-2 flex items-center gap-2 flex-1 border border-white/10 cursor-pointer hover:border-primary/40 transition-colors">
+                                    <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">record_voice_over</span>
+                                    <span class="text-xs text-on-surface font-medium">Giọng Nam Miền Nam</span>
+                                    <span class="material-symbols-outlined text-outline text-sm ml-auto">expand_more</span>
+                                </div>
+                                <div class="glass-panel rounded-lg px-3 py-2 flex items-center gap-2 border border-white/10 cursor-pointer hover:border-primary/40 transition-colors">
+                                    <span class="material-symbols-outlined text-tertiary text-base">speed</span>
+                                    <span class="text-xs text-on-surface">1.0x</span>
+                                </div>
+                            </div>
+                            <!-- Text area mockup -->
+                            <div class="glass-panel rounded-xl p-4 border border-white/10 flex-grow min-h-[120px] relative">
+                                <p class="text-sm text-on-surface leading-relaxed">
+                                    Xin chào! Đây là <span class="text-primary font-semibold">VietVoice AI</span>, nền tảng chuyển đổi văn bản thành giọng nói tự nhiên nhất Việt Nam.
+                                </p>
+                                <!-- Blinking cursor -->
+                                <span class="inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle" style="animation: blink 1s step-end infinite;"></span>
+                                <div class="absolute bottom-3 right-3 flex items-center gap-1">
+                                    <span class="text-xs text-outline">128 / 5000</span>
+                                </div>
+                            </div>
+                            <!-- Action buttons -->
+                            <div class="flex gap-3">
+                                <button id="demo-convert-btn" onclick="runDemoAnimation()" class="flex-1 h-10 rounded-full primary-gradient-btn text-white text-sm font-semibold flex items-center justify-center gap-2 glow-effect">
+                                    <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
+                                    Chuyển đổi
+                                </button>
+                                <button class="h-10 px-4 rounded-full glass-panel border border-white/10 text-on-surface-variant text-sm flex items-center gap-1 hover:bg-white/5 transition-colors">
+                                    <span class="material-symbols-outlined text-base">download</span>
+                                    MP3
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Audio output panel -->
+                        <div class="flex flex-col gap-4">
+                            <!-- Waveform display -->
+                            <div class="glass-panel rounded-xl border border-white/10 flex-grow flex flex-col items-center justify-center p-4 min-h-[140px] relative overflow-hidden">
+                                <!-- Glow behind waveform -->
+                                <div class="absolute inset-0 bg-gradient-to-b from-primary/5 to-tertiary/5"></div>
+                                <!-- Waveform bars -->
+                                <div id="demo-waveform" class="flex items-center gap-[3px] h-16 z-10">
+                                    <!-- Bars injected by JS -->
+                                </div>
+                                <p id="demo-status" class="text-xs text-outline mt-3 z-10">Nhấn "Chuyển đổi" để nghe thử</p>
+                            </div>
+                            <!-- Audio player bar -->
+                            <div class="glass-panel rounded-xl border border-white/10 px-4 py-3 flex items-center gap-3">
+                                <button id="demo-play-btn" onclick="toggleDemoPlay()" class="w-9 h-9 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center hover:bg-primary/30 transition-colors flex-shrink-0">
+                                    <span id="demo-play-icon" class="material-symbols-outlined text-primary text-lg" style="font-variation-settings:'FILL' 1;">play_arrow</span>
+                                </button>
+                                <!-- Progress bar -->
+                                <div class="flex-grow">
+                                    <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                        <div id="demo-progress" class="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-300" style="width:0%"></div>
+                                    </div>
+                                    <div class="flex justify-between mt-1">
+                                        <span id="demo-time" class="text-xs text-outline">0:00</span>
+                                        <span class="text-xs text-outline">0:04</span>
+                                    </div>
+                                </div>
+                                <span class="material-symbols-outlined text-outline text-base cursor-pointer hover:text-on-surface transition-colors">volume_up</span>
+                            </div>
+                            <!-- Tags -->
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 rounded-full glass-panel border border-white/10 text-xs text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-green-400 text-xs">check_circle</span> 44.1kHz
+                                </span>
+                                <span class="px-3 py-1 rounded-full glass-panel border border-white/10 text-xs text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-tertiary text-xs">bolt</span> &lt; 1s
+                                </span>
+                                <span class="px-3 py-1 rounded-full glass-panel border border-white/10 text-xs text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-primary text-xs">download</span> MP3 / WAV
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <span class="flex items-center gap-1 text-[11px] text-tertiary font-semibold">
-                    <span class="w-1.5 h-1.5 bg-tertiary rounded-full animate-pulse inline-block"></span>
-                    LIVE
-                  </span>
                 </div>
-                <!-- Waveform bars -->
-                <div class="flex items-end justify-center gap-1.5 h-20">
-                  {% for h in ['30%','70%','50%','90%','40%','80%','60%','100%','45%','75%','55%','85%','35%','65%','50%'] %}
-                  <div class="flex-1 rounded-t-full animate-pulse"
-                       style="height:{{ h }};background:linear-gradient(to top,#a078ff,#2fd9f4);animation-delay:{{ loop.index0 * 80 }}ms;opacity:0.8"></div>
-                  {% endfor %}
+
+                <!-- Float badges -->
+                <div class="absolute -top-8 -right-6 glass-card p-3 rounded-xl hidden lg:block animate-float z-20">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-tertiary-container flex items-center justify-center">
+                            <span class="material-symbols-outlined text-on-tertiary-container text-lg">check</span>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs text-outline">Độ trễ</div>
+                            <div class="text-sm font-bold">&lt; 200ms</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center text-sm text-on-surface-variant italic">
-                  "Xin chào! Tôi là giọng nói AI tiên phong của Việt Nam..."
+                <div class="absolute -bottom-6 -left-6 glass-card p-3 rounded-xl hidden lg:block animate-float-delayed z-20">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-base" style="font-variation-settings:'FILL' 1;">mic</span>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-xs text-outline">Giọng nói</div>
+                            <div class="text-sm font-bold">50+ giọng</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full animate-pulse" style="width:62%"></div>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- About Section -->
-  <section id="about" class="py-24 px-6 relative bg-surface-container-lowest/50 overflow-hidden">
-    <div class="max-w-7xl mx-auto relative z-10">
-      <div class="text-center max-w-3xl mx-auto mb-16 reveal-on-scroll">
-        <h2 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-4">{{ lp.get('about_new', {}).get('title', 'Về VietVoice AI') }}</h2>
-        <p class="text-lg text-on-surface-variant">{{ lp.get('about_new', {}).get('desc', 'Chúng tôi kiến tạo tương lai của giao tiếp số thông qua công nghệ AI Synthesis hàng đầu, mang đến giải pháp chuyển đổi văn bản thành giọng nói tự nhiên, truyền cảm và đậm chất Việt.') }}</p>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {% set default_cards = [
-          {"icon": "visibility", "title": "Tầm Nhìn", "desc": "Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo nội dung cho hàng triệu doanh nghiệp và cá nhân."},
-          {"icon": "flag", "title": "Sứ Mệnh", "desc": "Cung cấp giải pháp tổng hợp giọng nói chất lượng phòng thu, đa dạng vùng miền, dễ dàng tích hợp và tối ưu chi phí cho thị trường Việt Nam và quốc tế."},
-          {"icon": "handshake", "title": "Cam Kết", "desc": "Liên tục nghiên cứu, ứng dụng các mô hình học sâu (Deep Learning) mới nhất để cải thiện độ tự nhiên, cảm xúc và tốc độ xử lý của hệ thống."}
-        ] %}
-        {% set cards = lp.get('about_new', {}).get('cards', default_cards) %}
-        {% for card in cards %}
-        <div class="glass-card rounded-2xl p-8 hover:-translate-y-2 transition-transform duration-300 reveal-on-scroll group hover:shadow-[0_0_30px_rgba(160,120,255,0.15)]" style="transition-delay:{{ loop.index0 * 100 }}ms">
-          <div class="w-14 h-14 rounded-xl bg-surface-container-high border border-white/10 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <span class="material-symbols-outlined text-3xl text-primary" style="font-variation-settings:'FILL' 1;">{{ card.icon }}</span>
-          </div>
-          <h3 class="text-xl font-semibold text-on-surface mb-3 group-hover:text-primary-fixed-dim transition-colors">{{ card.title }}</h3>
-          <p class="text-base text-on-surface-variant">{{ card.desc }}</p>
+    <!-- Stats Bar -->
+    <section class="py-12 border-y border-white/5 bg-surface-container-lowest/30">
+        <div class="max-w-container-max mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="flex flex-col items-center text-center reveal-on-scroll is-visible">
+                <span class="font-headline-md text-primary-fixed-dim">99.9%</span>
+                <span class="text-on-surface-variant font-label-md uppercase tracking-widest">Độ chính xác</span>
+            </div>
+            <div class="flex flex-col items-center text-center reveal-on-scroll delay-100 border-x border-white/10 is-visible">
+                <span class="font-headline-md text-tertiary-fixed-dim">1M+</span>
+                <span class="text-on-surface-variant font-label-md uppercase tracking-widest">Giọng đã tạo</span>
+            </div>
+            <div class="flex flex-col items-center text-center reveal-on-scroll delay-200 is-visible">
+                <span class="font-headline-md text-primary-fixed-dim">50k+</span>
+                <span class="text-on-surface-variant font-label-md uppercase tracking-widest">Người dùng</span>
+            </div>
         </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Final CTA Section -->
-  {% set cta = lp.get('final_cta', {}) %}
-  <section class="py-28 px-6 relative overflow-hidden">
-    <div class="max-w-4xl mx-auto text-center relative z-10 reveal-on-scroll">
-      <div class="absolute inset-0 bg-gradient-to-r from-primary-container/5 via-tertiary-container/10 to-primary-container/5 rounded-3xl blur-3xl -z-10 pointer-events-none"></div>
-      <h2 class="text-4xl md:text-5xl font-black text-on-surface mb-5 leading-tight">
-        {{ cta.get('title', 'Bắt đầu tạo giọng nói ngay hôm nay') }}
-      </h2>
-      <p class="text-lg text-on-surface-variant mb-10">
-        {{ cta.get('subtitle', 'Không cần thẻ tín dụng · Miễn phí ngay khi đăng ký · Nâng cấp bất cứ lúc nào') }}
-      </p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-5">
-        <a href="{{ url_for('register') }}"
-           class="h-14 px-10 rounded-full primary-gradient-btn text-white font-bold text-lg glow-effect flex items-center gap-2 group">
-          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">rocket_launch</span>
-          <span>{{ cta.get('btn_primary', 'Đăng ký miễn phí') }}</span>
-        </a>
-        <a href="{{ url_for('login') }}"
-           class="h-14 px-8 rounded-full border border-white/20 text-white font-semibold text-base hover:bg-white/5 transition-all flex items-center gap-2">
-          {{ cta.get('btn_secondary', 'Đã có tài khoản →') }}
-        </a>
-      </div>
-      <p class="mt-6 text-sm text-outline">{{ cta.get('note', 'Bắt đầu với 100.000 ký tự miễn phí khi đăng ký') }}</p>
-    </div>
-  </section>
+    <!-- Feature Grid -->
+    <section class="py-section-gap px-6 bg-surface-container-lowest/50 relative" id="features">
+        {% set feat = lp.get('features', {}) %}
+        {% set feat_cards = feat.get('cards', [
+            {'icon': 'mic_external_on', 'title': 'Chất lượng phòng thu', 'desc': 'Giọng nói sắc nét, không nhiễu, được xử lý bởi thuật toán lọc âm AI tiên tiến nhất hiện nay.'},
+            {'icon': 'public', 'title': 'Đa dạng vùng miền', 'desc': 'Đầy đủ các giọng Bắc, Trung, Nam với sắc thái biểu cảm tự nhiên, phù hợp cho mọi loại nội dung.'},
+            {'icon': 'bolt', 'title': 'Xử lý thời gian thực', 'desc': 'Tốc độ chuyển đổi siêu tốc giúp bạn tiết kiệm 90% thời gian so với việc thu âm truyền thống.'}
+        ]) %}
+        {% set feat_icons = ['mic_external_on', 'public', 'bolt', 'record_voice_over'] %}
+        {% set feat_colors = ['primary', 'tertiary', 'primary', 'tertiary'] %}
+        <div class="max-w-container-max mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-20 reveal-on-scroll is-visible">
+                <h2 class="font-headline-md text-on-surface mb-6">{{ feat.get('title', 'Đỉnh cao công nghệ AI Synthesis') }}</h2>
+                <p class="font-body-lg text-on-surface-variant">{{ feat.get('subtitle', 'VietVoice mang đến bộ tính năng toàn diện để tối ưu hóa quy trình sản xuất nội dung âm thanh của bạn.') }}</p>
+            </div>
+            <div class="grid grid-cols-1 {% if feat_cards|length == 4 %}md:grid-cols-2 lg:grid-cols-4{% elif feat_cards|length == 2 %}md:grid-cols-2{% else %}md:grid-cols-3{% endif %} gap-gutter">
+                {% for card in feat_cards %}
+                {% set idx = loop.index0 %}
+                {% set clr = feat_colors[idx % feat_colors|length] %}
+                <div class="glass-card p-8 rounded-3xl reveal-on-scroll delay-{{ loop.index }}00 group is-visible">
+                    <div class="w-16 h-16 rounded-2xl bg-{{ clr }}/10 border border-{{ clr }}/20 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-4xl text-{{ clr }}" style="font-variation-settings: 'FILL' 1;">{{ feat_icons[idx % feat_icons|length] }}</span>
+                    </div>
+                    <h3 class="font-headline-sm mb-4">{{ card.get('title', '') }}</h3>
+                    <p class="font-body-md text-on-surface-variant">{{ card.get('desc', '') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 
+    <!-- Pricing Section -->
+    <section class="py-section-gap px-6 relative" id="pricing">
+        <div class="max-w-container-max mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-20 reveal-on-scroll">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-primary-fixed/20 text-tertiary-fixed-dim font-label-sm mb-6">
+                    <span class="material-symbols-outlined text-sm">sell</span>
+                    Minh bạch, không ẩn phí
+                </div>
+                <h2 class="font-headline-md text-on-surface mb-4">Bảng giá linh hoạt</h2>
+                <p class="font-body-lg text-on-surface-variant">Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp hoặc hủy bất kỳ lúc nào.</p>
+            </div>
+
+            <!-- Loading skeleton -->
+            <div id="pricing-loading" class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                <div class="glass-card p-8 rounded-3xl animate-pulse">
+                    <div class="h-5 bg-white/10 rounded-full w-1/2 mb-4"></div>
+                    <div class="h-10 bg-white/10 rounded-full w-3/4 mb-6"></div>
+                    <div class="space-y-3 mb-8">
+                        <div class="h-3 bg-white/5 rounded-full w-full"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-5/6"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-4/6"></div>
+                    </div>
+                    <div class="h-12 bg-white/10 rounded-full w-full"></div>
+                </div>
+                <div class="glass-card p-8 rounded-3xl animate-pulse">
+                    <div class="h-5 bg-white/10 rounded-full w-1/2 mb-4"></div>
+                    <div class="h-10 bg-white/10 rounded-full w-3/4 mb-6"></div>
+                    <div class="space-y-3 mb-8">
+                        <div class="h-3 bg-white/5 rounded-full w-full"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-5/6"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-4/6"></div>
+                    </div>
+                    <div class="h-12 bg-white/10 rounded-full w-full"></div>
+                </div>
+                <div class="glass-card p-8 rounded-3xl animate-pulse">
+                    <div class="h-5 bg-white/10 rounded-full w-1/2 mb-4"></div>
+                    <div class="h-10 bg-white/10 rounded-full w-3/4 mb-6"></div>
+                    <div class="space-y-3 mb-8">
+                        <div class="h-3 bg-white/5 rounded-full w-full"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-5/6"></div>
+                        <div class="h-3 bg-white/5 rounded-full w-4/6"></div>
+                    </div>
+                    <div class="h-12 bg-white/10 rounded-full w-full"></div>
+                </div>
+            </div>
+
+            <!-- Pricing cards (rendered by JS) -->
+            <div id="pricing-grid" class="flex flex-wrap justify-center gap-6 hidden"></div>
+
+            <!-- Free tier note -->
+            <p class="text-center text-on-surface-variant text-sm mt-10 reveal-on-scroll delay-300">
+                <span class="material-symbols-outlined text-green-400 text-base align-middle mr-1">check_circle</span>
+                Bắt đầu miễn phí với <strong class="text-on-surface">100.000 ký tự</strong> — không cần thẻ tín dụng.
+            </p>
+        </div>
+    </section>
+
+    <!-- About Us Section -->
+    {% set about_new = lp.get('about_new', {}) %}
+    {% set company = lp.get('company', {}) %}
+    {% set about_cards = about_new.get('cards', [
+        {'icon': 'visibility', 'title': 'Tầm nhìn', 'desc': 'Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo.'},
+        {'icon': 'flag', 'title': 'Sứ mệnh', 'desc': 'Cung cấp giải pháp tổng hợp giọng nói chất lượng cao, đa dạng, dễ dàng tích hợp và tối ưu chi phí.'},
+        {'icon': 'handshake', 'title': 'Cam kết', 'desc': 'Liên tục nghiên cứu các mô hình Deep Learning mới nhất để cải thiện độ tự nhiên và cảm xúc.'}
+    ]) %}
+    <section class="py-section-gap px-6 relative overflow-hidden" id="about">
+        <div class="max-w-container-max mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="relative reveal-on-scroll is-visible">
+                <div class="glass-card rounded-[2rem] overflow-hidden border-white/10 aspect-square lg:aspect-auto lg:h-[600px] relative">
+                    <img alt="Công nghệ VietVoice" class="w-full h-full object-cover opacity-60 mix-blend-luminosity hover:opacity-100 hover:mix-blend-normal transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWsBkbPrz4Y7zB-pMnEv_gOl0RV_8_iLVZ5IZGID8gW2sYNdi6cmE2Ib5iM0uuAG9i5HTTyQz4tQpQUdRwH8n84bAbOeaepf_GbfSXyTqCpNjPgsjYAgzAf3ag-ElLEuhhnZHdl2GlS-TjJUR31lFfkavAeFov3hQgVDVwqMd_c-kurKEH3EBkR19yLiR80Ue7gNBd_7fpBBJwgdWe2RfSZ9XUEzzhkVJZwvmtwJHoXyN_7BqYiBlGFW7gmGlrU5dEIsAajvcyPxoA">
+                    <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+                    <div class="absolute bottom-8 left-8 right-8 glass-panel p-6 rounded-2xl">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-primary">verified</span>
+                            </div>
+                            <div>
+                                <h4 class="font-label-md text-on-surface">Giải pháp tin cậy</h4>
+                                <p class="text-xs text-on-surface-variant">Được tin dùng bởi hơn 200 doanh nghiệp lớn tại Việt Nam.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-8 reveal-on-scroll delay-200 is-visible">
+                <div class="space-y-4">
+                    <h2 class="font-headline-md text-on-surface">{{ about_new.get('title', 'Tại sao chọn VietVoice?') }}</h2>
+                    <p class="font-body-lg text-on-surface-variant">{{ about_new.get('desc', 'Chúng tôi không chỉ cung cấp công cụ, chúng tôi kiến tạo giải pháp toàn diện cho kỷ nguyên âm thanh số.') }}</p>
+                </div>
+                <div class="space-y-8 mt-4">
+                    {% for card in about_cards %}
+                    {% set clr = 'tertiary' if loop.index == 2 else 'primary' %}
+                    <div class="flex gap-6">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-{{ clr }}/10 flex items-center justify-center border border-{{ clr }}/20">
+                            <span class="material-symbols-outlined text-{{ clr }}">{{ card.get('icon', 'star') }}</span>
+                        </div>
+                        <div>
+                            <h4 class="font-headline-sm text-lg mb-2">{{ card.get('title', '') }}</h4>
+                            <p class="font-body-md text-on-surface-variant">{{ card.get('desc', '') }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Corporate Info Card -->
+                <div class="mt-8 p-8 glass-panel rounded-2xl border border-primary/30 shadow-[0_0_20px_rgba(160,120,255,0.15)] bg-surface-container-high/60">
+                    <h5 class="font-headline-sm text-lg text-primary mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined">account_balance</span>
+                        Thông tin pháp lý
+                    </h5>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                        <div class="space-y-4">
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">corporate_fare</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Tên công ty</p>
+                                    <p class="text-sm text-on-surface font-semibold">{{ company.get('name', 'CÔNG TY TNHH MỘT THÀNH VIÊN CÔNG NGHỆ KỸ THUẬT TIÊN PHONG') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">description</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Mã số thuế</p>
+                                    <p class="text-sm text-on-surface font-semibold">{{ company.get('mst', '1801526082') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">person</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Người đại diện</p>
+                                    <p class="text-sm text-on-surface font-semibold">{{ company.get('representative', 'NGÔ HỒ ANH KHÔI') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">calendar_today</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Ngày cấp phép</p>
+                                    <p class="text-sm text-on-surface font-semibold">{{ company.get('since', '05/04/2017') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">location_on</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Trụ sở chính</p>
+                                    <p class="text-sm text-on-surface-variant leading-relaxed">{{ company.get('address', 'P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, P. Cái Răng, TP. Cần Thơ') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">call</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Hotline</p>
+                                    <p class="text-sm text-on-surface font-semibold">{{ company.get('phone', '0916 416 409') }}</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="material-symbols-outlined text-primary/70 text-xl">email</span>
+                                <div>
+                                    <p class="text-xs text-on-surface-variant uppercase tracking-wider mb-0.5">Email</p>
+                                    <p class="text-sm text-on-surface font-semibold">support@vietvoice.ai</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    {% set fcta = lp.get('final_cta', {}) %}
+    <section class="py-section-gap px-6">
+        <div class="max-w-4xl mx-auto glass-card rounded-[2.5rem] p-12 md:p-20 text-center relative overflow-hidden reveal-on-scroll is-visible">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-tertiary to-primary"></div>
+            <h2 class="font-headline-md mb-6">{{ fcta.get('title', 'Sẵn sàng nâng tầm nội dung của bạn?') }}</h2>
+            <p class="font-body-lg text-on-surface-variant mb-10">{{ fcta.get('subtitle', 'Bắt đầu ngay hôm nay và nhận 100.000 ký tự miễn phí khi đăng ký tài khoản mới.') }}</p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="{{ url_for('register') }}" class="w-full sm:w-auto h-14 px-12 rounded-full primary-gradient-btn text-white font-label-md text-lg glow-effect flex items-center justify-center">
+                    {{ fcta.get('btn_primary', 'Đăng ký ngay') }}
+                </a>
+                <div class="flex items-center gap-2 text-on-surface-variant text-sm">
+                    <span class="material-symbols-outlined text-green-400">check_circle</span>
+                    <span>{{ fcta.get('note', 'Không cần thẻ tín dụng') }}</span>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <!-- Footer -->
-<footer class="w-full bg-[#030d1a] mt-auto relative z-10">
-  <!-- Main footer grid -->
-  <div class="max-w-7xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-10">
-
-    <!-- Brand column -->
-    <div class="md:col-span-4 flex flex-col gap-5">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings:'FILL' 1;">graphic_eq</span>
-        <span class="text-xl font-extrabold text-white tracking-tight">VietVoice</span>
-      </div>
-      <p class="text-sm text-slate-400 leading-relaxed max-w-xs">
-        {{ lp.get('footer', {}).get('brand_desc', 'Nền tảng chuyển văn bản thành giọng nói AI tiên phong — chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.') }}
-      </p>
-      <div>
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase"
-              style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.2);color:#d0bcff">
-          ✦ BETA
-        </span>
-      </div>
+{% set ft = lp.get('footer', {}) %}
+{% set ft_col1 = ft.get('col1_links', [{'label':'Tính năng','href':'#features'},{'label':'Bảng giá','href':'#pricing'},{'label':'Kho giọng nói','href':'/login'}]) %}
+{% set ft_col2 = ft.get('col2_links', [{'label':'Về chúng tôi','href':'#about'},{'label':'Liên hệ','href':'/contact'},{'label':'Đăng ký','href':'/register'}]) %}
+<footer class="w-full py-16 px-8 bg-[#051424] border-t border-white/10 relative z-10">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div class="col-span-1 md:col-span-1">
+                <div class="flex items-center gap-2 mb-6">
+                    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+                    <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
+                </div>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    {{ ft.get('brand_desc', 'Nền tảng AI Voice hàng đầu Việt Nam, cung cấp giải pháp âm thanh số chất lượng cao cho doanh nghiệp.') }}
+                </p>
+            </div>
+            <div>
+                <h4 class="font-bold text-white mb-6">{{ ft.get('col1_title', 'Sản phẩm') }}</h4>
+                <ul class="space-y-4 text-sm text-slate-400">
+                    {% for lnk in ft_col1 %}
+                    <li><a class="hover:text-primary transition-colors" href="{{ lnk.href }}">{{ lnk.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-white mb-6">{{ ft.get('col2_title', 'Công ty') }}</h4>
+                <ul class="space-y-4 text-sm text-slate-400">
+                    {% for lnk in ft_col2 %}
+                    <li><a class="hover:text-primary transition-colors" href="{{ lnk.href }}">{{ lnk.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-white mb-6">{{ ft.get('col3_title', 'Liên kết') }}</h4>
+                <div class="flex gap-4">
+                    <a class="w-10 h-10 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all" href="#">
+                        <span class="material-symbols-outlined text-sm">public</span>
+                    </a>
+                    <a class="w-10 h-10 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all" href="mailto:support@vietvoice.ai">
+                        <span class="material-symbols-outlined text-sm">mail</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-xs text-slate-500">
+                {{ ft.get('copyright', '© 2024 VietVoice AI. Công ty TNHH MTV Công Nghệ Kỹ Thuật Tiên Phong.') }}
+            </div>
+            <div class="flex gap-8 text-xs text-slate-500">
+                <a class="hover:text-white" href="#">{{ ft.get('terms_link', 'Điều khoản sử dụng') }}</a>
+                <a class="hover:text-white" href="#">{{ ft.get('privacy_link', 'Chính sách bảo mật') }}</a>
+            </div>
+        </div>
     </div>
-
-    <!-- Nav columns -->
-    <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
-
-      <!-- Tính năng -->
-      <div>
-        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
-          {{ lp.get('footer', {}).get('col1_title', 'TÍNH NĂNG') }}
-        </h4>
-        <ul class="space-y-3">
-          {% for link in lp.get('footer', {}).get('col1_links', [
-            {'label': 'Chuyển văn bản → Giọng nói', 'href': '#'},
-            {'label': 'Clone giọng cá nhân',         'href': '#'},
-            {'label': 'Emotional TTS',               'href': '#'},
-            {'label': 'Thư viện âm thanh',           'href': '#'},
-            {'label': 'Bảng giá & Nâng cấp',         'href': '#'}
-          ]) %}
-          <li>
-            <a href="{{ link.href }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">
-              {{ link.label }}
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <!-- Hỗ trợ -->
-      <div>
-        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
-          {{ lp.get('footer', {}).get('col2_title', 'HỖ TRỢ') }}
-        </h4>
-        <ul class="space-y-3">
-          {% for link in lp.get('footer', {}).get('col2_links', [
-            {'label': 'Liên hệ hỗ trợ',        'href': '/contact'},
-            {'label': 'Câu hỏi thường gặp',     'href': '#'},
-            {'label': 'Báo lỗi',                'href': '#'},
-            {'label': 'Yêu cầu tính năng',      'href': '#'}
-          ]) %}
-          <li>
-            <a href="{{ link.href }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">
-              {{ link.label }}
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <!-- Tài khoản -->
-      <div>
-        <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-slate-400 mb-5">
-          {{ lp.get('footer', {}).get('col3_title', 'TÀI KHOẢN') }}
-        </h4>
-        <ul class="space-y-3">
-          <li><a href="{{ url_for('login') }}"    class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Đăng nhập</a></li>
-          <li><a href="{{ url_for('register') }}" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Đăng ký miễn phí</a></li>
-          <li><a href="/pricing" class="text-sm text-slate-300 hover:text-violet-400 transition-colors duration-200">Nâng cấp tài khoản</a></li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Bottom bar -->
-  <div>
-    <div class="max-w-7xl mx-auto px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-3">
-      <p class="text-xs text-slate-500">
-        {{ lp.get('footer', {}).get('copyright', '© 2024 VietVoice AI · Công ty TNHH Một Thành Viên Công Nghệ Kỹ Thuật Tiên Phong · MST: 1801526082') }}
-      </p>
-      <div class="flex gap-5">
-        <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Chính sách bảo mật</a>
-        <a href="#" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Điều khoản sử dụng</a>
-      </div>
-    </div>
-  </div>
 </footer>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) entry.target.classList.add('is-visible');
+    // Intersection Observer for scroll reveal animations
+    document.addEventListener("DOMContentLoaded", function () {
+        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('is-visible');
+            });
+        }, observerOptions);
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+
+        // Load pricing packages
+        loadPricingPackages();
+    });
+
+    function formatPrice(price) {
+        if (!price || price === 0) return 'Miễn phí';
+        return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    }
+
+    function formatChars(chars) {
+        if (chars >= 1000000) return (chars / 1000000).toFixed(1).replace('.0','') + 'M';
+        if (chars >= 1000) return (chars / 1000).toFixed(0) + 'K';
+        return chars.toLocaleString('vi-VN');
+    }
+
+    function formatDuration(days) {
+        if (days === 30) return '1 tháng';
+        if (days === 90) return '3 tháng';
+        if (days === 180) return '6 tháng';
+        if (days === 365) return '1 năm';
+        return days + ' ngày';
+    }
+
+    function getPackageFeatures(pkg) {
+        const chars = pkg.characters || 0;
+        return [
+            `<strong>${formatChars(chars)}</strong> ký tự / kỳ`,
+            `Hiệu lực <strong>${formatDuration(pkg.duration_days || 30)}</strong>`,
+            'Toàn bộ giọng nói có sẵn',
+            'Tải file MP3 / WAV',
+            'Hỗ trợ qua email',
+        ];
+    }
+
+    async function loadPricingPackages() {
+        try {
+            const res = await fetch('/api/packages');
+            const data = await res.json();
+
+            document.getElementById('pricing-loading').classList.add('hidden');
+
+            if (!data.success || !data.packages || data.packages.length === 0) {
+                renderFallbackPricing();
+                return;
+            }
+
+            const grid = document.getElementById('pricing-grid');
+            grid.classList.remove('hidden');
+
+            const packages = data.packages;
+            // Đánh dấu gói ở giữa (phổ biến nhất)
+            const popularIdx = Math.floor(packages.length / 2);
+
+            // Tính flex-basis: tối đa 3 card/hàng, căn giữa hàng cuối
+            const n = packages.length;
+            const perRow = n <= 2 ? n : n <= 4 ? 2 : 3;
+            const cardBasis = perRow === 1 ? 'min(100%, 400px)'
+                            : perRow === 2 ? 'min(calc(50% - 12px), 420px)'
+                            : 'min(calc(33.333% - 16px), 380px)';
+
+            packages.forEach((pkg, idx) => {
+                const isPopular = idx === popularIdx;
+                const features = getPackageFeatures(pkg);
+                const price = formatPrice(pkg.price);
+                const isFree = !pkg.price || pkg.price === 0;
+
+                const card = document.createElement('div');
+                card.className = `relative glass-card p-8 rounded-3xl reveal-on-scroll flex flex-col transition-all duration-300 delay-${(idx+1)*100}` +
+                    (isPopular ? ' border-primary/50 shadow-[0_0_30px_rgba(160,120,255,0.2)]' : '');
+                card.style.cssText = `flex: 1 1 ${cardBasis}; max-width: 380px;`;
+
+                card.innerHTML = `
+                    ${isPopular ? `<div class="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 text-white text-xs font-bold tracking-wide shadow-lg whitespace-nowrap">
+                        ⭐ Phổ biến nhất
+                    </div>` : ''}
+                    <div class="mb-6">
+                        <h3 class="font-headline-sm text-on-surface mb-1">${pkg.name}</h3>
+                        <p class="text-on-surface-variant text-sm">${formatDuration(pkg.duration_days || 30)}</p>
+                    </div>
+                    <div class="mb-8">
+                        <span class="text-4xl font-extrabold ${isPopular ? 'bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent' : 'text-on-surface'}">${price}</span>
+                        ${!isFree ? `<span class="text-on-surface-variant text-sm ml-1">/ ${formatDuration(pkg.duration_days || 30)}</span>` : ''}
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-grow">
+                        ${features.map(f => `
+                        <li class="flex items-start gap-3 text-sm text-on-surface-variant">
+                            <span class="material-symbols-outlined text-green-400 text-base mt-0.5 flex-shrink-0">check_circle</span>
+                            <span>${f}</span>
+                        </li>`).join('')}
+                    </ul>
+                    <a href="{{ url_for('register') }}" class="w-full h-12 rounded-full flex items-center justify-center font-label-md text-sm transition-all duration-300
+                        ${isPopular ? 'primary-gradient-btn text-white glow-effect' : 'glass-panel border border-white/10 text-on-surface hover:bg-white/5'}">
+                        ${isFree ? 'Bắt đầu miễn phí' : 'Đăng ký ngay'}
+                    </a>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Kích hoạt lại observer cho các card vừa render
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible'); });
+            }, { threshold: 0.1 });
+            grid.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+
+        } catch (err) {
+            document.getElementById('pricing-loading').classList.add('hidden');
+            renderFallbackPricing();
+        }
+    }
+
+    function renderFallbackPricing() {
+        const grid = document.getElementById('pricing-grid');
+        grid.classList.remove('hidden');
+        grid.innerHTML = `
+            <div class="glass-card p-8 rounded-3xl flex flex-col reveal-on-scroll delay-100 is-visible" style="flex:1 1 min(calc(33.333% - 16px),380px);max-width:380px;">
+                <div class="mb-6"><h3 class="font-headline-sm mb-1">Cơ bản</h3><p class="text-on-surface-variant text-sm">1 tháng</p></div>
+                <div class="mb-8"><span class="text-4xl font-extrabold text-on-surface">Miễn phí</span></div>
+                <ul class="space-y-3 mb-8 flex-grow">
+                    ${['<strong>100K</strong> ký tự / tháng','Toàn bộ giọng nói có sẵn','Tải file MP3','Hỗ trợ qua email'].map(f=>`<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span><span>${f}</span></li>`).join('')}
+                </ul>
+                <a href="{{ url_for('register') }}" class="w-full h-12 rounded-full glass-panel border border-white/10 text-on-surface font-label-md text-sm flex items-center justify-center hover:bg-white/5 transition-colors">Bắt đầu miễn phí</a>
+            </div>
+            <div class="relative glass-card p-8 rounded-3xl flex flex-col border-primary/50 shadow-[0_0_30px_rgba(160,120,255,0.2)] reveal-on-scroll delay-200 is-visible" style="flex:1 1 min(calc(33.333% - 16px),380px);max-width:380px;">
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 text-white text-xs font-bold tracking-wide shadow-lg">⭐ Phổ biến nhất</div>
+                <div class="mb-6"><h3 class="font-headline-sm mb-1">Chuyên nghiệp</h3><p class="text-on-surface-variant text-sm">1 tháng</p></div>
+                <div class="mb-8"><span class="text-4xl font-extrabold bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">199.000đ</span><span class="text-on-surface-variant text-sm ml-1">/ tháng</span></div>
+                <ul class="space-y-3 mb-8 flex-grow">
+                    ${['<strong>1M</strong> ký tự / tháng','Toàn bộ giọng nói có sẵn','Tải file MP3 / WAV','Giọng nói tùy chỉnh','Hỗ trợ ưu tiên'].map(f=>`<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span><span>${f}</span></li>`).join('')}
+                </ul>
+                <a href="{{ url_for('register') }}" class="w-full h-12 rounded-full primary-gradient-btn text-white font-label-md text-sm flex items-center justify-center glow-effect">Đăng ký ngay</a>
+            </div>
+            <div class="glass-card p-8 rounded-3xl flex flex-col reveal-on-scroll delay-300 is-visible" style="flex:1 1 min(calc(33.333% - 16px),380px);max-width:380px;">
+                <div class="mb-6"><h3 class="font-headline-sm mb-1">Doanh nghiệp</h3><p class="text-on-surface-variant text-sm">1 tháng</p></div>
+                <div class="mb-8"><span class="text-4xl font-extrabold text-on-surface">499.000đ</span><span class="text-on-surface-variant text-sm ml-1">/ tháng</span></div>
+                <ul class="space-y-3 mb-8 flex-grow">
+                    ${['<strong>5M</strong> ký tự / tháng','Toàn bộ giọng nói có sẵn','Tải file MP3 / WAV / OGG','Giọng nói tùy chỉnh không giới hạn','Hỗ trợ 24/7 ưu tiên'].map(f=>`<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-green-400 text-base mt-0.5">check_circle</span><span>${f}</span></li>`).join('')}
+                </ul>
+                <a href="{{ url_for('register') }}" class="w-full h-12 rounded-full glass-panel border border-white/10 text-on-surface font-label-md text-sm flex items-center justify-center hover:bg-white/5 transition-colors">Đăng ký ngay</a>
+            </div>
+        `;
+    }
+
+    // Mobile menu
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+
+    function openMobileMenu() { mobileMenu.classList.remove('hidden'); }
+    function closeMobileMenu() { mobileMenu.classList.add('hidden'); }
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileMenu);
+    if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+
+    // Scroll to features
+    function scrollToFeatures() {
+        document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ── Hero Demo Animation ──────────────────────────────────────────
+    (function initWaveform() {
+        const container = document.getElementById('demo-waveform');
+        if (!container) return;
+        const heights = [18,28,40,55,62,70,58,72,80,64,72,58,68,52,72,64,56,72,60,48,70,56,40,28,18];
+        heights.forEach(h => {
+            const bar = document.createElement('div');
+            bar.className = 'wavebar';
+            bar.style.height = '8px';
+            container.appendChild(bar);
         });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
-});
+        window._demoBars = Array.from(container.querySelectorAll('.wavebar'));
+        window._demoHeights = heights;
+    })();
+
+    let _demoPlaying = false;
+    let _demoTimer = null;
+    let _demoProgress = 0;
+    const DEMO_DURATION = 4000;
+
+    function runDemoAnimation() {
+        const bars = window._demoBars;
+        const heights = window._demoHeights;
+        if (!bars) return;
+
+        const status = document.getElementById('demo-status');
+        const btn = document.getElementById('demo-convert-btn');
+
+        // Show converting state
+        btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Đang xử lý...';
+        btn.disabled = true;
+        status.textContent = 'Đang tổng hợp giọng nói...';
+
+        setTimeout(() => {
+            // Render waveform
+            bars.forEach((bar, i) => {
+                bar.style.height = heights[i] + 'px';
+                bar.style.animationDelay = (i * 0.04) + 's';
+                bar.classList.add('active');
+            });
+            status.textContent = '✓ Đã tổng hợp xong — sẵn sàng phát';
+            btn.innerHTML = '<span class="material-symbols-outlined text-base" style="font-variation-settings:\'FILL\' 1;">graphic_eq</span> Chuyển đổi';
+            btn.disabled = false;
+            startDemoPlay();
+        }, 900);
+    }
+
+    function startDemoPlay() {
+        _demoPlaying = true;
+        _demoProgress = 0;
+        document.getElementById('demo-play-icon').textContent = 'pause';
+        tickDemoProgress();
+    }
+
+    function toggleDemoPlay() {
+        const bars = window._demoBars;
+        if (!bars || bars[0].style.height === '8px') { runDemoAnimation(); return; }
+        _demoPlaying = !_demoPlaying;
+        document.getElementById('demo-play-icon').textContent = _demoPlaying ? 'pause' : 'play_arrow';
+        if (_demoPlaying) tickDemoProgress();
+    }
+
+    function tickDemoProgress() {
+        if (!_demoPlaying) return;
+        _demoProgress += 50;
+        if (_demoProgress > DEMO_DURATION) {
+            _demoProgress = 0;
+            _demoPlaying = false;
+            document.getElementById('demo-play-icon').textContent = 'play_arrow';
+            document.getElementById('demo-progress').style.width = '0%';
+            document.getElementById('demo-time').textContent = '0:00';
+            return;
+        }
+        const pct = (_demoProgress / DEMO_DURATION * 100).toFixed(1);
+        document.getElementById('demo-progress').style.width = pct + '%';
+        const sec = Math.floor(_demoProgress / 1000);
+        document.getElementById('demo-time').textContent = '0:0' + sec;
+        setTimeout(tickDemoProgress, 50);
+    }
 </script>
 </body>
 </html>
