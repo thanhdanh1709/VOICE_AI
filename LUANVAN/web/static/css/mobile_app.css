@@ -1,0 +1,70 @@
+/*
+ * Mobile App CSS - Áp dụng khi truy cập qua APK (body.is-mobile-app)
+ */
+
+/* Ẩn navbar và footer */
+body.is-mobile-app .navbar,
+body.is-mobile-app #mainNavbar,
+body.is-mobile-app .site-footer,
+body.is-mobile-app footer,
+html.is-mobile-app .navbar,
+html.is-mobile-app #mainNavbar,
+html.is-mobile-app .site-footer,
+html.is-mobile-app footer { display: none !important; }
+
+/* Xóa padding-top navbar */
+body.is-mobile-app .main-content,
+html.is-mobile-app .main-content {
+    padding-top: 1rem !important;
+    margin-top: 0 !important;
+    min-height: 100vh !important;
+}
+body.is-mobile-app, html.is-mobile-app body { padding-top: 0 !important; }
+
+/* Container full width */
+body.is-mobile-app .container { padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100% !important; }
+
+/* Page header nhỏ lại */
+body.is-mobile-app .page-header { padding: 1rem 0 !important; }
+body.is-mobile-app .page-header h1 { font-size: 1.4rem !important; }
+body.is-mobile-app .page-header p { font-size: 0.85rem !important; }
+
+/* Form boxes */
+body.is-mobile-app .conversion-box,
+body.is-mobile-app .auth-box,
+body.is-mobile-app .statistics-box,
+body.is-mobile-app .card { padding: 1rem !important; border-radius: 0.75rem !important; }
+
+/* Grid về 1 cột */
+body.is-mobile-app .stats-grid,
+body.is-mobile-app .grid-3,
+body.is-mobile-app .grid-2 { grid-template-columns: 1fr !important; gap: 0.75rem !important; }
+
+/* Tabs cuộn ngang */
+body.is-mobile-app .tabs { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; flex-wrap: nowrap !important; }
+
+/* Buttons đủ lớn */
+body.is-mobile-app button,
+body.is-mobile-app .btn,
+body.is-mobile-app .btn-auth { min-height: 44px !important; font-size: 0.95rem !important; }
+
+/* Input fields */
+body.is-mobile-app input,
+body.is-mobile-app textarea,
+body.is-mobile-app select { font-size: 1rem !important; min-height: 44px !important; }
+body.is-mobile-app textarea { min-height: 120px !important; }
+
+/* Auth page */
+body.is-mobile-app .auth-container { padding: 1rem !important; padding-top: 2rem !important; align-items: flex-start !important; }
+body.is-mobile-app .auth-box { max-width: 100% !important; width: 100% !important; }
+
+/* Bảng cuộn ngang */
+body.is-mobile-app .table-container,
+body.is-mobile-app table { overflow-x: auto !important; display: block !important; }
+body.is-mobile-app th,
+body.is-mobile-app td { white-space: nowrap !important; padding: 0.5rem 0.75rem !important; font-size: 0.85rem !important; }
+
+/* Fix overflow */
+body.is-mobile-app { overflow-x: hidden !important; font-size: 15px !important; }
+body.is-mobile-app img,
+body.is-mobile-app video { max-width: 100% !important; height: auto !important; }
