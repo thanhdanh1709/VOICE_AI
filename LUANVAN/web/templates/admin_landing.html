@@ -41,6 +41,7 @@ tailwind.config = {
 </script>
 
 <style>
+  html, body { overflow-x: hidden; max-width: 100%; }
   body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
 
   .material-symbols-outlined {
@@ -212,32 +213,70 @@ tailwind.config = {
 
   <!-- ═══ TOP NAVBAR ═══ -->
   <header class="fixed top-0 left-0 right-0 md:left-64 z-50 bg-[#0F172A]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.3)]">
-    <div class="px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+    <div class="px-4 md:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2 md:gap-3">
+        <button id="adminLpMobileMenuBtn" class="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-all mr-1" onclick="toggleAdminLpNav()">
+          <span class="material-symbols-outlined" id="adminLpMenuIcon">menu</span>
+        </button>
         <span class="material-symbols-outlined text-violet-400" style="font-size:20px;font-variation-settings:'FILL' 1">palette</span>
         <div>
           <h1 class="text-sm font-bold text-white">Chỉnh sửa Landing Page</h1>
-          <p class="text-xs text-slate-400">Nội dung được lưu và hiển thị ngay lập tức</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Nội dung được lưu và hiển thị ngay lập tức</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 md:gap-3">
         <a href="{{ url_for('landing') }}" target="_blank"
-           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/10 border border-tertiary/25 text-tertiary text-xs font-semibold hover:bg-tertiary/20 transition-colors no-underline">
+           class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/10 border border-tertiary/25 text-tertiary text-xs font-semibold hover:bg-tertiary/20 transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>
           Xem Landing
         </a>
         <a href="{{ url_for('admin') }}"
-           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold hover:bg-surface-container-high transition-colors no-underline">
+           class="flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold hover:bg-surface-container-high transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>
-          Quay lại Admin
+          <span class="hidden sm:inline">Quay lại Admin</span>
         </a>
-        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium">Logout</a>
+        <a href="{{ url_for('logout') }}" class="text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium">
+          <span class="material-symbols-outlined md:hidden" style="font-size:16px">logout</span>
+          <span class="hidden md:inline">Logout</span>
+        </a>
       </div>
     </div>
   </header>
 
+  <!-- Mobile nav drawer for admin_landing -->
+  <div id="adminLpNavOverlay" class="fixed inset-0 bg-black/60 z-[45] hidden md:hidden" onclick="closeAdminLpNav()"></div>
+  <div id="adminLpNavDrawer" class="fixed top-16 left-0 w-64 bottom-0 z-[45] bg-[#0F172A] border-r border-white/10 shadow-2xl hidden md:hidden flex-col">
+    <div class="flex flex-col gap-1 p-4 flex-1">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}">
+        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
+        Bảng điều khiển
+      </a>
+      <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin_landing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">palette</span>
+        Landing Page
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-users">
+        <span class="material-symbols-outlined" style="font-size:18px">group</span>
+        Quản lý người dùng
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-payments">
+        <span class="material-symbols-outlined" style="font-size:18px">payments</span>
+        Quản lý thanh toán
+      </a>
+      <a href="{{ url_for('landing') }}" target="_blank" class="flex items-center gap-3 text-tertiary px-4 py-2.5 hover:bg-white/5 transition-all rounded-lg no-underline text-sm font-medium">
+        <span class="material-symbols-outlined" style="font-size:18px">open_in_new</span>
+        Xem Landing Page
+      </a>
+      <div class="my-2 border-t border-white/10"></div>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+        Về trang chính
+      </a>
+    </div>
+  </div>
+
   <!-- ═══ CONTENT ═══ -->
-  <main class="flex-1 pt-[80px] pb-24 px-6 md:px-10 max-w-4xl mx-auto w-full">
+  <main class="flex-1 min-w-0 pt-[80px] pb-24 px-4 md:px-10 max-w-4xl mx-auto w-full overflow-hidden">
 
     <!-- ── HERO ── -->
     <div class="alp-section mt-6">
@@ -714,5 +753,27 @@ function saveContent() {
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+<script>
+function toggleAdminLpNav() {
+  const overlay = document.getElementById('adminLpNavOverlay');
+  const drawer  = document.getElementById('adminLpNavDrawer');
+  const icon    = document.getElementById('adminLpMenuIcon');
+  const isOpen  = !drawer.classList.contains('hidden');
+  if (isOpen) {
+    drawer.classList.add('hidden');
+    overlay.classList.add('hidden');
+    icon.textContent = 'menu';
+  } else {
+    drawer.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    icon.textContent = 'close';
+  }
+}
+function closeAdminLpNav() {
+  document.getElementById('adminLpNavDrawer').classList.add('hidden');
+  document.getElementById('adminLpNavOverlay').classList.add('hidden');
+  document.getElementById('adminLpMenuIcon').textContent = 'menu';
+}
+</script>
 </body>
 </html>

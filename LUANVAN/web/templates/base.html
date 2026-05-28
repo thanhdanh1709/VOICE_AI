@@ -27,7 +27,7 @@
     {% block extra_css %}{% endblock %}
 
     <style>
-        html, body { margin: 0 !important; padding: 0 !important; }
+        html, body { margin: 0 !important; padding: 0 !important; overflow-x: hidden; max-width: 100%; }
         html { scroll-behavior: smooth; }
 
         body {
@@ -237,11 +237,75 @@
         .theme-toggle:hover { border-color: #7c3aed; background: rgba(124,58,237,0.12); }
         .theme-icon { display: none; }
 
+        /* ── HAMBURGER BUTTON (mobile) ── */
+        .nav-hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 6px;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+        .nav-hamburger:hover { background: rgba(255,255,255,0.07); color: #f1f5f9; }
+        .nav-hamburger svg { width: 22px; height: 22px; display: block; }
+
+        /* ── MOBILE NAV DRAWER ── */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9998;
+        }
+        .mobile-nav-overlay.open { display: block; }
+        .mobile-nav-drawer {
+            display: none;
+            position: fixed;
+            top: 64px; left: 0; right: 0;
+            background: rgba(10,10,20,0.97);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            z-index: 9999;
+            padding: 12px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .mobile-nav-drawer.open { display: block; }
+        .mobile-nav-drawer a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; border-radius: 10px;
+            color: #94a3b8; font-size: 0.875rem; font-weight: 500;
+            text-decoration: none; transition: all 0.15s;
+        }
+        .mobile-nav-drawer a:hover, .mobile-nav-drawer a.active {
+            color: #f1f5f9; background: rgba(255,255,255,0.06);
+        }
+        .mobile-nav-drawer .mobile-nav-divider {
+            border: none; border-top: 1px solid rgba(255,255,255,0.07);
+            margin: 6px 0;
+        }
+        .mobile-nav-drawer .mobile-logout {
+            color: #fca5a5;
+        }
+        .mobile-nav-drawer .mobile-logout:hover { background: rgba(239,68,68,0.1); }
+
+        /* ── RESPONSIVE NAVBAR ── */
+        @media (max-width: 768px) {
+            .nav-menu { display: none !important; }
+            .nav-hamburger { display: flex; align-items: center; justify-content: center; }
+            .navbar .container { padding: 0 1rem; }
+        }
+
         /* ── MAIN ── */
         .main-content {
             min-height: calc(100vh - 64px - 280px);
             padding-top: calc(64px + 2rem);
             padding-bottom: 2rem;
+        }
+        @media (max-width: 540px) {
+            .main-content { padding-top: calc(64px + 1rem); padding-left: 0.5rem; padding-right: 0.5rem; }
         }
 
         /* ══════════════════════════════════════
@@ -440,8 +504,37 @@
                     </button>
                 </li>
             </ul>
+            <!-- Mobile hamburger button -->
+            <button class="nav-hamburger" id="navHamburger" onclick="toggleBaseNav()" aria-label="Menu">
+                <svg id="hamburgerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
         </div>
     </nav>
+
+    <!-- ══ MOBILE NAV OVERLAY + DRAWER ══ -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeBaseNav()"></div>
+    <div class="mobile-nav-drawer" id="mobileNavDrawer">
+        {% if session.user_id %}
+        <a href="{{ url_for('index') }}">🏠 Trang chủ</a>
+        <a href="{{ url_for('audio_library') }}">🎵 Thư viện Audio</a>
+        <a href="{{ url_for('history') }}">📋 Lịch sử chuyển đổi</a>
+        <a href="{{ url_for('my_voices') }}">🎙️ Giọng của tôi</a>
+        <a href="{{ url_for('pricing') }}">⚡ Bảng giá</a>
+        <a href="{{ url_for('contact') }}">💬 Liên hệ</a>
+        {% if session.user_role == 'admin' %}
+        <a href="{{ url_for('admin') }}">🛡️ Quản trị</a>
+        {% endif %}
+        <hr class="mobile-nav-divider">
+        <a href="{{ url_for('logout') }}" class="mobile-logout">🚪 Đăng xuất ({{ session.full_name or session.username }})</a>
+        {% else %}
+        <a href="{{ url_for('landing') }}">✨ Tính năng</a>
+        <a href="{{ url_for('contact') }}">💬 Liên hệ</a>
+        <a href="{{ url_for('login') }}">🔑 Đăng nhập</a>
+        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700">✦ Bắt đầu miễn phí</a>
+        {% endif %}
+    </div>
 
     <!-- ══ MAIN CONTENT ══ -->
     <main class="main-content">
@@ -557,6 +650,32 @@
         document.querySelectorAll('.nav-menu li a').forEach(a => {
             if (a.getAttribute('href') === path) a.classList.add('active');
         });
+        document.querySelectorAll('.mobile-nav-drawer a').forEach(a => {
+            if (a.getAttribute('href') === path) a.classList.add('active');
+        });
+
+        // Mobile nav toggle
+        function toggleBaseNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const overlay = document.getElementById('mobileNavOverlay');
+            const icon = document.getElementById('hamburgerIcon');
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>';
+            } else {
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>';
+            }
+        }
+        function closeBaseNav() {
+            document.getElementById('mobileNavDrawer').classList.remove('open');
+            document.getElementById('mobileNavOverlay').classList.remove('open');
+            document.getElementById('hamburgerIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>';
+        }
+        window.addEventListener('resize', () => { if (window.innerWidth > 768) closeBaseNav(); });
     </script>
 
     {% block extra_js %}{% endblock %}

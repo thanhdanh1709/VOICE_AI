@@ -113,11 +113,13 @@
     }
 </script>
 <style>
+    html { overflow-x: hidden; max-width: 100%; }
     body {
         background-color: #051424;
         color: #d4e4fa;
         font-family: 'Manrope', sans-serif;
         overflow-x: hidden;
+        max-width: 100%;
     }
 
     .glass-panel {
@@ -271,7 +273,7 @@
                 <span class="material-symbols-outlined text-sm">rocket_launch</span>
                 {{ lp.get('hero', {}).get('tag', 'Thế hệ AI Voice mới nhất 2024') }}
             </div>
-            <h1 class="font-headline-lg text-on-surface leading-[1.1] font-extrabold tracking-tight text-5xl md:text-6xl lg:text-7xl mb-6">
+            <h1 class="font-headline-lg text-on-surface leading-[1.1] font-extrabold tracking-tight text-3xl sm:text-4xl md:text-6xl lg:text-7xl mb-6">
                 {{ lp.get('hero', {}).get('title_line1', 'VietVoice: Chuyển đổi') }} <br>
                 <span class="bg-gradient-to-r from-violet-400 via-cyan-400 to-violet-400 bg-[length:200%_auto] animate-pulse-slow bg-clip-text text-transparent">{{ lp.get('hero', {}).get('title_grad', 'văn bản thành giọng nói AI') }}</span> <br>
                 {{ lp.get('hero', {}).get('title_line2', 'tự nhiên & truyền cảm') }}

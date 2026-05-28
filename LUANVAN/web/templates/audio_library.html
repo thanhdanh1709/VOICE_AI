@@ -61,6 +61,7 @@ tailwind.config = {
 </script>
 
 <style>
+  html, body { overflow-x: hidden; max-width: 100%; }
   body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
 
   .material-symbols-outlined {
@@ -132,7 +133,7 @@ tailwind.config = {
 
 <!-- ═══ TOP NAVBAR ═══ -->
 <nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-  <div class="flex justify-between items-center px-6 h-16 max-w-[1360px] mx-auto">
+  <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
       <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
       VietVoice
@@ -147,7 +148,7 @@ tailwind.config = {
       <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
       {% endif %}
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-1.5 md:gap-3">
       <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
@@ -155,25 +156,66 @@ tailwind.config = {
       <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
         <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
       </button>
-      <a href="{{ url_for('contact') }}" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
+      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
         <span class="material-symbols-outlined">help_outline</span>
       </a>
-      <div class="flex items-center gap-2 pl-2 border-l border-white/10">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary">
+      <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
           {{ (session.full_name or session.username or 'U')[0] | upper }}
         </div>
         <div class="hidden sm:flex flex-col">
           <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
           <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
         </div>
-        <a href="{{ url_for('logout') }}" class="text-xs px-2.5 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">Logout</a>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
+          <span class="material-symbols-outlined" style="font-size:15px">logout</span>
+          <span class="hidden sm:inline">Logout</span>
+        </a>
       </div>
+      <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all ml-1" onclick="toggleMobileNav()">
+        <span class="material-symbols-outlined" id="mobileMenuIcon">menu</span>
+      </button>
     </div>
   </div>
 </nav>
 
+<!-- ═══ MOBILE NAV OVERLAY + DRAWER ═══ -->
+<div id="mobileNavOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileNav()"></div>
+<div id="mobileNavDrawer" class="fixed top-16 left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
+  <div class="flex flex-col p-3 gap-0.5">
+    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span> Workspace
+    </a>
+    <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> Giọng của tôi
+    </a>
+    <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">library_music</span> Thư viện Audio
+    </a>
+    <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">history</span> Lịch sử
+    </a>
+    <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">bolt</span> Bảng giá
+    </a>
+    <a href="{{ url_for('contact') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">help_outline</span> Liên hệ
+    </a>
+    {% if session.user_role == 'admin' %}
+    <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-tertiary hover:text-white hover:bg-white/5 no-underline">
+      <span class="material-symbols-outlined" style="font-size:20px">admin_panel_settings</span> Admin
+    </a>
+    {% endif %}
+    <div class="border-t border-white/10 mt-1 pt-1">
+      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline">
+        <span class="material-symbols-outlined" style="font-size:20px">logout</span> Đăng xuất
+      </a>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
-<div class="flex flex-1 pt-16 min-h-screen">
+<div class="flex flex-1 pt-16 min-h-screen w-full overflow-hidden">
 
   <!-- Sidebar -->
   <aside class="hidden md:flex flex-col w-60 fixed left-0 top-16 bottom-0 bg-[#051424] pt-6">
@@ -225,53 +267,52 @@ tailwind.config = {
   </aside>
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main class="flex-1 md:ml-60 p-6 md:p-8 min-h-0">
+  <main class="flex-1 min-w-0 md:ml-60 p-4 md:p-8 min-h-0 pb-[76px] md:pb-8 overflow-hidden">
 
     <!-- Page Header -->
-    <header class="mb-8">
-      <h1 class="text-4xl font-extrabold text-on-surface mb-2 tracking-tight">Thư viện Audio</h1>
-      <p class="text-base text-on-surface-variant">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
+    <header class="mb-5 md:mb-8">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-1 md:mb-2 tracking-tight">Thư viện Audio</h1>
+      <p class="text-sm md:text-base text-on-surface-variant">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
     </header>
 
     <!-- Filter Bar -->
-    <section class="glass-panel rounded-xl p-4 mb-6">
-      <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
-        <!-- Search -->
-        <div class="relative flex-1">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px">search</span>
-          <input id="searchInput" type="search"
-            class="w-full bg-surface-container border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors placeholder-on-surface-variant/60"
-            placeholder="Tìm kiếm theo nội dung âm thanh..."/>
-        </div>
+    <section class="glass-panel rounded-xl p-4 mb-5">
+      <!-- Search -->
+      <div class="relative mb-3">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px">search</span>
+        <input id="searchInput" type="search"
+          class="w-full bg-surface-container border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors placeholder-on-surface-variant/60"
+          placeholder="Tìm kiếm theo nội dung âm thanh..."/>
+      </div>
 
-        <!-- Filters -->
-        <div class="flex flex-wrap gap-2 items-center">
-          <select id="voiceFilter" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
-            <option value="">Tất cả giọng đọc</option>
-          </select>
+      <!-- Filters row 1: voice + sort -->
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <select id="voiceFilter" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+          <option value="">Tất cả giọng đọc</option>
+        </select>
+        <select id="sortBy" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+          <option value="newest">Mới nhất</option>
+          <option value="oldest">Cũ nhất</option>
+          <option value="duration">Thời lượng</option>
+          <option value="size">Kích thước</option>
+        </select>
+      </div>
 
-          <input id="dateFrom" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+      <!-- Filters row 2: dates -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <input id="dateFrom" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+        <input id="dateTo" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+      </div>
 
-          <span class="text-on-surface-variant text-sm">—</span>
-
-          <input id="dateTo" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
-
-          <select id="sortBy" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="duration">Thời lượng</option>
-            <option value="size">Kích thước</option>
-          </select>
-
-          <button id="filterBtn" class="px-4 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors flex items-center gap-1.5">
-            <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-            Lọc
-          </button>
-
-          <button id="resetBtn" class="px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant text-sm font-medium hover:bg-white/10 transition-colors">
-            Đặt lại
-          </button>
-        </div>
+      <!-- Action buttons -->
+      <div class="flex gap-2">
+        <button id="filterBtn" class="flex-1 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+          Lọc
+        </button>
+        <button id="resetBtn" class="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant text-sm font-medium hover:bg-white/10 transition-colors">
+          Đặt lại
+        </button>
       </div>
     </section>
 
@@ -330,6 +371,30 @@ tailwind.config = {
   </div>
 </footer>
 
+<!-- ═══ MOBILE BOTTOM NAV ═══ -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#07111f]/95 backdrop-blur-xl border-t border-white/10 flex justify-around items-center h-[60px] px-1">
+  <a href="{{ url_for('index') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors">
+    <span class="material-symbols-outlined" style="font-size:22px">graphic_eq</span>
+    <span class="text-[10px] font-medium">Tạo</span>
+  </a>
+  <a href="{{ url_for('audio_library') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-primary no-underline">
+    <span class="material-symbols-outlined" style="font-size:22px;font-variation-settings:'FILL' 1">library_music</span>
+    <span class="text-[10px] font-semibold">Thư viện</span>
+  </a>
+  <a href="{{ url_for('my_voices') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors">
+    <span class="material-symbols-outlined" style="font-size:22px">record_voice_over</span>
+    <span class="text-[10px] font-medium">Giọng</span>
+  </a>
+  <a href="{{ url_for('history') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors">
+    <span class="material-symbols-outlined" style="font-size:22px">history</span>
+    <span class="text-[10px] font-medium">Lịch sử</span>
+  </a>
+  <a href="{{ url_for('pricing') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors">
+    <span class="material-symbols-outlined" style="font-size:22px">bolt</span>
+    <span class="text-[10px] font-medium">Gói</span>
+  </a>
+</nav>
+
 <!-- ═══ SCRIPTS ═══ -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
@@ -384,6 +449,22 @@ if (themeToggleBtn) {
     updateThemeIcon();
   });
 }
+</script>
+<script>
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const icon = document.getElementById('mobileMenuIcon');
+  const isOpen = !drawer.classList.contains('hidden');
+  if (isOpen) { drawer.classList.add('hidden'); overlay.classList.add('hidden'); icon.textContent = 'menu'; }
+  else { drawer.classList.remove('hidden'); overlay.classList.remove('hidden'); icon.textContent = 'close'; }
+}
+function closeMobileNav() {
+  document.getElementById('mobileNavDrawer').classList.add('hidden');
+  document.getElementById('mobileNavOverlay').classList.add('hidden');
+  document.getElementById('mobileMenuIcon').textContent = 'menu';
+}
+window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileNav(); });
 </script>
 <script src="{{ url_for('static', filename='js/audio-library.js') }}"></script>
 </body>
