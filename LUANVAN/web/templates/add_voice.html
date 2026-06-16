@@ -51,13 +51,62 @@ tailwind.config = {
   .upload-area-modern.drag-over { border-color: #d0bcff !important; background: rgba(208,188,255,0.05) !important; }
   /* Range input */
   input[type=range] { accent-color: #d0bcff; }
-  /* Select styling */
-  select { background-color: #1c2b3c; color: #d4e4fa; border: 1px solid #494454; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; font-size: 14px; }
-  select:focus { border-color: #d0bcff; }
-  select option { background: #1c2b3c; }
-  /* Textarea / Input */
-  .form-input-dark { background: #1c2b3c; color: #d4e4fa; border: 1px solid #494454; border-radius: 8px; padding: 10px 14px; width: 100%; outline: none; font-size: 14px; transition: border-color 0.15s; font-family: inherit; }
-  .form-input-dark:focus { border-color: #d0bcff; }
+  /* Select styling — override Tailwind Forms plugin */
+  select,
+  select.form-select {
+    background-color: #1c2b3c !important;
+    background-image: none !important;
+    color: #d4e4fa !important;
+    border: 1px solid #494454 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    outline: none !important;
+    font-size: 14px !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+  select:focus, select.form-select:focus {
+    border-color: #d0bcff !important;
+    box-shadow: 0 0 0 2px rgba(208,188,255,0.15) !important;
+  }
+  select option,
+  select optgroup {
+    background-color: #1c2b3c !important;
+    color: #d4e4fa !important;
+  }
+  select optgroup {
+    font-weight: 700;
+    color: #a08aff !important;
+  }
+  /* Textarea / Input — override Tailwind Forms plugin */
+  .form-input-dark,
+  input.form-input-dark,
+  textarea.form-input-dark {
+    background: #1c2b3c !important;
+    background-color: #1c2b3c !important;
+    color: #d4e4fa !important;
+    border: 1px solid #494454 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    outline: none !important;
+    font-size: 14px !important;
+    transition: border-color 0.15s !important;
+    font-family: inherit !important;
+    box-shadow: none !important;
+  }
+  .form-input-dark:focus,
+  input.form-input-dark:focus,
+  textarea.form-input-dark:focus {
+    border-color: #d0bcff !important;
+    box-shadow: 0 0 0 2px rgba(208,188,255,0.15) !important;
+  }
+  .form-input-dark::placeholder {
+    color: #7a8a9e !important;
+    opacity: 1 !important;
+  }
   /* Progress bar */
   .progress-bar-track { background: #1c2b3c; border-radius: 9999px; height: 10px; overflow: hidden; }
   .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #a078ff, #d0bcff); border-radius: 9999px; transition: width 0.4s ease; }

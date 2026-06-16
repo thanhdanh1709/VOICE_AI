@@ -3,10 +3,8 @@
     "tag": "Giải pháp AI Tiên Phong",
     "title_line1": "VietVoice: Chuyển đổi",
     "title_grad": "văn bản thành giọng nói AI",
-    "title_line2": "tự nhiên &amp; truyền cảm",
-    "subtitle": "Nền tảng TTS AI tiên phong — tạo giọng nói chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân, chỉ trong vài giây.",
+    "title_line2": "tự nhiên & truyền cảm",
     "btn_primary": "Bắt đầu ngay",
-    "btn_secondary": "Đăng nhập →",
     "free_note": "Không cần thẻ tín dụng - 100.000 ký tự miễn phí khi đăng ký"
   },
   "company": {
@@ -22,31 +20,68 @@
     "title": "Về VietVoice AI",
     "desc": "Chúng tôi kiến tạo tương lai của giao tiếp số thông qua công nghệ AI Synthesis hàng đầu, mang đến giải pháp chuyển đổi văn bản thành giọng nói tự nhiên, truyền cảm và đậm chất Việt.",
     "cards": [
-      {"icon": "visibility", "title": "Tầm Nhìn", "desc": "Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo nội dung cho hàng triệu doanh nghiệp và cá nhân."},
-      {"icon": "flag", "title": "Sứ Mệnh", "desc": "Cung cấp giải pháp tổng hợp giọng nói chất lượng phòng thu, đa dạng vùng miền, dễ dàng tích hợp và tối ưu chi phí cho thị trường Việt Nam và quốc tế."},
-      {"icon": "handshake", "title": "Cam Kết", "desc": "Liên tục nghiên cứu, ứng dụng các mô hình học sâu (Deep Learning) mới nhất để cải thiện độ tự nhiên, cảm xúc và tốc độ xử lý của hệ thống."}
+      {
+        "icon": "visibility",
+        "title": "Tầm Nhìn",
+        "desc": "Trở thành nền tảng AI Voice hàng đầu khu vực, xóa bỏ rào cản ngôn ngữ và tự động hóa quy trình sáng tạo nội dung cho hàng triệu doanh nghiệp và cá nhân."
+      },
+      {
+        "icon": "flag",
+        "title": "Sứ Mệnh",
+        "desc": "Cung cấp giải pháp tổng hợp giọng nói chất lượng phòng thu, đa dạng vùng miền, dễ dàng tích hợp và tối ưu chi phí cho thị trường Việt Nam và quốc tế."
+      },
+      {
+        "icon": "handshake",
+        "title": "Cam Kết",
+        "desc": "Liên tục nghiên cứu, ứng dụng các mô hình học sâu (Deep Learning) mới nhất để cải thiện độ tự nhiên, cảm xúc và tốc độ xử lý của hệ thống."
+      }
     ]
   },
   "footer": {
     "brand_desc": "Nền tảng chuyển văn bản thành giọng nói AI tiên phong — chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.",
     "col1_title": "TÍNH NĂNG",
-    "col1_links": [
-      {"label": "Chuyển văn bản → Giọng nói", "href": "/#features"},
-      {"label": "Clone giọng cá nhân",         "href": "/#features"},
-      {"label": "Emotional TTS",               "href": "/#features"},
-      {"label": "Thư viện âm thanh",           "href": "/audio-library"},
-      {"label": "Bảng giá & Nâng cấp",         "href": "/pricing"}
-    ],
     "col2_title": "HỖ TRỢ",
-    "col2_links": [
-      {"label": "Liên hệ hỗ trợ",     "href": "/contact"},
-      {"label": "Câu hỏi thường gặp", "href": "#"},
-      {"label": "Báo lỗi",            "href": "/contact"},
-      {"label": "Yêu cầu tính năng",  "href": "/contact"}
-    ],
     "col3_title": "TÀI KHOẢN",
-    "privacy_link": "Chính sách bảo mật",
-    "terms_link": "Điều khoản sử dụng",
+    "col1_links": [
+      {
+        "label": "Chuyển văn bản → Giọng nói",
+        "href": "/#features"
+      },
+      {
+        "label": "Clone giọng cá nhân",
+        "href": "/#features"
+      },
+      {
+        "label": "Emotional TTS",
+        "href": "/#features"
+      },
+      {
+        "label": "Thư viện âm thanh",
+        "href": "/audio-library"
+      },
+      {
+        "label": "Bảng giá & Nâng cấp",
+        "href": "/pricing"
+      }
+    ],
+    "col2_links": [
+      {
+        "label": "Liên hệ hỗ trợ",
+        "href": "/contact"
+      },
+      {
+        "label": "Câu hỏi thường gặp",
+        "href": "#"
+      },
+      {
+        "label": "Báo lỗi",
+        "href": "/contact"
+      },
+      {
+        "label": "Yêu cầu tính năng",
+        "href": "/contact"
+      }
+    ],
     "copyright": "© 2024 VietVoice AI · Công ty TNHH Một Thành Viên Công Nghệ Kỹ Thuật Tiên Phong · MST: 1801526082"
   },
   "trusted": {

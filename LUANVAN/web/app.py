@@ -63,6 +63,9 @@ def resolve_audio_path(path: str) -> str:
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
 from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+
+# Deep link scheme cho Flutter mobile OAuth callback (phải khớp AndroidManifest & config.dart)
+MOBILE_CALLBACK_SCHEME = 'petai'
 from authlib.integrations.flask_client import OAuth
 import qrcode
 import io
@@ -124,6 +127,64 @@ google = oauth.register(
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'},
 )
+
+# ── Mobile Auth Token Store ────────────────────────────────
+# Token một lần (5 phút) dùng để kết nối CCT OAuth → WebView session.
+# Tạo sau khi Google OAuth thành công trong CCT, tiêu thụ khi WebView gọi /auth/mobile/callback.
+import threading as _threading
+
+_mobile_tokens: dict = {}
+_mobile_tokens_lock = _threading.Lock()
+
+def _create_mobile_token(user_id: int) -> str:
+    """Tạo token một lần (5 phút) cho mobile auth."""
+    token = str(uuid.uuid4()).replace('-', '')
+    expires = time.time() + 300
+    with _mobile_tokens_lock:
+        expired_keys = [k for k, v in _mobile_tokens.items() if v['expires'] < time.time()]
+        for k in expired_keys:
+            del _mobile_tokens[k]
+        _mobile_tokens[token] = {'user_id': user_id, 'expires': expires}
+    return token
+
+def _consume_mobile_token(token: str):
+    """Xác thực và tiêu thụ mobile token (dùng một lần). Trả về user_id hoặc None."""
+    with _mobile_tokens_lock:
+        data = _mobile_tokens.pop(token, None)
+    if data and data['expires'] > time.time():
+        return data['user_id']
+    return None
+
+def _mobile_cct_response(callback_url: str):
+    """Trả về HTML tối giản để Chrome Custom Tab kích hoạt deep link và tự đóng.
+    Page này user hầu như không thấy vì app sẽ tự kéo lên foreground.
+    Thông báo đăng nhập thành công sẽ hiện trong Flutter app (SnackBar).
+    """
+    safe_url = callback_url.replace('"', '%22').replace("'", '%27')
+    html = f'''<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VietVoice</title>
+</head>
+<body style="margin:0;background:#0f172a">
+  <script>
+  (function() {{
+    var u = "{safe_url}";
+    try {{
+      var a = document.createElement("a");
+      a.href = u; document.body.appendChild(a); a.click();
+    }} catch(e) {{ window.location.replace(u); }}
+    setTimeout(function() {{ window.close(); }}, 500);
+  }})();
+  </script>
+</body>
+</html>'''
+    from flask import make_response
+    resp = make_response(html, 200)
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return resp
 
 # Request logging
 @app.before_request
@@ -441,17 +502,36 @@ def logout():
 
 @app.route('/auth/google')
 def google_login():
-    """Bắt đầu luồng đăng nhập Google"""
+    """Bắt đầu luồng đăng nhập Google (Web)"""
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return redirect(url_for('login') + '?error=google_not_configured')
     redirect_uri = url_for('google_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
 
+@app.route('/auth/google/login/flutter')
+def google_login_flutter():
+    """Bắt đầu luồng đăng nhập Google cho Flutter mobile qua Chrome Custom Tab.
+    
+    Flutter mở URL này bằng FlutterWebAuth2 (Chrome Custom Tab, không phải WebView).
+    Sau khi Google OAuth xong, backend redirect về petai://callback?mobile_token=...
+    Flutter nhận callback rồi load /auth/mobile/callback?mobile_token=... trong WebView.
+    """
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=google_not_configured')
+    session['google_login_source'] = 'flutter'
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
 @app.route('/auth/google/callback')
 def google_callback():
-    """Callback sau khi Google xác thực"""
+    """Callback sau khi Google xác thực (dùng chung cho Web và Flutter mobile)"""
+    source = session.pop('google_login_source', 'web')
+
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        if source == 'flutter':
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=google_not_configured')
         return redirect(url_for('login') + '?error=google_not_configured')
 
     try:
@@ -459,6 +539,8 @@ def google_callback():
         user_info = token.get('userinfo') or google.userinfo()
     except Exception as e:
         print(f"[GOOGLE AUTH] Error: {e}")
+        if source == 'flutter':
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=google_auth_failed')
         return redirect(url_for('login') + '?error=google_auth_failed')
 
     google_id  = user_info.get('sub')
@@ -467,10 +549,14 @@ def google_callback():
     avatar_url = user_info.get('picture', '')
 
     if not google_id or not email:
+        if source == 'flutter':
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=google_no_email')
         return redirect(url_for('login') + '?error=google_no_email')
 
     conn = get_db_connection()
     if not conn:
+        if source == 'flutter':
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=db_error')
         return redirect(url_for('login') + '?error=db_error')
 
     try:
@@ -484,7 +570,6 @@ def google_callback():
                 cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
                 user = cursor.fetchone()
                 if user:
-                    # Liên kết google_id vào tài khoản hiện có
                     cursor.execute(
                         "UPDATE users SET google_id = %s, avatar_url = %s WHERE id = %s",
                         (google_id, avatar_url, user['id'])
@@ -493,12 +578,10 @@ def google_callback():
 
             # 3. Tạo tài khoản mới nếu chưa có
             if not user:
-                # Tạo username từ email (vd: nguyenvana@gmail.com → nguyenvana)
                 base_username = email.split('@')[0].lower()
                 base_username = ''.join(c for c in base_username if c.isalnum() or c == '_')[:30]
                 username = base_username
 
-                # Đảm bảo username duy nhất
                 counter = 1
                 while True:
                     cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
@@ -514,7 +597,6 @@ def google_callback():
                 )
                 user_id = cursor.lastrowid
 
-                # Tặng 100,000 ký tự miễn phí
                 cursor.execute("""
                     INSERT INTO user_subscriptions
                     (user_id, characters_limit, characters_used, start_date, end_date)
@@ -525,21 +607,68 @@ def google_callback():
                 cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
                 user = cursor.fetchone()
 
-        # Đăng nhập
+        if source == 'flutter':
+            # Mobile: tạo one-time token, trả về HTML để CCT tự đóng
+            mobile_token = _create_mobile_token(user['id'])
+            print(f"[GOOGLE AUTH] Mobile login OK: {user['username']} ({email})")
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?mobile_token={mobile_token}')
+        else:
+            # Web: tạo Flask session bình thường
+            session['user_id']   = user['id']
+            session['username']  = user['username']
+            session['user_role'] = user.get('role', 'user')
+            session['full_name'] = user.get('full_name', '')
+            session.permanent    = True
+            print(f"[GOOGLE AUTH] Web login OK: {user['username']} ({email})")
+            return redirect(url_for('index'))
+
+    except Exception as e:
+        conn.rollback()
+        print(f"[GOOGLE AUTH] DB error: {e}")
+        print(traceback.format_exc())
+        if source == 'flutter':
+            return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=db_error')
+        return redirect(url_for('login') + '?error=db_error')
+    finally:
+        conn.close()
+
+
+@app.route('/auth/mobile/callback')
+def mobile_auth_callback():
+    """Flutter WebView: Đổi mobile_token → Flask session để WebView đăng nhập.
+    
+    Flutter load URL này trong WebView sau khi nhận được mobile_token từ deep link.
+    Backend xác thực token, tạo session cho WebView, redirect về trang chủ.
+    """
+    mobile_token = request.args.get('mobile_token', '').strip()
+    if not mobile_token:
+        return redirect(url_for('login') + '?error=invalid_token')
+
+    user_id = _consume_mobile_token(mobile_token)
+    if not user_id:
+        print(f"[MOBILE AUTH] Token không hợp lệ hoặc đã hết hạn")
+        return redirect(url_for('login') + '?error=token_expired')
+
+    conn = get_db_connection()
+    if not conn:
+        return redirect(url_for('login') + '?error=db_error')
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE id = %s AND is_active = 1", (user_id,))
+            user = cursor.fetchone()
+
+        if not user:
+            return redirect(url_for('login') + '?error=user_not_found')
+
         session['user_id']   = user['id']
         session['username']  = user['username']
         session['user_role'] = user.get('role', 'user')
         session['full_name'] = user.get('full_name', '')
         session.permanent    = True
 
-        print(f"[GOOGLE AUTH] Logged in: {user['username']} ({email})")
+        print(f"[MOBILE AUTH] WebView session tạo thành công: {user['username']}")
         return redirect(url_for('index'))
-
-    except Exception as e:
-        conn.rollback()
-        print(f"[GOOGLE AUTH] DB error: {e}")
-        print(traceback.format_exc())
-        return redirect(url_for('login') + '?error=db_error')
     finally:
         conn.close()
 

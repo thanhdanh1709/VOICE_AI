@@ -115,6 +115,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     document.getElementById('textInput').value = e.target.result;
+                    const emotionalInput = document.getElementById('emotionalTextInput');
+                    if (emotionalInput) emotionalInput.value = e.target.result;
                     fileName.textContent = `📄 ${file.name}`;
                 };
                 reader.onerror = () => {
@@ -137,6 +139,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     
                     if (data.success) {
                         document.getElementById('textInput').value = data.text;
+                        const emotionalInput = document.getElementById('emotionalTextInput');
+                        if (emotionalInput) emotionalInput.value = data.text;
                         fileName.textContent = `📄 ${file.name}`;
                     } else {
                         fileName.textContent = `❌ ${data.message || 'Lỗi xử lý file'}`;
