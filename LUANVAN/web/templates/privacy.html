@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Chính sách quyền riêng tư — VietVoice{% endblock %}
+
+{% block extra_css %}
+<style>
+    .legal-hero {
+        text-align: center;
+        padding: 3rem 1.5rem 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .legal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 16px;
+        background: rgba(124,58,237,0.12);
+        border: 1px solid rgba(124,58,237,0.25);
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #c4b5fd;
+        margin-bottom: 1.25rem;
+    }
+    .legal-hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #a78bfa, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.75rem;
+    }
+    .legal-hero p {
+        color: #64748b;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1.5rem 4rem;
+    }
+    .legal-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .legal-card h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .legal-card h2 .section-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        background: linear-gradient(135deg, #7c3aed, #3b82f6);
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+    }
+    .legal-card p, .legal-card li {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        line-height: 1.75;
+        margin: 0 0 0.75rem;
+    }
+    .legal-card ul {
+        padding-left: 1.25rem;
+        margin: 0.5rem 0 0.75rem;
+    }
+    .legal-card li { margin-bottom: 0.4rem; }
+    .legal-card p:last-child { margin-bottom: 0; }
+    .highlight-box {
+        background: rgba(124,58,237,0.08);
+        border: 1px solid rgba(124,58,237,0.18);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-top: 0.75rem;
+    }
+    .highlight-box p { margin: 0; color: #c4b5fd; font-size: 0.85rem; }
+    .contact-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        font-size: 0.8375rem;
+        color: #94a3b8;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+    .contact-item:hover { border-color: #7c3aed; color: #c4b5fd; text-decoration: none; }
+    .last-updated {
+        text-align: center;
+        font-size: 0.78rem;
+        color: #334155;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-hero">
+    <div class="legal-badge">🔒 Pháp lý</div>
+    <h1>Chính sách quyền riêng tư</h1>
+    <p>Cập nhật lần cuối: Tháng 6 năm 2026</p>
+</div>
+
+<div class="legal-container">
+
+    <!-- Giới thiệu -->
+    <div class="legal-card">
+        <h2><span class="section-num">1</span> Giới thiệu</h2>
+        <p>
+            VietVoice ("chúng tôi") cam kết bảo vệ quyền riêng tư của bạn. Chính sách này mô tả cách chúng tôi
+            thu thập, sử dụng và bảo vệ thông tin cá nhân khi bạn sử dụng ứng dụng VietVoice —
+            nền tảng chuyển văn bản thành giọng nói AI.
+        </p>
+        <div class="highlight-box">
+            <p>📋 Bằng cách sử dụng VietVoice, bạn đồng ý với các điều khoản của chính sách này.</p>
+        </div>
+    </div>
+
+    <!-- Thông tin nhà phát triển -->
+    <div class="legal-card">
+        <h2><span class="section-num">2</span> Thông tin nhà phát triển</h2>
+        <p><strong style="color:#e2e8f0">Tên ứng dụng:</strong> VietVoice – Text to Speech AI</p>
+        <p><strong style="color:#e2e8f0">Nhà phát triển:</strong> VietVoice Development Team</p>
+        <p><strong style="color:#e2e8f0">Email liên hệ:</strong> support@vietvoice.app</p>
+        <p><strong style="color:#e2e8f0">Nền tảng:</strong> Web, Android, iOS</p>
+    </div>
+
+    <!-- Dữ liệu thu thập -->
+    <div class="legal-card">
+        <h2><span class="section-num">3</span> Dữ liệu chúng tôi thu thập</h2>
+        <p>Chúng tôi thu thập các thông tin sau:</p>
+        <ul>
+            <li><strong style="color:#e2e8f0">Thông tin tài khoản:</strong> họ tên, địa chỉ email, mật khẩu (đã mã hóa)</li>
+            <li><strong style="color:#e2e8f0">Dữ liệu sử dụng:</strong> văn bản bạn nhập để chuyển đổi, file âm thanh đầu ra</li>
+            <li><strong style="color:#e2e8f0">File giọng nói:</strong> nếu bạn tải lên để clone giọng cá nhân</li>
+            <li><strong style="color:#e2e8f0">Lịch sử giao dịch:</strong> thông tin thanh toán và nâng cấp gói dịch vụ</li>
+            <li><strong style="color:#e2e8f0">Thông tin kỹ thuật:</strong> địa chỉ IP, loại thiết bị, phiên bản hệ điều hành</li>
+            <li><strong style="color:#e2e8f0">Nhật ký hoạt động:</strong> thời gian đăng nhập, số ký tự đã sử dụng</li>
+        </ul>
+    </div>
+
+    <!-- Mục đích sử dụng -->
+    <div class="legal-card">
+        <h2><span class="section-num">4</span> Mục đích sử dụng dữ liệu</h2>
+        <p>Chúng tôi sử dụng dữ liệu thu thập để:</p>
+        <ul>
+            <li>Cung cấp dịch vụ chuyển văn bản thành giọng nói</li>
+            <li>Quản lý tài khoản và phiên đăng nhập của bạn</li>
+            <li>Xử lý thanh toán và quản lý gói dịch vụ</li>
+            <li>Cải thiện chất lượng giọng nói AI và trải nghiệm người dùng</li>
+            <li>Gửi thông báo về dịch vụ khi cần thiết</li>
+            <li>Phát hiện và ngăn chặn hành vi lạm dụng hệ thống</li>
+        </ul>
+    </div>
+
+    <!-- Chia sẻ dữ liệu -->
+    <div class="legal-card">
+        <h2><span class="section-num">5</span> Chia sẻ dữ liệu với bên thứ ba</h2>
+        <p>Chúng tôi <strong style="color:#e2e8f0">không bán</strong> dữ liệu cá nhân của bạn. Dữ liệu chỉ được chia sẻ trong các trường hợp:</p>
+        <ul>
+            <li><strong style="color:#e2e8f0">Cổng thanh toán SePay:</strong> để xử lý giao dịch nâng cấp tài khoản</li>
+            <li><strong style="color:#e2e8f0">Dịch vụ lưu trữ đám mây:</strong> Railway / hosting provider để vận hành ứng dụng</li>
+            <li><strong style="color:#e2e8f0">Yêu cầu pháp lý:</strong> khi có lệnh của cơ quan pháp luật Việt Nam</li>
+        </ul>
+        <div class="highlight-box">
+            <p>🛡️ Chúng tôi không chia sẻ dữ liệu với bên thứ ba cho mục đích quảng cáo.</p>
+        </div>
+    </div>
+
+    <!-- Cookies & Analytics -->
+    <div class="legal-card">
+        <h2><span class="section-num">6</span> Cookies & Session</h2>
+        <p>VietVoice sử dụng:</p>
+        <ul>
+            <li><strong style="color:#e2e8f0">Session cookies:</strong> để duy trì trạng thái đăng nhập của bạn</li>
+            <li><strong style="color:#e2e8f0">Local Storage:</strong> lưu tùy chọn giao diện (sáng/tối)</li>
+        </ul>
+        <p>Chúng tôi không sử dụng Google Analytics, Facebook Pixel, hay bất kỳ công cụ theo dõi của bên thứ ba.</p>
+    </div>
+
+    <!-- Quyền người dùng -->
+    <div class="legal-card">
+        <h2><span class="section-num">7</span> Quyền của bạn</h2>
+        <p>Bạn có các quyền sau đối với dữ liệu cá nhân:</p>
+        <ul>
+            <li><strong style="color:#e2e8f0">Truy cập:</strong> xem dữ liệu chúng tôi lưu trữ về bạn</li>
+            <li><strong style="color:#e2e8f0">Chỉnh sửa:</strong> cập nhật thông tin tài khoản bất kỳ lúc nào</li>
+            <li><strong style="color:#e2e8f0">Xóa:</strong> yêu cầu xóa toàn bộ dữ liệu tài khoản</li>
+            <li><strong style="color:#e2e8f0">Phản đối:</strong> từ chối một số hình thức xử lý dữ liệu nhất định</li>
+        </ul>
+        <div class="highlight-box">
+            <p>🗑️ Để xóa tài khoản và toàn bộ dữ liệu, hãy gửi email đến <strong>support@vietvoice.app</strong>
+            với tiêu đề <em>"Yêu cầu xóa dữ liệu"</em>. Chúng tôi sẽ xử lý trong vòng 30 ngày.</p>
+        </div>
+    </div>
+
+    <!-- Bảo mật -->
+    <div class="legal-card">
+        <h2><span class="section-num">8</span> Bảo mật dữ liệu</h2>
+        <p>Chúng tôi áp dụng các biện pháp bảo mật sau:</p>
+        <ul>
+            <li>Mã hóa mật khẩu bằng bcrypt hashing</li>
+            <li>Kết nối HTTPS/TLS cho mọi giao tiếp</li>
+            <li>Giới hạn quyền truy cập cơ sở dữ liệu theo vai trò</li>
+            <li>Không lưu trữ thông tin thẻ thanh toán trực tiếp</li>
+        </ul>
+    </div>
+
+    <!-- Liên hệ -->
+    <div class="legal-card">
+        <h2><span class="section-num">9</span> Liên hệ</h2>
+        <p>Nếu có câu hỏi về chính sách quyền riêng tư, vui lòng liên hệ:</p>
+        <div class="contact-row">
+            <a href="mailto:support@vietvoice.app" class="contact-item">
+                📧 support@vietvoice.app
+            </a>
+            <a href="{{ url_for('contact') }}" class="contact-item">
+                💬 Trang liên hệ
+            </a>
+            <a href="{{ url_for('support') }}" class="contact-item">
+                ❓ Trang hỗ trợ
+            </a>
+        </div>
+    </div>
+
+    <p class="last-updated">Chính sách này có hiệu lực từ ngày 01/06/2026 và được cập nhật lần cuối vào tháng 6 năm 2026.</p>
+</div>
+{% endblock %}

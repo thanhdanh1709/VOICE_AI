@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if audio %}{{ audio.display_name or (audio.text_input[:60] + '…') }} — VietVoice{% else %}Không tìm thấy — VietVoice{% endif %}</title>
+
+    <!-- Open Graph / Social -->
+    {% if audio %}
+    <meta property="og:title" content="{{ audio.display_name or audio.text_input[:60] }}">
+    <meta property="og:description" content="Nghe audio được tạo bằng VietVoice TTS — Giọng đọc AI tiếng Việt">
+    <meta property="og:type" content="website">
+    {% endif %}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #070f1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120,80,255,0.15), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(47,217,244,0.08), transparent);
+            pointer-events: none;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1.75rem;
+            color: #64748b;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .brand-logo {
+            font-size: 1.1rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #7b5ea7, #2fd9f4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .audio-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+        }
+        .audio-text-preview {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 99px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        .meta-chip .material-symbols-outlined { font-size: 13px; color: #60a5fa; }
+
+        /* Player */
+        .player-wrap {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .player-wrap audio {
+            width: 100%;
+            height: 40px;
+            accent-color: #7c3aed;
+            outline: none;
+        }
+        audio::-webkit-media-controls-panel { background: transparent; }
+
+        .btn-download {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #7b5ea7, #5b7cf7);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.15s, transform 0.1s;
+            margin-bottom: 1rem;
+        }
+        .btn-download:hover { opacity: 0.88; transform: translateY(-1px); }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            margin: 1.25rem 0;
+        }
+
+        .cta {
+            text-align: center;
+        }
+        .cta p {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+        .btn-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.625rem 1.25rem;
+            background: rgba(124,58,237,0.12);
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 10px;
+            color: #a78bfa;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+        .btn-cta:hover { background: rgba(124,58,237,0.2); }
+
+        /* Not found */
+        .not-found {
+            text-align: center;
+            padding: 2rem;
+        }
+        .not-found .icon { font-size: 3.5rem; color: #334155; margin-bottom: 1rem; }
+        .not-found h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .not-found p { font-size: 0.85rem; color: #64748b; }
+
+        @media (max-width: 480px) {
+            body { padding: 1rem; align-items: flex-start; justify-content: flex-start; padding-top: 2rem; }
+            .card { padding: 1.5rem; border-radius: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="brand">
+        <span class="brand-logo">VietVoice</span>
+        <span>·</span>
+        <span>Chia sẻ âm thanh</span>
+    </div>
+
+    {% if audio %}
+    <!-- Title -->
+    <h1 class="audio-title">
+        {{ audio.display_name or (audio.text_input[:80] + ('…' if audio.text_input|length > 80 else '')) }}
+    </h1>
+
+    <!-- Text preview (only show when display_name is set) -->
+    {% if audio.display_name %}
+    <p class="audio-text-preview">{{ audio.text_input }}</p>
+    {% endif %}
+
+    <!-- Meta chips -->
+    <div class="meta-row">
+        <span class="meta-chip">
+            <span class="material-symbols-outlined">graphic_eq</span>
+            {{ audio.voice_name or audio.voice_id or 'Giọng AI' }}
+        </span>
+        {% if audio.duration_seconds %}
+        <span class="meta-chip">
+            <span class="material-symbols-outlined">schedule</span>
+            {% set m = (audio.duration_seconds // 60)|int %}
+            {% set s = (audio.duration_seconds % 60)|int %}
+            {{ '%d:%02d'|format(m, s) }}
+        </span>
+        {% endif %}
+        {% if audio.created_at %}
+        <span class="meta-chip">
+            <span class="material-symbols-outlined">calendar_today</span>
+            {{ audio.created_at[:10] }}
+        </span>
+        {% endif %}
+        <span class="meta-chip">
+            <span class="material-symbols-outlined">person</span>
+            {{ audio.full_name or audio.username }}
+        </span>
+    </div>
+
+    <!-- Player -->
+    <div class="player-wrap">
+        <audio controls preload="auto" src="/api/audio/share/{{ token }}">
+            Trình duyệt không hỗ trợ phát audio.
+        </audio>
+    </div>
+
+    <!-- Download -->
+    <a href="/api/audio/share/{{ token }}" download="vietvoice_audio.wav" class="btn-download">
+        <span class="material-symbols-outlined" style="font-size:20px">download</span>
+        Tải về (WAV)
+    </a>
+
+    <hr class="divider">
+
+    <!-- CTA -->
+    <div class="cta">
+        <p>Tự tạo giọng đọc AI tiếng Việt của bạn</p>
+        <a href="/" class="btn-cta">
+            <span class="material-symbols-outlined" style="font-size:16px">mic</span>
+            Dùng VietVoice miễn phí
+        </a>
+    </div>
+
+    {% else %}
+    <!-- Not found -->
+    <div class="not-found">
+        <div class="icon">
+            <span class="material-symbols-outlined" style="font-size:inherit">link_off</span>
+        </div>
+        <h2>Link không hợp lệ</h2>
+        <p>Audio này không tồn tại hoặc đã bị tắt chia sẻ.</p>
+        <a href="/" class="btn-cta" style="margin-top:1.5rem;display:inline-flex">
+            <span class="material-symbols-outlined" style="font-size:16px">home</span>
+            Về trang chủ
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

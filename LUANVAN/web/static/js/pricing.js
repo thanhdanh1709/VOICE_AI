@@ -4,9 +4,19 @@
 
 let selectedPackageId = null;
 
+// i18n helper — falls back to hardcoded value if VVi18n not ready
+function _t(key, fallback) {
+    return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSubscriptionStatus();
     loadPackages();
+
+    // Re-render package cards whenever language is switched
+    window.addEventListener('vv:langChanged', () => {
+        loadPackages();
+    });
     
     // QR Modal close
     const qrModal = document.getElementById('qrPaymentModal');
@@ -42,8 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (success) success.style.display = 'flex';
         if (msg) {
             const chars = userCharacters?.characters_remaining;
-            msg.textContent = `+${formatNumber(pkg?.characters || 0)} ký tự đã được cộng vào tài khoản.`
-                + (chars != null ? ` Còn lại: ${formatNumber(chars)} ký tự.` : '');
+            const added = `+${formatNumber(pkg?.characters || 0)} ${_t('pkg.chars', 'ký tự')}`;
+            const vi_added = _t('pkg.payment.added', 'đã được cộng vào tài khoản.');
+            const vi_remain = _t('pkg.payment.remaining', 'Còn lại:');
+            msg.textContent = `${added} ${vi_added}`
+                + (chars != null ? ` ${vi_remain} ${formatNumber(chars)} ${_t('pkg.chars', 'ký tự')}.` : '');
         }
 
         // Reload subscription numbers
@@ -102,12 +115,12 @@ async function loadPackages() {
 
                 // Feature list items
                 const features = [
-                    `${formatNumber(pkg.characters)} ký tự`,
-                    'Tất cả giọng đọc tiếng Việt',
-                    'Emotional TTS (cảm xúc)',
-                    'Thư viện âm thanh',
-                    ...(!isFree   ? ['Clone giọng cá nhân'] : []),
-                    ...(isFeatured ? ['Ưu tiên xử lý']       : []),
+                    `${formatNumber(pkg.characters)} ${_t('pkg.chars', 'ký tự')}`,
+                    _t('pkg.feature.voices',   'Tất cả giọng đọc tiếng Việt'),
+                    _t('pkg.feature.emo_tts',  'Emotional TTS (cảm xúc)'),
+                    _t('pkg.feature.library',  'Thư viện âm thanh'),
+                    ...(!isFree    ? [_t('pkg.feature.clone',    'Clone giọng cá nhân')] : []),
+                    ...(isFeatured ? [_t('pkg.feature.priority', 'Ưu tiên xử lý')]       : []),
                 ];
 
                 const featureRows = features.map(f => `
@@ -118,20 +131,20 @@ async function loadPackages() {
 
                 const featuredBadge = isFeatured ? `
                     <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-tertiary to-primary text-surface-container-lowest text-[11px] font-bold px-4 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
-                        Phổ biến nhất
+                        ${_t('pkg.badge.popular', 'Phổ biến nhất')}
                     </div>` : '';
 
                 const priceHtml = isFree
-                    ? `<div class="text-2xl font-bold text-primary mt-1">0đ<span class="text-sm text-on-surface-variant font-normal">/mãi mãi</span></div>`
-                    : `<div class="text-2xl font-bold ${isFeatured ? 'text-tertiary' : 'text-primary'} mt-1">${formatCurrency(pkg.price)}<span class="text-sm text-on-surface-variant font-normal">/${pkg.duration_days} ngày</span></div>`;
+                    ? `<div class="text-2xl font-bold text-primary mt-1">0đ<span class="text-sm text-on-surface-variant font-normal">${_t('pkg.price.forever', '/mãi mãi')}</span></div>`
+                    : `<div class="text-2xl font-bold ${isFeatured ? 'text-tertiary' : 'text-primary'} mt-1">${formatCurrency(pkg.price)}<span class="text-sm text-on-surface-variant font-normal">/${pkg.duration_days} ${_t('pkg.price.days', 'ngày')}</span></div>`;
 
                 let btnHtml;
                 if (isFree) {
-                    btnHtml = `<button class="w-full py-2.5 px-4 rounded-lg border border-primary text-primary text-sm font-semibold text-center hover:bg-primary/10 transition-colors mt-auto" disabled>✓ Bắt đầu miễn phí</button>`;
+                    btnHtml = `<button class="w-full py-2.5 px-4 rounded-lg border border-primary text-primary text-sm font-semibold text-center hover:bg-primary/10 transition-colors mt-auto" disabled>${_t('pkg.btn.free', '✓ Bắt đầu miễn phí')}</button>`;
                 } else if (isFeatured) {
-                    btnHtml = `<button onclick="selectPackage(${pkg.id}, false)" class="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-primary to-inverse-primary text-white text-sm font-semibold text-center hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all mt-auto">Đăng ký ngay</button>`;
+                    btnHtml = `<button onclick="selectPackage(${pkg.id}, false)" class="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-primary to-inverse-primary text-white text-sm font-semibold text-center hover:shadow-[0_0_15px_rgba(208,188,255,0.4)] transition-all mt-auto">${_t('pkg.btn.subscribe_now', 'Đăng ký ngay')}</button>`;
                 } else {
-                    btnHtml = `<button onclick="selectPackage(${pkg.id}, false)" class="w-full py-2.5 px-4 rounded-lg border border-primary text-primary text-sm font-semibold text-center hover:bg-primary/10 transition-colors mt-auto">Đăng ký ${pkg.name}</button>`;
+                    btnHtml = `<button onclick="selectPackage(${pkg.id}, false)" class="w-full py-2.5 px-4 rounded-lg border border-primary text-primary text-sm font-semibold text-center hover:bg-primary/10 transition-colors mt-auto">${_t('pkg.btn.subscribe_to', 'Đăng ký')} ${pkg.name}</button>`;
                 }
 
                 return `
@@ -150,7 +163,7 @@ async function loadPackages() {
         } else {
             grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
                 <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">error_outline</span>
-                <p class="text-sm">Không thể tải gói dịch vụ. Vui lòng thử lại.</p>
+                <p class="text-sm">${_t('pkg.error.load', 'Không thể tải gói dịch vụ. Vui lòng thử lại.')}</p>
             </div>`;
         }
     } catch (error) {
@@ -158,7 +171,7 @@ async function loadPackages() {
         const grid = document.getElementById('pricingGrid');
         grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
             <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">wifi_off</span>
-            <p class="text-sm">Lỗi kết nối. Vui lòng tải lại trang.</p>
+            <p class="text-sm">${_t('pkg.error.connection', 'Lỗi kết nối. Vui lòng tải lại trang.')}</p>
         </div>`;
     }
 }

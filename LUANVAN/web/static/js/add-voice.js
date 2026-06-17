@@ -2,6 +2,11 @@
  * Add Voice Page - Upload and Train Custom Voice
  */
 
+// i18n helper
+function _t(key, fallback) {
+    return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+}
+
 let selectedFile = null;
 let currentVoiceId = null;
 
@@ -48,29 +53,37 @@ function setupVoiceTypeToggle() {
         const uploadSpecs = document.getElementById('uploadSpecs');
         if (uploadSpecs) {
             if (isVixtts) {
-                uploadSpecs.innerHTML = '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 6 giây - 2 phút (tối ưu 10–60 giây)<br><strong>Chất lượng:</strong> Không noise, không echo';
+                uploadSpecs.innerHTML = _t('addv.upload.specs_vixtts',
+                    '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 6 giây - 2 phút<br><strong>Chất lượng:</strong> Không noise, không echo');
             } else {
-                uploadSpecs.innerHTML = '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 30 giây - 15 phút<br><strong>Chất lượng:</strong> Không noise, không echo';
+                uploadSpecs.innerHTML = _t('addv.upload.specs_rvc',
+                    '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 30 giây - 15 phút<br><strong>Chất lượng:</strong> Không noise, không echo');
             }
         }
 
         // Update training info card text
         if (trainingInfoText) {
             if (isVixtts) {
-                trainingInfoText.innerHTML = 'Giọng <strong>viXTTS Clone</strong> được tạo ngay lập tức sau khi upload. Model viXTTS sẽ clone giọng từ audio mẫu khi bạn chuyển đổi văn bản.';
+                trainingInfoText.innerHTML = _t('addv.training.vixtts',
+                    'Giọng <strong>viXTTS Clone</strong> được tạo ngay lập tức.');
             } else if (isZeroShot) {
-                trainingInfoText.innerHTML = 'Giọng <strong>Zero-shot</strong> được tạo ngay lập tức. Model sẽ clone giọng từ audio mẫu + transcript mỗi lần chuyển đổi.';
+                trainingInfoText.innerHTML = _t('addv.training.zeroshot',
+                    'Giọng <strong>Zero-shot</strong> được tạo ngay lập tức.');
             } else {
-                trainingInfoText.innerHTML = 'Giọng custom sẽ được tạo <strong>ngay lập tức</strong> (< 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.';
+                trainingInfoText.innerHTML = _t('addv.training.text',
+                    'Giọng custom sẽ được tạo <strong>ngay lập tức</strong> (< 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.');
             }
         }
         if (trainingInfoNote) {
             if (isVixtts) {
-                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả clone tốt nhất.';
+                trainingInfoNote.innerHTML = _t('addv.training.tip.vixtts',
+                    '💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả clone tốt nhất.');
             } else if (isZeroShot) {
-                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Transcript phải khớp chính xác với nội dung trong file audio mẫu.';
+                trainingInfoNote.innerHTML = _t('addv.training.tip.zeroshot',
+                    '💡 <strong>Tip:</strong> Transcript phải khớp chính xác với nội dung trong file audio mẫu.');
             } else {
-                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.';
+                trainingInfoNote.innerHTML = _t('addv.training.tip',
+                    '💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.');
             }
         }
     }
@@ -78,6 +91,9 @@ function setupVoiceTypeToggle() {
     if (voiceTypeRvc) voiceTypeRvc.addEventListener('change', updateVisibility);
     if (voiceTypeZeroShot) voiceTypeZeroShot.addEventListener('change', updateVisibility);
     if (voiceTypeVixtts) voiceTypeVixtts.addEventListener('change', updateVisibility);
+
+    // Re-render dynamic text when language switches
+    window.addEventListener('vv:langChanged', updateVisibility);
     updateVisibility();
 }
 

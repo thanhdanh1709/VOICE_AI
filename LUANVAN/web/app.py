@@ -28,6 +28,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pymysql
 import uuid
+import secrets
 
 # Thêm đường dẫn VieNeu-TTS-main vào sys.path để import Vieneu
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -2370,10 +2371,138 @@ def payment_confirm():
     finally:
         conn.close()
 
+@app.route('/profile')
+@login_required
+def profile():
+    """Trang hồ sơ cá nhân"""
+    conn = get_db_connection()
+    user_data = {}
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT id, username, email, full_name, avatar_url, role, created_at FROM users WHERE id = %s",
+                    (session['user_id'],)
+                )
+                row = cursor.fetchone()
+                if row:
+                    user_data = {
+                        'id':         row['id'],
+                        'username':   row['username'],
+                        'email':      row['email'] or '',
+                        'full_name':  row['full_name'] or '',
+                        'avatar_url': row.get('avatar_url') or '',
+                        'role':       row['role'],
+                        'created_at': row['created_at'].strftime('%d/%m/%Y') if row.get('created_at') else '',
+                    }
+        except Exception as e:
+            print(f'[ERROR] profile: {e}')
+        finally:
+            conn.close()
+    return render_template('profile.html', user=user_data)
+
+
+@app.route('/api/user/update-profile', methods=['POST'])
+@login_required
+def update_profile():
+    """Cập nhật thông tin cá nhân (full_name)"""
+    data = request.get_json() or {}
+    full_name = (data.get('full_name') or '').strip()
+    if not full_name:
+        return jsonify({'success': False, 'message': 'Tên không được để trống'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET full_name = %s WHERE id = %s",
+                (full_name, session['user_id'])
+            )
+            conn.commit()
+        session['full_name'] = full_name
+        return jsonify({'success': True, 'message': 'Cập nhật thành công'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Đổi mật khẩu"""
+    data = request.get_json() or {}
+    current_pw  = data.get('current_password', '')
+    new_pw      = data.get('new_password', '')
+    confirm_pw  = data.get('confirm_password', '')
+
+    if not current_pw or not new_pw:
+        return jsonify({'success': False, 'message': 'Vui lòng điền đầy đủ thông tin'}), 400
+    if new_pw != confirm_pw:
+        return jsonify({'success': False, 'message': 'Mật khẩu xác nhận không khớp'}), 400
+    if len(new_pw) < 6:
+        return jsonify({'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password FROM users WHERE id = %s", (session['user_id'],))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+            if not check_password_hash(row['password'], current_pw):
+                return jsonify({'success': False, 'message': 'Mật khẩu hiện tại không đúng'}), 400
+            new_hash = generate_password_hash(new_pw)
+            cursor.execute(
+                "UPDATE users SET password = %s WHERE id = %s",
+                (new_hash, session['user_id'])
+            )
+            conn.commit()
+        return jsonify({'success': True, 'message': 'Đổi mật khẩu thành công'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
 @app.route('/contact')
 def contact():
     """Trang liên hệ"""
     return render_template('contact.html')
+
+@app.route('/privacy')
+def privacy():
+    """Chính sách quyền riêng tư"""
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    """Điều khoản sử dụng"""
+    return render_template('terms.html')
+
+@app.route('/data-deletion')
+def data_deletion():
+    """Chính sách xóa dữ liệu"""
+    return render_template('data_deletion.html')
+
+@app.route('/support')
+def support():
+    """Trang hỗ trợ và FAQ"""
+    return render_template('support.html')
+
+@app.route('/user-guide')
+def user_guide():
+    """Hướng dẫn sử dụng"""
+    return render_template('user_guide.html')
+
+@app.route('/installation-guide')
+def installation_guide():
+    """Hướng dẫn cài đặt hệ thống"""
+    return render_template('installation_guide.html')
 
 @app.route('/api/contact', methods=['POST'])
 def submit_contact():
@@ -2650,10 +2779,10 @@ def get_audio_library():
             """
             params = [session['user_id']]
             
-            # Search filter
+            # Search filter (tìm theo nội dung hoặc tên đặt)
             if search:
-                query += " AND text_input LIKE %s"
-                params.append(f'%{search}%')
+                query += " AND (text_input LIKE %s OR display_name LIKE %s)"
+                params.extend([f'%{search}%', f'%{search}%'])
             
             # Voice filter
             if voice_filter:
@@ -2754,6 +2883,133 @@ def delete_audio(audio_id):
         return jsonify({'success': False, 'message': f'Loi: {str(e)}'}), 500
     finally:
         conn.close()
+
+@app.route('/api/audio-library/<int:audio_id>/rename', methods=['PATCH'])
+def rename_audio(audio_id):
+    """Đặt tên hiển thị cho audio"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json() or {}
+    display_name = data.get('display_name', '').strip()[:200]
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE conversions SET display_name = %s
+                WHERE id = %s AND user_id = %s
+            """, (display_name or None, audio_id, session['user_id']))
+            if cursor.rowcount == 0:
+                return jsonify({'success': False, 'message': 'Không tìm thấy audio'}), 404
+            conn.commit()
+            return jsonify({'success': True, 'display_name': display_name})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/audio-library/<int:audio_id>/share', methods=['POST'])
+def toggle_share_audio(audio_id):
+    """Bật/tắt chia sẻ công khai cho audio"""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT is_public, share_token FROM conversions
+                WHERE id = %s AND user_id = %s
+            """, (audio_id, session['user_id']))
+            audio = cursor.fetchone()
+            if not audio:
+                return jsonify({'success': False, 'message': 'Không tìm thấy audio'}), 404
+
+            if audio['is_public']:
+                # Tắt chia sẻ
+                cursor.execute("UPDATE conversions SET is_public = 0 WHERE id = %s", (audio_id,))
+                conn.commit()
+                return jsonify({'success': True, 'is_public': False, 'share_token': None})
+            else:
+                # Bật chia sẻ — tạo token nếu chưa có
+                token = audio['share_token'] or secrets.token_urlsafe(32)
+                cursor.execute(
+                    "UPDATE conversions SET is_public = 1, share_token = %s WHERE id = %s",
+                    (token, audio_id)
+                )
+                conn.commit()
+                return jsonify({'success': True, 'is_public': True, 'share_token': token})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/audio/share/<token>')
+def share_audio_page(token):
+    """Trang xem audio công khai — không cần đăng nhập"""
+    conn = get_db_connection()
+    if not conn:
+        return "Lỗi kết nối server", 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT c.id, c.text_input, c.display_name, c.voice_name, c.voice_id,
+                       c.duration_seconds, c.audio_file_size, c.created_at, c.share_token,
+                       u.full_name, u.username
+                FROM conversions c
+                JOIN users u ON c.user_id = u.id
+                WHERE c.share_token = %s AND c.is_public = 1
+            """, (token,))
+            audio = cursor.fetchone()
+            if not audio:
+                return render_template('share_audio.html', audio=None, token=token), 404
+            if audio['created_at']:
+                audio['created_at'] = audio['created_at'].isoformat()
+            return render_template('share_audio.html', audio=audio, token=token)
+    except Exception as e:
+        print(f"[ERROR] share_audio_page: {e}")
+        return "Lỗi server", 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/audio/share/<token>')
+def get_shared_audio_file(token):
+    """Phục vụ file âm thanh công khai — không cần đăng nhập"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT audio_file_path FROM conversions
+                WHERE share_token = %s AND is_public = 1
+            """, (token,))
+            row = cursor.fetchone()
+            if not row or not row['audio_file_path']:
+                return jsonify({'success': False, 'message': 'File not found'}), 404
+            file_path = Path(row['audio_file_path'])
+            if not file_path.exists():
+                return jsonify({'success': False, 'message': 'File not found on disk'}), 404
+            resp = send_file(file_path, mimetype='audio/wav', as_attachment=False)
+            resp.headers['Accept-Ranges'] = 'bytes'
+            resp.headers['Cache-Control'] = 'public, max-age=86400'
+            return resp
+    except Exception as e:
+        print(f"[ERROR] get_shared_audio_file: {e}")
+        return jsonify({'success': False}), 500
+    finally:
+        conn.close()
+
 
 @app.route('/api/subscription/status')
 def get_subscription_status():
@@ -4031,6 +4287,260 @@ def get_payment_status(payment_id):
     finally:
         conn.close()
 
+# ─────────────────────────────────────────────────────────────────────────────
+# INVOICE / HÓA ĐƠN
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_invoice_pdf(payment, user_info):
+    """Generate PDF invoice bytes using reportlab."""
+    from io import BytesIO
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    buffer = BytesIO()
+    W, H = A4  # 595 x 842 pt
+
+    # ── Font registration (try Windows Arial for Vietnamese support) ──
+    font_reg  = 'Helvetica'
+    font_bold = 'Helvetica-Bold'
+    _win_fonts = [
+        ('C:/Windows/Fonts/arial.ttf',   'C:/Windows/Fonts/arialbd.ttf'),
+        ('C:/Windows/Fonts/verdana.ttf', 'C:/Windows/Fonts/verdanab.ttf'),
+    ]
+    for reg_path, bold_path in _win_fonts:
+        if os.path.exists(reg_path):
+            try:
+                pdfmetrics.registerFont(TTFont('VV_Reg',  reg_path))
+                font_reg  = 'VV_Reg'
+                if os.path.exists(bold_path):
+                    pdfmetrics.registerFont(TTFont('VV_Bold', bold_path))
+                    font_bold = 'VV_Bold'
+                break
+            except Exception:
+                pass
+
+    c = rl_canvas.Canvas(buffer, pagesize=A4)
+
+    # ── Palette ──
+    COL_BG        = (0.020, 0.082, 0.122)   # #051424
+    COL_PRIMARY   = (0.439, 0.471, 1.000)   # purplish-blue
+    COL_TEXT      = (0.831, 0.894, 0.980)   # #d4e4fa
+    COL_MUTED     = (0.592, 0.557, 0.627)
+    COL_ACCENT    = (0.188, 0.851, 0.957)   # tertiary teal
+    COL_WHITE     = (1, 1, 1)
+    COL_SURFACE   = (0.071, 0.133, 0.192)
+
+    def rgb(col): c.setFillColorRGB(*col)
+    def stroke(col): c.setStrokeColorRGB(*col)
+
+    # ── Background ──
+    rgb(COL_BG)
+    c.rect(0, 0, W, H, fill=1, stroke=0)
+
+    # ── Header band ──
+    rgb(COL_SURFACE)
+    c.rect(0, H - 90, W, 90, fill=1, stroke=0)
+
+    # Logo / brand
+    rgb(COL_PRIMARY)
+    c.setFont(font_bold, 22)
+    c.drawString(40, H - 55, 'VietVoice AI')
+    rgb(COL_MUTED)
+    c.setFont(font_reg, 10)
+    c.drawString(40, H - 72, 'Ho tro: support@vietvoice.ai')
+
+    # Invoice label (right side)
+    rgb(COL_WHITE)
+    c.setFont(font_bold, 28)
+    c.drawRightString(W - 40, H - 52, 'HOA DON / INVOICE')
+    rgb(COL_MUTED)
+    c.setFont(font_reg, 10)
+    inv_no = f'VV-{payment["id"]:05d}'
+    c.drawRightString(W - 40, H - 68, f'So: {inv_no}')
+
+    # ── Invoice meta ──
+    y = H - 115
+    rgb(COL_TEXT)
+    c.setFont(font_bold, 11)
+    c.drawString(40, y, 'THONG TIN HOA DON')
+    rgb(COL_PRIMARY)
+    c.setLineWidth(1.5)
+    stroke(COL_PRIMARY)
+    c.line(40, y - 5, W - 40, y - 5)
+
+    y -= 28
+    meta_rows = [
+        ('Khach hang:', user_info.get('username', '—')),
+        ('Ma giao dich:', payment.get('transaction_id', '—')),
+        ('Ngay tao:', str(payment.get('created_at', '—'))[:19]),
+        ('Ngay thanh toan:', str(payment.get('completed_at', '—'))[:19] if payment.get('completed_at') else '—'),
+        ('Phuong thuc:', payment.get('payment_method', 'bank_qr').replace('_', ' ').upper()),
+        ('Trang thai:', 'DA THANH TOAN' if payment.get('payment_status') == 'completed' else payment.get('payment_status', '').upper()),
+    ]
+    for label, val in meta_rows:
+        rgb(COL_MUTED)
+        c.setFont(font_reg, 10)
+        c.drawString(40, y, label)
+        rgb(COL_TEXT)
+        c.setFont(font_bold if label in ('Trang thai:', 'Khach hang:') else font_reg, 10)
+        c.drawString(200, y, val)
+        y -= 20
+
+    # ── Items table ──
+    y -= 18
+    rgb(COL_TEXT)
+    c.setFont(font_bold, 11)
+    c.drawString(40, y, 'CHI TIET DICH VU')
+    stroke(COL_PRIMARY)
+    c.line(40, y - 5, W - 40, y - 5)
+
+    # Table header
+    y -= 28
+    rgb(COL_SURFACE)
+    c.rect(38, y - 6, W - 76, 24, fill=1, stroke=0)
+    rgb(COL_PRIMARY)
+    c.setFont(font_bold, 10)
+    c.drawString(46, y + 4, 'Dich vu / Goi')
+    c.drawString(280, y + 4, 'Ky tu')
+    c.drawString(380, y + 4, 'Thoi han')
+    c.drawRightString(W - 46, y + 4, 'So tien (VND)')
+
+    # Table row
+    y -= 30
+    rgb(COL_TEXT)
+    c.setFont(font_reg, 10)
+    pkg_name = payment.get('package_name', 'Goi dich vu')
+    chars    = f'{payment.get("characters_limit", 0):,}'.replace(',', '.')
+    days     = f'{payment.get("duration_days", 0)} ngay'
+    amount_s = f'{payment.get("amount_vnd", 0):,}'.replace(',', '.') + ' d'
+    c.drawString(46, y, pkg_name)
+    c.drawString(280, y, chars)
+    c.drawString(380, y, days)
+    c.drawRightString(W - 46, y, amount_s)
+
+    # Total row
+    y -= 20
+    stroke(COL_MUTED)
+    c.setLineWidth(0.5)
+    c.line(38, y, W - 38, y)
+    y -= 22
+    rgb(COL_ACCENT)
+    c.setFont(font_bold, 13)
+    c.drawString(46, y, 'TONG CONG:')
+    c.drawRightString(W - 46, y, amount_s)
+
+    # ── Footer ──
+    stroke(COL_SURFACE)
+    c.setLineWidth(1)
+    c.line(40, 60, W - 40, 60)
+    rgb(COL_MUTED)
+    c.setFont(font_reg, 9)
+    c.drawCentredString(W / 2, 44, 'Cam on ban da su dung VietVoice AI  |  vietvoice.ai  |  support@vietvoice.ai')
+    c.drawCentredString(W / 2, 30, f'Tai lieu nay duoc tao tu dong - Invoice #{inv_no}')
+
+    c.save()
+    buffer.seek(0)
+    return buffer
+
+
+@app.route('/invoice/<int:payment_id>')
+@login_required
+def download_invoice(payment_id):
+    """Tải hóa đơn PDF cho một payment đã hoàn thành"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id, p.transaction_id, p.amount_vnd, p.payment_method,
+                       p.payment_status, p.created_at, p.completed_at,
+                       sp.package_name, sp.characters_limit, sp.duration_days,
+                       u.username, u.email, u.full_name
+                FROM payments p
+                JOIN subscription_packages sp ON p.package_id = sp.id
+                JOIN users u ON p.user_id = u.id
+                WHERE p.id = %s AND p.user_id = %s
+            """, (payment_id, session['user_id']))
+            payment = cursor.fetchone()
+
+        if not payment:
+            return jsonify({'error': 'Không tìm thấy hóa đơn'}), 404
+
+        if payment['payment_status'] != 'completed':
+            return jsonify({'error': 'Hóa đơn chỉ khả dụng sau khi thanh toán thành công'}), 403
+
+        user_info = {
+            'username':  payment.get('full_name') or payment.get('username', ''),
+            'email':     payment.get('email', ''),
+        }
+
+        pdf_buffer = _build_invoice_pdf(payment, user_info)
+        filename = f'VietVoice_Invoice_VV-{payment_id:05d}.pdf'
+
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        print(f'[ERROR] Invoice generation: {e}')
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/payments')
+@login_required
+def get_user_payments():
+    """Lịch sử thanh toán của user hiện tại"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'payments': []}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id, p.transaction_id, p.amount_vnd, p.payment_method,
+                       p.payment_status, p.created_at, p.completed_at,
+                       sp.package_name, sp.characters_limit, sp.duration_days
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE p.user_id = %s
+                ORDER BY p.created_at DESC
+                LIMIT 20
+            """, (session['user_id'],))
+            rows = cursor.fetchall()
+
+        payments = []
+        for r in rows:
+            payments.append({
+                'id':              r['id'],
+                'transaction_id':  r['transaction_id'],
+                'amount_vnd':      r['amount_vnd'],
+                'payment_method':  r['payment_method'],
+                'payment_status':  r['payment_status'],
+                'package_name':    r.get('package_name', '—'),
+                'characters_limit': r.get('characters_limit', 0),
+                'duration_days':   r.get('duration_days', 0),
+                'created_at':      r['created_at'].strftime('%d/%m/%Y %H:%M') if r['created_at'] else '—',
+                'completed_at':    r['completed_at'].strftime('%d/%m/%Y %H:%M') if r['completed_at'] else None,
+            })
+
+        return jsonify({'success': True, 'payments': payments})
+
+    except Exception as e:
+        print(f'[ERROR] get_user_payments: {e}')
+        return jsonify({'success': False, 'payments': []}), 500
+    finally:
+        conn.close()
+
+
 @app.route('/my-voices')
 @login_required
 def my_voices():
@@ -4785,12 +5295,59 @@ def manual_verify_payment(transaction_id):
 
 # ==================== END PAYMENT STATUS & NOTIFICATION ROUTES ====================
 
+def run_db_migrations():
+    """Tự động thêm các cột mới vào DB nếu chưa tồn tại (idempotent)."""
+    migrations = [
+        # (table, column, definition)
+        ('conversions', 'display_name', 'VARCHAR(200) NULL DEFAULT NULL AFTER voice_name'),
+        ('conversions', 'is_public',    'TINYINT(1) NOT NULL DEFAULT 0'),
+        ('conversions', 'share_token',  'VARCHAR(64) NULL DEFAULT NULL'),
+    ]
+    conn = get_db_connection()
+    if not conn:
+        print("[MIGRATION] ⚠️  Không kết nối được DB — bỏ qua migration")
+        return
+    try:
+        with conn.cursor() as cursor:
+            db_name = DB_CONFIG['database']
+            for table, column, definition in migrations:
+                cursor.execute("""
+                    SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s
+                """, (db_name, table, column))
+                exists = cursor.fetchone()['cnt'] > 0
+                if not exists:
+                    cursor.execute(f"ALTER TABLE `{table}` ADD COLUMN `{column}` {definition}")
+                    conn.commit()
+                    print(f"[MIGRATION] ✅ Đã thêm cột '{column}' vào bảng '{table}'")
+                else:
+                    print(f"[MIGRATION] ✓  Cột '{column}' trong '{table}' đã tồn tại")
+
+            # Thêm index cho share_token nếu chưa có
+            cursor.execute("""
+                SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.STATISTICS
+                WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'conversions' AND INDEX_NAME = 'idx_share_token'
+            """, (db_name,))
+            if cursor.fetchone()['cnt'] == 0:
+                cursor.execute("ALTER TABLE conversions ADD INDEX idx_share_token (share_token)")
+                conn.commit()
+                print("[MIGRATION] ✅ Đã thêm index 'idx_share_token'")
+    except Exception as e:
+        print(f"[MIGRATION] ❌ Lỗi migration: {e}")
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("[TTS] TTS Web Application dang khoi dong...")
     print("[TTS] URL: http://localhost:5000")
     print("[TTS] Port: 5000")
     print("=" * 60)
+
+    # Chạy DB migration tự động
+    print("[MIGRATION] Kiểm tra và cập nhật cấu trúc database...")
+    run_db_migrations()
     
     # Start background worker for custom voice training
     try:

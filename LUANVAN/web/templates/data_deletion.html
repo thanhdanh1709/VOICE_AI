@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Chính sách xóa dữ liệu — VietVoice{% endblock %}
+
+{% block extra_css %}
+<style>
+    .legal-hero {
+        text-align: center;
+        padding: 3rem 1.5rem 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .legal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 16px;
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.22);
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #fca5a5;
+        margin-bottom: 1.25rem;
+    }
+    .legal-hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #f87171, #fb923c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.75rem;
+    }
+    .legal-hero p { color: #64748b; font-size: 0.9rem; margin: 0; }
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1.5rem 4rem;
+    }
+    .legal-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .legal-card h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .legal-card h2 .section-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        background: linear-gradient(135deg, #ef4444, #f97316);
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+    }
+    .legal-card p, .legal-card li {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        line-height: 1.75;
+        margin: 0 0 0.75rem;
+    }
+    .legal-card ul { padding-left: 1.25rem; margin: 0.5rem 0 0.75rem; }
+    .legal-card li { margin-bottom: 0.4rem; }
+    .legal-card p:last-child { margin-bottom: 0; }
+
+    /* Steps */
+    .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 14px 16px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+    }
+    .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        min-width: 28px;
+        background: linear-gradient(135deg, #ef4444, #f97316);
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: white;
+    }
+    .step-text { font-size: 0.875rem; color: #94a3b8; line-height: 1.65; }
+    .step-text strong { color: #e2e8f0; }
+
+    .timeline-box {
+        background: rgba(239,68,68,0.07);
+        border: 1px solid rgba(239,68,68,0.2);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-top: 1rem;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+    .timeline-icon { font-size: 2rem; flex-shrink: 0; }
+    .timeline-text h3 { font-size: 0.95rem; font-weight: 700; color: #fca5a5; margin: 0 0 4px; }
+    .timeline-text p { font-size: 0.8375rem; color: #94a3b8; margin: 0; }
+
+    .highlight-box {
+        background: rgba(124,58,237,0.08);
+        border: 1px solid rgba(124,58,237,0.18);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-top: 0.75rem;
+    }
+    .highlight-box p { margin: 0; color: #c4b5fd; font-size: 0.85rem; }
+
+    .email-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #ef4444, #f97316);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        margin-top: 1rem;
+        transition: all 0.2s ease;
+    }
+    .email-cta:hover { opacity: 0.9; transform: translateY(-1px); color: white; text-decoration: none; }
+    .last-updated {
+        text-align: center;
+        font-size: 0.78rem;
+        color: #334155;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-hero">
+    <div class="legal-badge">🗑️ Xóa dữ liệu</div>
+    <h1>Chính sách xóa dữ liệu</h1>
+    <p>Cập nhật lần cuối: Tháng 6 năm 2026</p>
+</div>
+
+<div class="legal-container">
+
+    <!-- Cam kết -->
+    <div class="legal-card">
+        <h2><span class="section-num">1</span> Cam kết của chúng tôi</h2>
+        <p>
+            VietVoice tôn trọng quyền của bạn đối với dữ liệu cá nhân. Bạn có quyền yêu cầu
+            xóa toàn bộ dữ liệu liên quan đến tài khoản của mình bất kỳ lúc nào,
+            phù hợp với yêu cầu của Google Play, Apple App Store và quy định bảo vệ dữ liệu.
+        </p>
+        <div class="highlight-box">
+            <p>✅ Chúng tôi xử lý mọi yêu cầu xóa dữ liệu trong vòng <strong>30 ngày</strong> kể từ khi nhận yêu cầu.</p>
+        </div>
+    </div>
+
+    <!-- Dữ liệu sẽ bị xóa -->
+    <div class="legal-card">
+        <h2><span class="section-num">2</span> Dữ liệu sẽ bị xóa</h2>
+        <p>Khi bạn yêu cầu xóa tài khoản, chúng tôi sẽ xóa vĩnh viễn:</p>
+        <ul>
+            <li>Thông tin tài khoản: email, họ tên, mật khẩu đã mã hóa</li>
+            <li>Lịch sử chuyển đổi văn bản thành giọng nói</li>
+            <li>Các file âm thanh đã tạo ra và lưu trữ</li>
+            <li>File giọng nói đã tải lên để clone</li>
+            <li>Dữ liệu giọng nói cá nhân đã huấn luyện</li>
+            <li>Lịch sử thanh toán và giao dịch</li>
+            <li>Cài đặt và tùy chọn cá nhân</li>
+        </ul>
+    </div>
+
+    <!-- Cách yêu cầu xóa -->
+    <div class="legal-card">
+        <h2><span class="section-num">3</span> Cách yêu cầu xóa dữ liệu</h2>
+        <p>Bạn có thể yêu cầu xóa dữ liệu theo các cách sau:</p>
+
+        <ul class="steps-list">
+            <li class="step-item">
+                <span class="step-num">1</span>
+                <div class="step-text">
+                    <strong>Qua email:</strong> Gửi email đến
+                    <a href="mailto:support@vietvoice.app" style="color:#fca5a5">support@vietvoice.app</a>
+                    với tiêu đề <em>"Yêu cầu xóa dữ liệu"</em> và địa chỉ email tài khoản của bạn.
+                </div>
+            </li>
+            <li class="step-item">
+                <span class="step-num">2</span>
+                <div class="step-text">
+                    <strong>Qua trang liên hệ:</strong> Điền form tại
+                    <a href="{{ url_for('contact') }}" style="color:#fca5a5">trang Liên hệ</a>
+                    với nội dung yêu cầu xóa tài khoản.
+                </div>
+            </li>
+        </ul>
+
+        <a href="mailto:support@vietvoice.app?subject=Yêu cầu xóa dữ liệu&body=Xin chào, tôi muốn xóa tài khoản và toàn bộ dữ liệu của tôi.%0A%0AEmail tài khoản: " class="email-cta">
+            📧 Gửi yêu cầu xóa dữ liệu ngay
+        </a>
+    </div>
+
+    <!-- Thời gian xử lý -->
+    <div class="legal-card">
+        <h2><span class="section-num">4</span> Thời gian xử lý</h2>
+
+        <div class="timeline-box">
+            <div class="timeline-icon">⏱️</div>
+            <div class="timeline-text">
+                <h3>Tối đa 30 ngày</h3>
+                <p>Sau khi nhận yêu cầu xác nhận, toàn bộ dữ liệu sẽ được xóa khỏi hệ thống trong vòng 30 ngày.</p>
+            </div>
+        </div>
+
+        <p style="margin-top: 1rem;">Quy trình xử lý:</p>
+        <ul>
+            <li><strong style="color:#e2e8f0">Ngay lập tức:</strong> Tài khoản bị vô hiệu hóa, không thể đăng nhập</li>
+            <li><strong style="color:#e2e8f0">Trong 7 ngày:</strong> Xóa dữ liệu cá nhân khỏi hệ thống chính</li>
+            <li><strong style="color:#e2e8f0">Trong 30 ngày:</strong> Xóa khỏi backup và hệ thống lưu trữ dự phòng</li>
+        </ul>
+    </div>
+
+    <!-- Lưu ý -->
+    <div class="legal-card">
+        <h2><span class="section-num">5</span> Lưu ý quan trọng</h2>
+        <ul>
+            <li>Hành động xóa là <strong style="color:#fca5a5">không thể hoàn tác</strong></li>
+            <li>Dữ liệu giao dịch tài chính có thể được giữ lại theo yêu cầu pháp lý (tối đa 5 năm)</li>
+            <li>Sau khi xóa, bạn có thể đăng ký tài khoản mới với cùng email</li>
+            <li>Các file âm thanh đã chia sẻ công khai sẽ được gỡ bỏ khỏi hệ thống</li>
+        </ul>
+    </div>
+
+    <p class="last-updated">Chính sách này có hiệu lực từ ngày 01/06/2026 và được cập nhật lần cuối vào tháng 6 năm 2026.</p>
+</div>
+{% endblock %}

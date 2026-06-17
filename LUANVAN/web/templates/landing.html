@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="dark" lang="vi">
 <head>
 <meta charset="utf-8">
@@ -230,14 +230,17 @@
         <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
     </div>
     <div class="hidden md:flex items-center gap-8">
-        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#features">Tính năng</a>
-        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#pricing">Bảng giá</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#features" data-i18n="nav.features">Tính năng</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#pricing" data-i18n="nav.pricing">Bảng giá</a>
         <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="#about">Về chúng tôi</a>
-        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="{{ url_for('contact') }}">Hỗ trợ</a>
+        <a class="font-manrope text-sm font-medium text-slate-300 hover:text-cyan-400 transition-all duration-300" href="{{ url_for('contact') }}" data-i18n="ft.support">Hỗ trợ</a>
     </div>
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
+        <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
+            <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+        </button>
         <a href="{{ url_for('login') }}" class="hidden md:inline-flex items-center justify-center h-11 px-6 rounded-full primary-gradient-btn text-white font-label-md hover:shadow-[0_0_15px_rgba(160,120,255,0.4)]">
-            <span>Bắt đầu ngay</span>
+            <span data-i18n="nav.register">Bắt đầu ngay</span>
         </a>
         <button class="md:hidden text-on-surface" id="mobile-menu-btn">
             <span class="material-symbols-outlined text-3xl">menu</span>
@@ -658,57 +661,7 @@
 {% set ft = lp.get('footer', {}) %}
 {% set ft_col1 = ft.get('col1_links', [{'label':'Tính năng','href':'#features'},{'label':'Bảng giá','href':'#pricing'},{'label':'Kho giọng nói','href':'/login'}]) %}
 {% set ft_col2 = ft.get('col2_links', [{'label':'Về chúng tôi','href':'#about'},{'label':'Liên hệ','href':'/contact'},{'label':'Đăng ký','href':'/register'}]) %}
-<footer class="w-full py-16 px-8 bg-[#051424] border-t border-white/10 relative z-10">
-    <div class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div class="col-span-1 md:col-span-1">
-                <div class="flex items-center gap-2 mb-6">
-                    <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
-                    <span class="text-2xl font-black bg-gradient-to-r from-violet-500 to-cyan-400 bg-clip-text text-transparent tracking-tight">VietVoice AI</span>
-                </div>
-                <p class="text-sm text-slate-400 leading-relaxed">
-                    {{ ft.get('brand_desc', 'Nền tảng AI Voice hàng đầu Việt Nam, cung cấp giải pháp âm thanh số chất lượng cao cho doanh nghiệp.') }}
-                </p>
-            </div>
-            <div>
-                <h4 class="font-bold text-white mb-6">{{ ft.get('col1_title', 'Sản phẩm') }}</h4>
-                <ul class="space-y-4 text-sm text-slate-400">
-                    {% for lnk in ft_col1 %}
-                    <li><a class="hover:text-primary transition-colors" href="{{ lnk.href }}">{{ lnk.label }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-white mb-6">{{ ft.get('col2_title', 'Công ty') }}</h4>
-                <ul class="space-y-4 text-sm text-slate-400">
-                    {% for lnk in ft_col2 %}
-                    <li><a class="hover:text-primary transition-colors" href="{{ lnk.href }}">{{ lnk.label }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-white mb-6">{{ ft.get('col3_title', 'Liên kết') }}</h4>
-                <div class="flex gap-4">
-                    <a class="w-10 h-10 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all" href="#">
-                        <span class="material-symbols-outlined text-sm">public</span>
-                    </a>
-                    <a class="w-10 h-10 rounded-full glass-panel border border-white/10 flex items-center justify-center hover:bg-primary/20 transition-all" href="mailto:support@vietvoice.ai">
-                        <span class="material-symbols-outlined text-sm">mail</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="text-xs text-slate-500">
-                {{ ft.get('copyright', '© 2024 VietVoice AI. Công ty TNHH MTV Công Nghệ Kỹ Thuật Tiên Phong.') }}
-            </div>
-            <div class="flex gap-8 text-xs text-slate-500">
-                <a class="hover:text-white" href="#">{{ ft.get('terms_link', 'Điều khoản sử dụng') }}</a>
-                <a class="hover:text-white" href="#">{{ ft.get('privacy_link', 'Chính sách bảo mật') }}</a>
-            </div>
-        </div>
-    </div>
-</footer>
+{% include '_footer.html' %}
 
 <script>
     // Intersection Observer for scroll reveal animations

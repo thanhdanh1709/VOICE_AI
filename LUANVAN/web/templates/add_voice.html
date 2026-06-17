@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="dark" lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8"/>
@@ -110,6 +110,20 @@ tailwind.config = {
   /* Progress bar */
   .progress-bar-track { background: #1c2b3c; border-radius: 9999px; height: 10px; overflow: hidden; }
   .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #a078ff, #d0bcff); border-radius: 9999px; transition: width 0.4s ease; }
+
+  /* Language toggle button */
+  .vv-lang-toggle {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 4px 10px; border-radius: 9999px;
+    border: 1px solid rgba(208,188,255,0.25);
+    background: rgba(208,188,255,0.06);
+    cursor: pointer; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.04em; transition: background 0.2s;
+  }
+  .vv-lang-toggle:hover { background: rgba(208,188,255,0.18); border-color: #a78bfa; }
+  .lang-active   { color: #c4b5fd; font-weight: 800; }
+  .lang-inactive { color: #475569; font-weight: 600; }
+  .lang-sep      { color: rgba(148,163,184,0.3); font-weight: 300; font-size: 0.65rem; margin: 0 1px; }
 </style>
 </head>
 
@@ -139,6 +153,9 @@ tailwind.config = {
       </a>
       <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
         <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
+        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
       </button>
       <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
         <span class="material-symbols-outlined">help_outline</span>
@@ -171,20 +188,20 @@ tailwind.config = {
       <span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span> Workspace
     </a>
     <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> Giọng của tôi
+      <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> <span data-i18n="mob.voices">Giọng của tôi</span>
     </a>
     <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">library_music</span> Thư viện Audio
+      <span class="material-symbols-outlined" style="font-size:20px">library_music</span> <span data-i18n="mob.library">Thư viện Audio</span>
     </a>
     <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">history</span> Lịch sử
+      <span class="material-symbols-outlined" style="font-size:20px">history</span> <span data-i18n="mob.history">Lịch sử</span>
     </a>
     <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">bolt</span> Bảng giá
+      <span class="material-symbols-outlined" style="font-size:20px">bolt</span> <span data-i18n="mob.pricing">Bảng giá</span>
     </a>
     <div class="border-t border-white/10 mt-1 pt-1">
       <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline">
-        <span class="material-symbols-outlined" style="font-size:20px">logout</span> Đăng xuất
+        <span class="material-symbols-outlined" style="font-size:20px">logout</span> <span data-i18n="mob.logout">Đăng xuất</span>
       </a>
     </div>
   </div>
@@ -198,13 +215,13 @@ tailwind.config = {
     <div class="mb-6 md:mb-8">
       <a href="{{ url_for('my_voices') }}" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 text-on-surface-variant hover:bg-white/10 hover:text-white transition-all text-sm font-medium no-underline mb-4">
         <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-        Quay lại
+        <span data-i18n="common.back">Quay lại</span>
       </a>
       <h1 class="text-2xl md:text-3xl font-extrabold text-on-surface flex items-center gap-3 mb-2">
         <span class="material-symbols-outlined text-primary" style="font-size:28px;font-variation-settings:'FILL' 1">mic</span>
-        Thêm giọng mới
+        <span data-i18n="addv.title">Thêm giọng mới</span>
       </h1>
-      <p class="text-sm md:text-base text-on-surface-variant">Upload audio sample hoặc chọn giọng nền để tạo giọng nói tùy chỉnh</p>
+      <p class="text-sm md:text-base text-on-surface-variant" data-i18n="addv.subtitle">Upload audio sample hoặc chọn giọng nền để tạo giọng nói tùy chỉnh</p>
     </div>
 
     <!-- Form Card -->
@@ -215,20 +232,20 @@ tailwind.config = {
         <div class="mb-8 pb-8" style="border-bottom:1px solid rgba(255,255,255,0.06)">
           <h2 class="text-lg font-bold text-on-surface flex items-center gap-3 mb-2">
             <span class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary flex-shrink-0">1</span>
-            Upload Audio Sample <span class="text-sm font-normal text-on-surface-variant">(Tuỳ chọn)</span>
+            <span data-i18n="addv.step1.title">Upload Audio Sample</span> <span class="text-sm font-normal text-on-surface-variant" data-i18n="addv.step1.optional">(Tuỳ chọn)</span>
           </h2>
-          <p class="text-sm text-on-surface-variant mb-4 ml-11">Upload file audio chứa giọng nói của bạn nếu muốn train voice riêng. Hoặc bỏ qua bước này và dùng giọng nền có sẵn.</p>
+          <p class="text-sm text-on-surface-variant mb-4 ml-11" data-i18n="addv.step1.desc">Upload file audio chứa giọng nói của bạn nếu muốn train voice riêng. Hoặc bỏ qua bước này và dùng giọng nền có sẵn.</p>
 
           <!-- Upload area -->
           <div id="uploadArea" class="upload-area-modern sm:ml-11 border-2 border-dashed rounded-xl p-6 md:p-10 text-center cursor-pointer transition-all" style="border-color:rgba(208,188,255,0.25);background:rgba(208,188,255,0.03)">
             <input type="file" id="audioFile" name="audio_file" accept="audio/*,.wav,.mp3,.m4a" style="display:none">
             <div class="upload-content-modern">
               <div class="text-5xl mb-3">📁</div>
-              <p class="text-base font-semibold text-on-surface mb-1">Kéo thả file hoặc click để chọn</p>
+              <p class="text-base font-semibold text-on-surface mb-1" data-i18n="addv.upload.label">Kéo thả file hoặc click để chọn</p>
               <p id="uploadSpecs" class="text-xs text-on-surface-variant leading-relaxed">
-                <strong class="text-on-surface">Hỗ trợ:</strong> WAV, MP3, M4A &nbsp;·&nbsp;
-                <strong class="text-on-surface">Độ dài:</strong> 6 giây - 2 phút (tối ưu 10–60 giây) &nbsp;·&nbsp;
-                <strong class="text-on-surface">Chất lượng:</strong> Không noise, không echo
+                <strong class="text-on-surface" data-i18n="addv.upload.support">Hỗ trợ:</strong> WAV, MP3, M4A &nbsp;·&nbsp;
+                <strong class="text-on-surface" data-i18n="addv.upload.length">Độ dài:</strong> 6 giây - 2 phút (tối ưu 10–60 giây) &nbsp;·&nbsp;
+                <strong class="text-on-surface" data-i18n="addv.upload.quality">Chất lượng:</strong> <span data-i18n="addv.upload.quality_val">Không noise, không echo</span>
               </p>
             </div>
           </div>
@@ -258,9 +275,9 @@ tailwind.config = {
         <div class="mb-8 pb-8" style="border-bottom:1px solid rgba(255,255,255,0.06)">
           <h2 class="text-lg font-bold text-on-surface flex items-center gap-3 mb-2">
             <span class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary flex-shrink-0">2</span>
-            Chế độ tạo giọng
+            <span data-i18n="addv.step2.title">Chế độ tạo giọng</span>
           </h2>
-          <p class="text-sm text-on-surface-variant mb-4 ml-11">
+          <p class="text-sm text-on-surface-variant mb-4 ml-11" data-i18n-html="addv.step2.desc">
             <strong class="text-on-surface">RVC:</strong> Train model từ audio (mất vài phút).
             <strong class="text-on-surface">Zero-shot:</strong> Clone giọng ngay từ mẫu (cần nhập transcript).
             <strong class="text-on-surface">viXTTS Clone:</strong> AI clone giọng bằng model viXTTS, không cần transcript.
@@ -273,7 +290,7 @@ tailwind.config = {
             </label>
             <label class="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg transition-all" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
               <input type="radio" name="voice_type" value="zero_shot" id="voiceTypeZeroShot" class="accent-primary">
-              <span class="text-sm font-medium text-on-surface">Zero-shot (clone từ mẫu)</span>
+              <span class="text-sm font-medium text-on-surface" data-i18n="addv.zeroshot.label">Zero-shot (clone từ mẫu)</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg transition-all" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
               <input type="radio" name="voice_type" value="vixtts_clone" id="voiceTypeVixtts" class="accent-primary">
@@ -284,17 +301,17 @@ tailwind.config = {
           <!-- Transcript block (shown for zero-shot) -->
           <div id="refTranscriptBlock" class="ml-11" style="display:none">
             <label for="refTranscript" class="block text-sm font-semibold text-on-surface mb-1.5">
-              Transcript <span class="text-red-400">*</span>
+              <span data-i18n="addv.transcript.label">Transcript</span> <span class="text-red-400">*</span>
             </label>
-            <textarea id="refTranscript" name="ref_transcript" rows="4" placeholder="Nhập chính xác nội dung mà người nói đọc trong file audio mẫu..." class="form-input-dark resize-none"></textarea>
-            <p class="text-xs text-on-surface-variant mt-1.5">Zero-shot cần transcript khớp với audio để clone giọng chính xác.</p>
+            <textarea id="refTranscript" name="ref_transcript" rows="4" data-i18n-placeholder="addv.transcript.placeholder" placeholder="Nhập chính xác nội dung mà người nói đọc trong file audio mẫu..." class="form-input-dark resize-none"></textarea>
+            <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.transcript.hint">Zero-shot cần transcript khớp với audio để clone giọng chính xác.</p>
           </div>
 
           <!-- viXTTS info (shown for vixtts_clone) -->
           <div id="vixttsCloneInfo" class="ml-11 rounded-xl p-4" style="display:none;background:rgba(208,188,255,0.06);border-left:3px solid #d0bcff">
-            <h4 class="text-sm font-bold text-on-surface mb-1">🤖 viXTTS Clone — AI clone giọng</h4>
-            <p class="text-sm text-on-surface-variant mb-2">Model <strong class="text-on-surface">viXTTS</strong> sẽ học đặc trưng giọng nói từ file audio mẫu và tổng hợp giọng mới không cần transcript.</p>
-            <p class="text-xs text-primary">💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả tốt nhất.</p>
+            <h4 class="text-sm font-bold text-on-surface mb-1" data-i18n="addv.vixtts.title">🤖 viXTTS Clone — AI clone giọng</h4>
+            <p class="text-sm text-on-surface-variant mb-2" data-i18n-html="addv.vixtts.desc">Model <strong class="text-on-surface">viXTTS</strong> sẽ học đặc trưng giọng nói từ file audio mẫu và tổng hợp giọng mới không cần transcript.</p>
+            <p class="text-xs text-primary" data-i18n-html="addv.vixtts.tip">💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả tốt nhất.</p>
           </div>
         </div>
 
@@ -302,12 +319,12 @@ tailwind.config = {
         <div id="baseVoiceSection" class="mb-8 pb-8" style="border-bottom:1px solid rgba(255,255,255,0.06)">
           <h2 class="text-lg font-bold text-on-surface flex items-center gap-3 mb-2">
             <span class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary flex-shrink-0">3</span>
-            Chọn giọng nền
+            <span data-i18n="addv.step3.title">Chọn giọng nền</span>
           </h2>
-          <p class="text-sm text-on-surface-variant mb-4 ml-11">Chọn giọng hệ thống làm nền, sau đó điều chỉnh để tạo giọng riêng của bạn.</p>
+          <p class="text-sm text-on-surface-variant mb-4 ml-11" data-i18n="addv.step3.desc">Chọn giọng hệ thống làm nền, sau đó điều chỉnh để tạo giọng riêng của bạn.</p>
           <div class="ml-11">
             <label for="baseVoice" class="block text-sm font-semibold text-on-surface mb-1.5">
-              Giọng nền <span class="text-red-400">*</span>
+              <span data-i18n="addv.base.label">Giọng nền</span> <span class="text-red-400">*</span>
             </label>
             <select id="baseVoice" name="base_voice_id" required>
               <optgroup label="Nam miền Bắc">
@@ -325,7 +342,7 @@ tailwind.config = {
                 <option value="doan">Đoan - Nữ miền Nam</option>
               </optgroup>
             </select>
-            <p class="text-xs text-on-surface-variant mt-1.5">💡 Giọng custom sẽ dựa trên giọng nền này</p>
+            <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.base.tip">💡 Giọng custom sẽ dựa trên giọng nền này</p>
           </div>
         </div>
 
@@ -333,37 +350,37 @@ tailwind.config = {
         <div id="adjustmentsSection" class="mb-8 pb-8" style="border-bottom:1px solid rgba(255,255,255,0.06)">
           <h2 class="text-lg font-bold text-on-surface flex items-center gap-3 mb-2">
             <span class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary flex-shrink-0">4</span>
-            Điều chỉnh giọng
+            <span data-i18n="addv.step4.title">Điều chỉnh giọng</span>
           </h2>
-          <p class="text-sm text-on-surface-variant mb-5 ml-11">Tinh chỉnh giọng nói theo ý muốn (có thể để mặc định).</p>
+          <p class="text-sm text-on-surface-variant mb-5 ml-11" data-i18n="addv.step4.desc">Tinh chỉnh giọng nói theo ý muốn (có thể để mặc định).</p>
 
           <div class="ml-11 space-y-5">
             <!-- Pitch -->
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label for="pitchAdjustment" class="text-sm font-semibold text-on-surface">Cao độ (Pitch)</label>
+                <label for="pitchAdjustment" class="text-sm font-semibold text-on-surface" data-i18n="addv.pitch.label">Cao độ (Pitch)</label>
                 <span id="pitchValue" class="text-sm font-bold text-primary">0</span>
               </div>
               <input type="range" id="pitchAdjustment" name="pitch_adjustment" min="-12" max="12" value="0" step="1" class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color:#d0bcff">
-              <p class="text-xs text-on-surface-variant mt-1">-12 (thấp hơn) ← 0 (bình thường) → +12 (cao hơn)</p>
+              <p class="text-xs text-on-surface-variant mt-1" data-i18n="addv.pitch.hint">-12 (thấp hơn) ← 0 (bình thường) → +12 (cao hơn)</p>
             </div>
             <!-- Speed -->
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label for="speedAdjustment" class="text-sm font-semibold text-on-surface">Tốc độ (Speed)</label>
+                <label for="speedAdjustment" class="text-sm font-semibold text-on-surface" data-i18n="addv.speed.label">Tốc độ (Speed)</label>
                 <span id="speedValue" class="text-sm font-bold text-primary">1.0x</span>
               </div>
               <input type="range" id="speedAdjustment" name="speed_adjustment" min="0.5" max="2.0" value="1.0" step="0.1" class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color:#d0bcff">
-              <p class="text-xs text-on-surface-variant mt-1">0.5x (chậm) ← 1.0x (bình thường) → 2.0x (nhanh)</p>
+              <p class="text-xs text-on-surface-variant mt-1" data-i18n="addv.speed.hint">0.5x (chậm) ← 1.0x (bình thường) → 2.0x (nhanh)</p>
             </div>
             <!-- Energy -->
             <div>
               <div class="flex justify-between items-center mb-2">
-                <label for="energyAdjustment" class="text-sm font-semibold text-on-surface">Năng lượng (Energy)</label>
+                <label for="energyAdjustment" class="text-sm font-semibold text-on-surface" data-i18n="addv.energy.label">Năng lượng (Energy)</label>
                 <span id="energyValue" class="text-sm font-bold text-primary">1.0x</span>
               </div>
               <input type="range" id="energyAdjustment" name="energy_adjustment" min="0.5" max="1.5" value="1.0" step="0.1" class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color:#d0bcff">
-              <p class="text-xs text-on-surface-variant mt-1">0.5x (nhẹ nhàng) ← 1.0x (bình thường) → 1.5x (mạnh mẽ)</p>
+              <p class="text-xs text-on-surface-variant mt-1" data-i18n="addv.energy.hint">0.5x (nhẹ nhàng) ← 1.0x (bình thường) → 1.5x (mạnh mẽ)</p>
             </div>
           </div>
         </div>
@@ -372,47 +389,47 @@ tailwind.config = {
         <div class="mb-8 pb-8" style="border-bottom:1px solid rgba(255,255,255,0.06)">
           <h2 class="text-lg font-bold text-on-surface flex items-center gap-3 mb-5">
             <span class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary flex-shrink-0">5</span>
-            Thông tin giọng nói
+            <span data-i18n="addv.step5.title">Thông tin giọng nói</span>
           </h2>
           <div class="ml-11 space-y-4">
             <div>
               <label for="voiceName" class="block text-sm font-semibold text-on-surface mb-1.5">
-                Tên giọng <span class="text-red-400">*</span>
+                <span data-i18n="addv.name.label">Tên giọng</span> <span class="text-red-400">*</span>
               </label>
-              <input type="text" id="voiceName" name="voice_name" placeholder="VD: Giọng của tôi, Giọng đọc sách, ..." required maxlength="255" class="form-input-dark">
-              <p class="text-xs text-on-surface-variant mt-1.5">Đặt tên dễ nhớ để phân biệt các giọng</p>
+              <input type="text" id="voiceName" name="voice_name" data-i18n-placeholder="addv.name.placeholder" placeholder="VD: Giọng của tôi, Giọng đọc sách, ..." required maxlength="255" class="form-input-dark">
+              <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.name.hint">Đặt tên dễ nhớ để phân biệt các giọng</p>
             </div>
             <div>
-              <label for="voiceDescription" class="block text-sm font-semibold text-on-surface mb-1.5">Mô tả (tuỳ chọn)</label>
-              <textarea id="voiceDescription" name="description" rows="3" placeholder="VD: Giọng ấm áp, phù hợp đọc truyện..." maxlength="500" class="form-input-dark resize-none"></textarea>
-              <p class="text-xs text-on-surface-variant mt-1.5">Mô tả đặc điểm hoặc mục đích sử dụng giọng này</p>
+              <label for="voiceDescription" class="block text-sm font-semibold text-on-surface mb-1.5" data-i18n="addv.desc.label">Mô tả (tuỳ chọn)</label>
+              <textarea id="voiceDescription" name="description" rows="3" data-i18n-placeholder="addv.desc.placeholder" placeholder="VD: Giọng ấm áp, phù hợp đọc truyện..." maxlength="500" class="form-input-dark resize-none"></textarea>
+              <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.desc.hint">Mô tả đặc điểm hoặc mục đích sử dụng giọng này</p>
             </div>
           </div>
         </div>
 
         <!-- Training Info -->
         <div id="trainingInfoCard" class="mb-6 p-4 rounded-xl" style="background:rgba(208,188,255,0.06);border-left:3px solid #d0bcff">
-          <h4 class="text-sm font-bold text-on-surface mb-1">⚡ Thời gian tạo giọng</h4>
-          <p id="trainingInfoText" class="text-sm text-on-surface-variant mb-2">Giọng custom sẽ được tạo <strong class="text-on-surface">ngay lập tức</strong> (&lt; 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.</p>
-          <p id="trainingInfoNote" class="text-xs text-primary">💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.</p>
+          <h4 class="text-sm font-bold text-on-surface mb-1" data-i18n="addv.training.title">⚡ Thời gian tạo giọng</h4>
+          <p id="trainingInfoText" class="text-sm text-on-surface-variant mb-2" data-i18n-html="addv.training.text">Giọng custom sẽ được tạo <strong class="text-on-surface">ngay lập tức</strong> (&lt; 1 giây) dựa trên giọng nền và các điều chỉnh của bạn.</p>
+          <p id="trainingInfoNote" class="text-xs text-primary" data-i18n-html="addv.training.tip">💡 <strong>Tip:</strong> Bạn có thể tạo nhiều biến thể từ cùng một audio sample bằng cách thay đổi giọng nền và các thông số điều chỉnh.</p>
         </div>
 
         <!-- Submit -->
         <div class="flex justify-end gap-3 pt-2">
-          <a href="{{ url_for('my_voices') }}" class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-on-surface transition-all text-sm font-medium no-underline">
+          <a href="{{ url_for('my_voices') }}" class="px-6 py-2.5 rounded-xl text-on-surface-variant hover:bg-white/5 hover:text-on-surface transition-all text-sm font-medium no-underline" data-i18n="addv.btn.cancel">
             Huỷ
           </a>
           <button type="submit" id="submitBtn" class="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary text-sm font-semibold hover:shadow-[0_0_16px_rgba(160,120,255,0.4)] transition-all">
             <span class="material-symbols-outlined" style="font-size:18px">auto_awesome</span>
-            Tạo giọng ngay
+            <span data-i18n="addv.btn.submit">Tạo giọng ngay</span>
           </button>
         </div>
       </form>
 
       <!-- Progress -->
       <div id="trainingProgress" class="text-center py-10" style="display:none">
-        <h3 class="text-xl font-bold text-on-surface mb-2">⚙️ Đang tạo giọng nói...</h3>
-        <p id="progressSubtitle" class="text-sm text-on-surface-variant mb-6">Đang xử lý...</p>
+        <h3 class="text-xl font-bold text-on-surface mb-2" data-i18n="addv.progress.title">⚙️ Đang tạo giọng nói...</h3>
+        <p id="progressSubtitle" class="text-sm text-on-surface-variant mb-6" data-i18n="addv.progress.subtitle">Đang xử lý...</p>
         <div class="progress-bar-track max-w-md mx-auto mb-3">
           <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
         </div>
@@ -423,13 +440,13 @@ tailwind.config = {
       <!-- Success -->
       <div id="trainingSuccess" class="text-center py-12" style="display:none">
         <div class="text-6xl mb-4">✅</div>
-        <h3 class="text-2xl font-extrabold text-on-surface mb-3">Tạo giọng thành công!</h3>
+        <h3 class="text-2xl font-extrabold text-on-surface mb-3" data-i18n="addv.success.title">Tạo giọng thành công!</h3>
         <p id="successMessage" class="text-on-surface-variant mb-6"></p>
         <div class="flex justify-center gap-3">
-          <a href="{{ url_for('my_voices') }}" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary text-sm font-semibold hover:shadow-[0_0_16px_rgba(160,120,255,0.4)] transition-all no-underline">
+          <a href="{{ url_for('my_voices') }}" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary text-sm font-semibold hover:shadow-[0_0_16px_rgba(160,120,255,0.4)] transition-all no-underline" data-i18n="addv.success.btn.view">
             Xem giọng của tôi
           </a>
-          <button type="button" onclick="location.reload()" class="px-6 py-2.5 rounded-xl text-primary border border-primary/30 hover:bg-primary/10 transition-all text-sm font-semibold">
+          <button type="button" onclick="location.reload()" class="px-6 py-2.5 rounded-xl text-primary border border-primary/30 hover:bg-primary/10 transition-all text-sm font-semibold" data-i18n="addv.success.btn.new">
             Tạo giọng mới
           </button>
         </div>
@@ -438,9 +455,9 @@ tailwind.config = {
       <!-- Error -->
       <div id="trainingError" class="text-center py-12" style="display:none">
         <div class="text-6xl mb-4">❌</div>
-        <h3 class="text-2xl font-extrabold text-on-surface mb-3">Tạo giọng thất bại</h3>
+        <h3 class="text-2xl font-extrabold text-on-surface mb-3" data-i18n="addv.error.title">Tạo giọng thất bại</h3>
         <p id="errorMessage" class="text-red-400 mb-6"></p>
-        <button type="button" onclick="location.reload()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary text-sm font-semibold hover:shadow-[0_0_16px_rgba(160,120,255,0.4)] transition-all">
+        <button type="button" onclick="location.reload()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary text-sm font-semibold hover:shadow-[0_0_16px_rgba(160,120,255,0.4)] transition-all" data-i18n="addv.error.btn.retry">
           Thử lại
         </button>
       </div>
@@ -450,28 +467,28 @@ tailwind.config = {
     <div class="rounded-2xl p-6" style="background:rgba(18,33,49,0.6);border:1px solid rgba(255,255,255,0.06)">
       <h3 class="text-base font-bold text-on-surface mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined text-primary" style="font-size:20px">tips_and_updates</span>
-        Tips để có giọng AI chất lượng cao
+        <span data-i18n="addv.tips.title">Tips để có giọng AI chất lượng cao</span>
       </h3>
       <div class="space-y-3">
         <div class="flex items-start gap-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
           <span class="text-xl flex-shrink-0">🎤</span>
-          <div><p class="text-sm text-on-surface font-semibold mb-0.5">Mic chất lượng</p><p class="text-xs text-on-surface-variant">Dùng mic tốt, cách miệng ~15cm</p></div>
+          <div><p class="text-sm text-on-surface font-semibold mb-0.5" data-i18n="addv.tip1.title">Mic chất lượng</p><p class="text-xs text-on-surface-variant" data-i18n="addv.tip1.desc">Dùng mic tốt, cách miệng ~15cm</p></div>
         </div>
         <div class="flex items-start gap-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
           <span class="text-xl flex-shrink-0">🔇</span>
-          <div><p class="text-sm text-on-surface font-semibold mb-0.5">Môi trường yên tĩnh</p><p class="text-xs text-on-surface-variant">Thu trong phòng kín, không tiếng ồn</p></div>
+          <div><p class="text-sm text-on-surface font-semibold mb-0.5" data-i18n="addv.tip2.title">Môi trường yên tĩnh</p><p class="text-xs text-on-surface-variant" data-i18n="addv.tip2.desc">Thu trong phòng kín, không tiếng ồn</p></div>
         </div>
         <div class="flex items-start gap-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
           <span class="text-xl flex-shrink-0">📝</span>
-          <div><p class="text-sm text-on-surface font-semibold mb-0.5">Đa dạng nội dung</p><p class="text-xs text-on-surface-variant">Đọc nhiều loại câu (hỏi, khẳng định, cảm xúc)</p></div>
+          <div><p class="text-sm text-on-surface font-semibold mb-0.5" data-i18n="addv.tip3.title">Đa dạng nội dung</p><p class="text-xs text-on-surface-variant" data-i18n="addv.tip3.desc">Đọc nhiều loại câu (hỏi, khẳng định, cảm xúc)</p></div>
         </div>
         <div class="flex items-start gap-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.05)">
           <span class="text-xl flex-shrink-0">🗣️</span>
-          <div><p class="text-sm text-on-surface font-semibold mb-0.5">Giọng tự nhiên</p><p class="text-xs text-on-surface-variant">Đọc rõ ràng, tự nhiên, không cố làm giọng</p></div>
+          <div><p class="text-sm text-on-surface font-semibold mb-0.5" data-i18n="addv.tip4.title">Giọng tự nhiên</p><p class="text-xs text-on-surface-variant" data-i18n="addv.tip4.desc">Đọc rõ ràng, tự nhiên, không cố làm giọng</p></div>
         </div>
         <div class="flex items-start gap-3">
           <span class="text-xl flex-shrink-0">⏱️</span>
-          <div><p class="text-sm text-on-surface font-semibold mb-0.5">Độ dài phù hợp</p><p class="text-xs text-on-surface-variant">5-10 phút là tối ưu (đủ data, không quá lâu)</p></div>
+          <div><p class="text-sm text-on-surface font-semibold mb-0.5" data-i18n="addv.tip5.title">Độ dài phù hợp</p><p class="text-xs text-on-surface-variant" data-i18n="addv.tip5.desc">5-10 phút là tối ưu (đủ data, không quá lâu)</p></div>
         </div>
       </div>
     </div>
@@ -529,5 +546,7 @@ function closeMobileNav() {
 }
 window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileNav(); });
 </script>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 </body>
 </html>

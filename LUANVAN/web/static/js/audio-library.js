@@ -203,7 +203,6 @@ function renderAudioItems(audios) {
                 const bars = this.closest('article').querySelectorAll('.waveform-bar');
 
                 if (audioEl.paused) {
-                    // Pause all others first
                     document.querySelectorAll('.audio-ctrl').forEach(a => {
                         if (a !== audioEl && !a.paused) {
                             a.pause();
@@ -215,7 +214,6 @@ function renderAudioItems(audios) {
                     audioEl.play();
                     this.classList.add('playing');
                     bars.forEach(b => b.classList.add('playing'));
-
                     audioEl.ontimeupdate = () => {
                         if (timeEl) timeEl.textContent = formatDuration(audioEl.currentTime);
                     };
@@ -232,6 +230,23 @@ function renderAudioItems(audios) {
             });
         });
     }
+
+    // Attach rename, share, delete listeners (dùng data-* thay inline onclick)
+    document.querySelectorAll('.rename-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            openRenameModal(this.dataset.id, this.dataset.name);
+        });
+    });
+    document.querySelectorAll('.share-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            openShareModal(this.dataset.id, parseInt(this.dataset.public), this.dataset.token);
+        });
+    });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            deleteAudio(this.dataset.id);
+        });
+    });
 }
 
 // ── Grid card ─────────────────────────────────────────────────────────────────
@@ -252,13 +267,33 @@ function createGridCard(audio, idx) {
         ? `<div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-primary/70 to-tertiary/70 rounded-t-xl"></div>`
         : '';
 
+    // Hiển thị tên đặt (display_name) nếu có, ngược lại dùng text_input
+    const titleDisplay = audio.display_name
+        ? escapeHtml(audio.display_name)
+        : truncate(audio.text_input, 90);
+    const titleHint = audio.display_name
+        ? `${escapeHtml(audio.display_name)} — ${escapeHtml(audio.text_input)}`
+        : escapeHtml(audio.text_input);
+
+    const sharedBadge = audio.is_public
+        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/15 border border-green-500/25 text-green-400 text-[10px] font-semibold">
+               <span class="material-symbols-outlined" style="font-size:11px">link</span>Đang chia sẻ
+           </span>`
+        : '';
+
     return `
 <article class="glass-panel rounded-xl p-5 flex flex-col border border-white/5 hover:border-primary/25 transition-all duration-300 relative overflow-hidden group" data-id="${audio.id}">
     ${accentBar}
-    <div class="flex justify-between items-start mb-3">
-        <h3 class="text-[15px] font-semibold leading-snug text-on-surface pr-4 line-clamp-2 group-hover:text-primary transition-colors"
-            title="${escapeHtml(audio.text_input)}">${truncate(audio.text_input, 90)}</h3>
+    <div class="flex justify-between items-start mb-1">
+        <h3 class="text-[15px] font-semibold leading-snug text-on-surface pr-2 line-clamp-2 group-hover:text-primary transition-colors flex-1"
+            title="${titleHint}">${titleDisplay}</h3>
+        <button class="rename-btn shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors ml-1"
+            data-id="${audio.id}" data-name="${escapeHtml(audio.display_name || '')}"
+            title="Đặt tên">
+            <span class="material-symbols-outlined" style="font-size:15px">edit</span>
+        </button>
     </div>
+    <div class="mb-3">${sharedBadge}</div>
 
     <div class="inline-flex items-center gap-2 bg-surface-container px-2.5 py-1 rounded-md w-fit mb-3 border border-outline-variant/40">
         <span class="material-symbols-outlined text-tertiary" style="font-size:14px;font-variation-settings:'FILL' 1">graphic_eq</span>
@@ -295,15 +330,22 @@ function createGridCard(audio, idx) {
         <audio class="audio-ctrl" src="${audioUrl}" preload="none"></audio>
 
         <!-- Actions -->
-        <div class="flex items-center justify-end gap-1 border-t border-outline-variant/25 pt-3">
-            <a href="${audioUrl}" download
-               class="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors text-xs font-semibold no-underline">
-                <span class="material-symbols-outlined" style="font-size:15px">download</span> Tải
-            </a>
-            <button onclick="deleteAudio(${audio.id})"
-               class="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-red-500/10 text-on-surface-variant hover:text-red-400 transition-colors text-xs font-semibold">
-                <span class="material-symbols-outlined" style="font-size:15px">delete</span> Xóa
+        <div class="flex items-center justify-between gap-1 border-t border-outline-variant/25 pt-3">
+            <button class="share-btn flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold ${audio.is_public ? 'text-green-400 hover:bg-green-500/10' : 'text-on-surface-variant hover:bg-surface-variant hover:text-on-surface'}"
+               data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}">
+                <span class="material-symbols-outlined" style="font-size:15px">${audio.is_public ? 'link' : 'share'}</span>
+                ${audio.is_public ? 'Đã chia sẻ' : 'Chia sẻ'}
             </button>
+            <div class="flex items-center gap-1">
+                <a href="${audioUrl}" download
+                   class="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors text-xs font-semibold no-underline">
+                    <span class="material-symbols-outlined" style="font-size:15px">download</span> Tải
+                </a>
+                <button class="delete-btn flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-red-500/10 text-on-surface-variant hover:text-red-400 transition-colors text-xs font-semibold"
+                   data-id="${audio.id}">
+                    <span class="material-symbols-outlined" style="font-size:15px">delete</span>
+                </button>
+            </div>
         </div>
     </div>
 </article>`;
@@ -313,22 +355,36 @@ function createGridCard(audio, idx) {
 function createListRow(audio) {
     const filename = getFilename(audio.audio_file_path);
     const audioUrl = `/api/audio/${filename}`;
+    const titleDisplay = audio.display_name
+        ? `<span class="font-semibold text-on-surface">${escapeHtml(audio.display_name)}</span><br><span class="text-on-surface-variant">${truncate(audio.text_input, 50)}</span>`
+        : truncate(audio.text_input, 60);
 
     return `
 <tr data-id="${audio.id}">
-    <td class="text-col" title="${escapeHtml(audio.text_input)}">${truncate(audio.text_input, 60)}</td>
+    <td class="text-col" title="${escapeHtml(audio.text_input)}">
+        ${titleDisplay}
+        ${audio.is_public ? '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 text-[10px] font-semibold ml-1"><span class="material-symbols-outlined" style="font-size:10px">link</span></span>' : ''}
+    </td>
     <td>${escapeHtml(audio.voice_name || audio.voice_id || '—')}</td>
     <td>${formatDuration(audio.duration_seconds)}</td>
     <td>${formatSize(audio.audio_file_size)}</td>
     <td>${formatDate(audio.created_at)}</td>
     <td class="actions-col">
         <audio controls src="${audioUrl}" preload="none" class="mini-player"></audio>
+        <button class="rename-btn inline-flex items-center gap-1 px-2 py-1 rounded-md bg-surface-container border border-outline-variant/50 text-on-surface-variant hover:text-primary text-xs font-medium transition-colors"
+           data-id="${audio.id}" data-name="${escapeHtml(audio.display_name || '')}" title="Đặt tên">
+            <span class="material-symbols-outlined" style="font-size:13px">edit</span>
+        </button>
+        <button class="share-btn inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors ${audio.is_public ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-surface-container border-outline-variant/50 text-on-surface-variant hover:text-primary'}"
+           data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}" title="Chia sẻ">
+            <span class="material-symbols-outlined" style="font-size:13px">${audio.is_public ? 'link' : 'share'}</span>
+        </button>
         <a href="${audioUrl}" download
            class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-surface-container border border-outline-variant/50 text-on-surface-variant hover:text-on-surface text-xs font-medium no-underline transition-colors">
             <span class="material-symbols-outlined" style="font-size:13px">download</span>
         </a>
-        <button onclick="deleteAudio(${audio.id})"
-           class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-colors">
+        <button class="delete-btn inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-colors"
+           data-id="${audio.id}">
             <span class="material-symbols-outlined" style="font-size:13px">delete</span>
         </button>
     </td>
@@ -357,7 +413,6 @@ function updatePagination(page, total) {
 // ── Delete ────────────────────────────────────────────────────────────────────
 async function deleteAudio(id) {
     if (!confirm('Bạn có chắc muốn xóa audio này?')) return;
-
     try {
         const response = await fetch(`/api/audio-library/${id}`, { method: 'DELETE' });
         const data = await response.json();
@@ -412,3 +467,132 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ── Rename modal ───────────────────────────────────────────────────────────────
+let _renameAudioId = null;
+
+function openRenameModal(id, currentName) {
+    _renameAudioId = id;
+    document.getElementById('renameInput').value = currentName || '';
+    const modal = document.getElementById('renameModal');
+    modal.style.removeProperty('display');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('renameInput').focus(), 50);
+}
+
+function closeRenameModal() {
+    document.getElementById('renameModal').style.setProperty('display', 'none', 'important');
+    _renameAudioId = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('renameSaveBtn').addEventListener('click', saveRename);
+    document.getElementById('renameInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveRename();
+        if (e.key === 'Escape') closeRenameModal();
+    });
+    document.getElementById('renameModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('renameModal')) closeRenameModal();
+    });
+});
+
+async function saveRename() {
+    if (!_renameAudioId) return;
+    const name = document.getElementById('renameInput').value.trim();
+    try {
+        const resp = await fetch(`/api/audio-library/${_renameAudioId}/rename`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ display_name: name })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            closeRenameModal();
+            loadAudioLibrary();
+        } else {
+            alert('Lỗi: ' + data.message);
+        }
+    } catch (e) {
+        alert('Lỗi kết nối');
+    }
+}
+
+// ── Share modal ────────────────────────────────────────────────────────────────
+let _shareAudioId = null;
+
+function openShareModal(id, isPublic, shareToken) {
+    _shareAudioId = id;
+    const modal = document.getElementById('shareModal');
+    const enabledEl  = document.getElementById('shareEnabled');
+    const disabledEl = document.getElementById('shareDisabled');
+
+    if (isPublic && shareToken) {
+        enabledEl.style.display  = 'block';
+        disabledEl.style.display = 'none';
+        const link = `${location.origin}/audio/share/${shareToken}`;
+        document.getElementById('shareLinkInput').value = link;
+        document.getElementById('disableShareBtn').onclick = () => doToggleShare(id, true);
+    } else {
+        // Chưa bật → gọi API bật ngay rồi mới mở modal
+        doToggleShare(id, false);
+        return;
+    }
+
+    modal.style.removeProperty('display');
+    modal.style.display = 'flex';
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').style.setProperty('display', 'none', 'important');
+    _shareAudioId = null;
+}
+
+async function doToggleShare(id, currentlyPublic) {
+    try {
+        const resp = await fetch(`/api/audio-library/${id}/share`, { method: 'POST' });
+        const data = await resp.json();
+        if (!data.success) { alert('Lỗi: ' + data.message); return; }
+
+        const modal    = document.getElementById('shareModal');
+        const enabledEl  = document.getElementById('shareEnabled');
+        const disabledEl = document.getElementById('shareDisabled');
+
+        if (data.is_public) {
+            const link = `${location.origin}/audio/share/${data.share_token}`;
+            document.getElementById('shareLinkInput').value = link;
+            enabledEl.style.display  = 'block';
+            disabledEl.style.display = 'none';
+            document.getElementById('disableShareBtn').onclick = () => doToggleShare(id, true);
+        } else {
+            enabledEl.style.display  = 'none';
+            disabledEl.style.display = 'block';
+        }
+
+        modal.style.removeProperty('display');
+        modal.style.display = 'flex';
+        loadAudioLibrary();  // Cập nhật badge trên card
+    } catch (e) {
+        alert('Lỗi kết nối');
+    }
+}
+
+function copyShareLink() {
+    const input = document.getElementById('shareLinkInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+        document.getElementById('copyIcon').textContent = 'check_circle';
+        document.getElementById('copyText').textContent = 'Đã sao chép!';
+        setTimeout(() => {
+            document.getElementById('copyIcon').textContent = 'content_copy';
+            document.getElementById('copyText').textContent = 'Sao chép';
+        }, 2000);
+    }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('shareModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('shareModal')) closeShareModal();
+    });
+});

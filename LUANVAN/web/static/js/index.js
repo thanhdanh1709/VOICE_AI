@@ -360,6 +360,11 @@ async function handleConvert() {
             });
             
             audioPlayer.style.display = 'block';
+
+            // Expose conversion_id for workspace quick-name feature
+            if (typeof window.wsSetConversionId === 'function') {
+                window.wsSetConversionId(data.conversion_id || null);
+            }
             
             // Show voice adjustment panel
             showVoiceAdjustmentPanel(data.audio_filename || downloadBtn.download);
@@ -997,6 +1002,11 @@ async function handleEmotionalConvert() {
                 audioElement.load();
                 
                 if (audioPlayer) audioPlayer.style.display = 'block';
+
+                // Expose conversion_id for workspace quick-name feature
+                if (typeof window.wsSetConversionId === 'function') {
+                    window.wsSetConversionId(data.conversion_id || null);
+                }
                 
                 console.log('[EMOTIONAL TTS] ✅ Success! File:', data.audio_filename);
             }

@@ -244,6 +244,12 @@ body { font-family: 'Manrope', sans-serif; }
         <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 0">arrow_back</span>
         Quay lại
       </a>
+      <a id="downloadInvoiceBtn" href="/invoice/{{ payment.payment_id }}" style="display:none"
+         class="flex-1 py-3 px-6 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+         style="background:rgba(47,217,244,0.15);border:1px solid rgba(47,217,244,0.35);color:#2fd9f4">
+        <span class="material-symbols-outlined text-base">download</span>
+        Tải hóa đơn PDF
+      </a>
       <button id="goWorkspace" onclick="window.location.href='/'" style="display:none"
          class="flex-1 py-3 px-6 rounded-xl text-sm font-bold flex items-center justify-center gap-2 text-white"
          style="background:linear-gradient(135deg,#a078ff,#009fb4)">
@@ -351,6 +357,10 @@ function onPaymentSuccess(data) {
     // Show "Go to workspace" button
     const goBtn = document.getElementById('goWorkspace');
     if (goBtn) { goBtn.style.display = 'flex'; goBtn.removeAttribute('style'); goBtn.style.display = 'flex'; }
+
+    // Show "Download invoice" button
+    const invBtn = document.getElementById('downloadInvoiceBtn');
+    if (invBtn) { invBtn.style.display = 'flex'; }
 
     // Add glow to verify section
     document.getElementById('verifySection').style.border = '1px solid rgba(110,231,183,0.35)';

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -29,6 +29,32 @@
     <style>
         html, body { margin: 0 !important; padding: 0 !important; overflow-x: hidden; max-width: 100%; }
         html { scroll-behavior: smooth; }
+
+        /* ── Language toggle button ── */
+        .vv-lang-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border: 1px solid rgba(167,139,250,0.35);
+            border-radius: 9999px;
+            background: rgba(124,58,237,0.08);
+            color: #94a3b8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 0.06em;
+            height: 30px;
+            text-transform: uppercase;
+        }
+        .vv-lang-toggle:hover {
+            background: rgba(124,58,237,0.18);
+            border-color: #a78bfa;
+        }
+        .lang-active { color: #c4b5fd; font-weight: 800; }
+        .lang-inactive { color: #475569; font-weight: 600; }
+        .lang-sep { color: rgba(148,163,184,0.3); font-weight: 300; font-size: 0.65rem; }
 
         body {
             background-color: #0a0a14;
@@ -327,14 +353,18 @@
         /* Top row */
         .footer-top {
             display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr 1fr;
-            gap: 48px;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+            gap: 36px;
             padding-bottom: 40px;
             border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
-        @media (max-width: 900px) {
-            .footer-top { grid-template-columns: 1fr 1fr; gap: 32px; }
+        @media (max-width: 1100px) {
+            .footer-top { grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; }
+        }
+
+        @media (max-width: 700px) {
+            .footer-top { grid-template-columns: 1fr 1fr; gap: 24px; }
         }
 
         @media (max-width: 540px) {
@@ -479,28 +509,33 @@
             </div>
             <ul class="nav-menu">
                 {% if session.user_id %}
-                    <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
-                    <li><a href="{{ url_for('audio_library') }}">Thư viện</a></li>
-                    <li><a href="{{ url_for('history') }}">Lịch sử</a></li>
-                    <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
-                    <li><a href="{{ url_for('pricing') }}">Thanh toán</a></li>
-                    <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
+                    <li><a href="{{ url_for('index') }}" data-i18n="nav.home">Trang chủ</a></li>
+                    <li><a href="{{ url_for('audio_library') }}" data-i18n="nav.library">Thư viện</a></li>
+                    <li><a href="{{ url_for('history') }}" data-i18n="nav.history">Lịch sử</a></li>
+                    <li><a href="{{ url_for('my_voices') }}" data-i18n="nav.voices">Giọng của tôi</a></li>
+                    <li><a href="{{ url_for('pricing') }}" data-i18n="nav.pricing">Thanh toán</a></li>
+                    <li><a href="{{ url_for('contact') }}" data-i18n="nav.contact">Liên hệ</a></li>
                     {% if session.user_role == 'admin' %}
-                    <li><a href="{{ url_for('admin') }}">Quản trị</a></li>
+                    <li><a href="{{ url_for('admin') }}" data-i18n="nav.admin">Quản trị</a></li>
                     {% endif %}
                     <li class="user-info">
                         <span>{{ session.full_name or session.username }}</span>
-                        <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
+                        <a href="{{ url_for('logout') }}" class="btn-logout" data-i18n="nav.logout">Đăng xuất</a>
                     </li>
                 {% else %}
-                    <li><a href="{{ url_for('landing') }}">Tính năng</a></li>
-                    <li><a href="{{ url_for('contact') }}">Liên hệ</a></li>
-                    <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
-                    <li><a href="{{ url_for('register') }}" class="nav-cta">✦ Bắt đầu miễn phí</a></li>
+                    <li><a href="{{ url_for('landing') }}" data-i18n="nav.features">Tính năng</a></li>
+                    <li><a href="{{ url_for('contact') }}" data-i18n="nav.contact">Liên hệ</a></li>
+                    <li><a href="{{ url_for('login') }}" data-i18n="nav.login">Đăng nhập</a></li>
+                    <li><a href="{{ url_for('register') }}" class="nav-cta" data-i18n="nav.register">Bắt đầu miễn phí</a></li>
                 {% endif %}
                 <li>
-                    <button id="themeToggle" class="theme-toggle" title="Chuyển sáng/tối" aria-label="Toggle theme">
+                    <button id="themeToggle" class="theme-toggle" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
                         <span class="theme-icon"></span>
+                    </button>
+                </li>
+                <li>
+                    <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language" title="Switch language">
+                        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
                     </button>
                 </li>
             </ul>
@@ -517,23 +552,27 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeBaseNav()"></div>
     <div class="mobile-nav-drawer" id="mobileNavDrawer">
         {% if session.user_id %}
-        <a href="{{ url_for('index') }}">🏠 Trang chủ</a>
-        <a href="{{ url_for('audio_library') }}">🎵 Thư viện Audio</a>
-        <a href="{{ url_for('history') }}">📋 Lịch sử chuyển đổi</a>
-        <a href="{{ url_for('my_voices') }}">🎙️ Giọng của tôi</a>
-        <a href="{{ url_for('pricing') }}">⚡ Bảng giá</a>
-        <a href="{{ url_for('contact') }}">💬 Liên hệ</a>
+        <a href="{{ url_for('index') }}" data-i18n="mob.home">🏠 Trang chủ</a>
+        <a href="{{ url_for('audio_library') }}" data-i18n="mob.library">🎵 Thư viện Audio</a>
+        <a href="{{ url_for('history') }}" data-i18n="mob.history">📋 Lịch sử chuyển đổi</a>
+        <a href="{{ url_for('my_voices') }}" data-i18n="mob.voices">🎙️ Giọng của tôi</a>
+        <a href="{{ url_for('pricing') }}" data-i18n="mob.pricing">⚡ Bảng giá</a>
+        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">💬 Liên hệ</a>
         {% if session.user_role == 'admin' %}
-        <a href="{{ url_for('admin') }}">🛡️ Quản trị</a>
+        <a href="{{ url_for('admin') }}" data-i18n="mob.admin">🛡️ Quản trị</a>
         {% endif %}
         <hr class="mobile-nav-divider">
-        <a href="{{ url_for('logout') }}" class="mobile-logout">🚪 Đăng xuất ({{ session.full_name or session.username }})</a>
+        <a href="{{ url_for('logout') }}" class="mobile-logout">🚪 <span data-i18n="nav.logout">Đăng xuất</span> ({{ session.full_name or session.username }})</a>
         {% else %}
-        <a href="{{ url_for('landing') }}">✨ Tính năng</a>
-        <a href="{{ url_for('contact') }}">💬 Liên hệ</a>
-        <a href="{{ url_for('login') }}">🔑 Đăng nhập</a>
-        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700">✦ Bắt đầu miễn phí</a>
+        <a href="{{ url_for('landing') }}" data-i18n="mob.features">✨ Tính năng</a>
+        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">💬 Liên hệ</a>
+        <a href="{{ url_for('login') }}" data-i18n="mob.login">🔑 Đăng nhập</a>
+        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700" data-i18n="mob.register">✦ Bắt đầu miễn phí</a>
         {% endif %}
+        <hr class="mobile-nav-divider">
+        <button class="vv-lang-toggle" style="margin:8px 0 4px 0;width:auto;" onclick="VVi18n.toggle()" aria-label="Switch language">
+            <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+        </button>
     </div>
 
     <!-- ══ MAIN CONTENT ══ -->
@@ -551,7 +590,7 @@
                 <!-- Brand col -->
                 <div class="footer-brand-col">
                     <div class="footer-logo">🎤 VietVoice</div>
-                    <p class="footer-tagline">
+                    <p class="footer-tagline" data-i18n="ft.tagline">
                         Nền tảng chuyển văn bản thành giọng nói AI tiên phong — 
                         chất lượng cao, cảm xúc phong phú, hỗ trợ clone giọng cá nhân.
                     </p>
@@ -560,41 +599,53 @@
 
                 <!-- Tính năng col -->
                 <div>
-                    <div class="footer-col-title">Tính năng</div>
+                    <div class="footer-col-title" data-i18n="ft.col.features">Tính năng</div>
                     <ul class="footer-links">
-                        <li><a href="{{ url_for('index') if session.user_id else url_for('landing') }}">Chuyển văn bản → Giọng nói</a></li>
-                        <li><a href="{{ url_for('my_voices') if session.user_id else url_for('register') }}">Clone giọng cá nhân</a></li>
-                        <li><a href="{{ url_for('index') if session.user_id else url_for('register') }}">Emotional TTS</a></li>
-                        <li><a href="{{ url_for('audio_library') if session.user_id else url_for('register') }}">Thư viện âm thanh</a></li>
-                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}">Bảng giá & Nâng cấp</a></li>
+                        <li><a href="{{ url_for('index') if session.user_id else url_for('landing') }}" data-i18n="ft.tts">Chuyển văn bản → Giọng nói</a></li>
+                        <li><a href="{{ url_for('my_voices') if session.user_id else url_for('register') }}" data-i18n="ft.clone">Clone giọng cá nhân</a></li>
+                        <li><a href="{{ url_for('index') if session.user_id else url_for('register') }}" data-i18n="ft.emotional">Emotional TTS</a></li>
+                        <li><a href="{{ url_for('audio_library') if session.user_id else url_for('register') }}" data-i18n="ft.audio-lib">Thư viện âm thanh</a></li>
+                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}" data-i18n="ft.pricing">Bảng giá & Nâng cấp</a></li>
                     </ul>
                 </div>
 
                 <!-- Hỗ trợ col -->
                 <div>
-                    <div class="footer-col-title">Hỗ trợ</div>
+                    <div class="footer-col-title" data-i18n="ft.col.support">Hỗ trợ</div>
                     <ul class="footer-links">
-                        <li><a href="{{ url_for('contact') }}">Liên hệ hỗ trợ</a></li>
-                        <li><a href="{{ url_for('contact') }}">Câu hỏi thường gặp</a></li>
-                        <li><a href="{{ url_for('contact') }}">Báo lỗi</a></li>
-                        <li><a href="{{ url_for('contact') }}">Yêu cầu tính năng</a></li>
+                        <li><a href="{{ url_for('support') }}" data-i18n="ft.support">Hỗ trợ & FAQ</a></li>
+                        <li><a href="{{ url_for('user_guide') }}" data-i18n="ft.user-guide">Hướng dẫn sử dụng</a></li>
+                        <li><a href="{{ url_for('installation_guide') }}" data-i18n="ft.install-guide">Hướng dẫn cài đặt</a></li>
+                        <li><a href="{{ url_for('contact') }}" data-i18n="ft.contact">Liên hệ hỗ trợ</a></li>
+                        <li><a href="{{ url_for('contact') }}" data-i18n="ft.bugreport">Báo lỗi</a></li>
                     </ul>
                 </div>
 
                 <!-- Tài khoản col -->
                 <div>
-                    <div class="footer-col-title">Tài khoản</div>
+                    <div class="footer-col-title" data-i18n="ft.col.account">Tài khoản</div>
                     <ul class="footer-links">
                         {% if session.user_id %}
-                        <li><a href="{{ url_for('index') }}">Trang chủ</a></li>
-                        <li><a href="{{ url_for('history') }}">Lịch sử chuyển đổi</a></li>
-                        <li><a href="{{ url_for('my_voices') }}">Giọng của tôi</a></li>
-                        <li><a href="{{ url_for('logout') }}">Đăng xuất</a></li>
+                        <li><a href="{{ url_for('index') }}" data-i18n="ft.home">Trang chủ</a></li>
+                        <li><a href="{{ url_for('history') }}" data-i18n="ft.history">Lịch sử chuyển đổi</a></li>
+                        <li><a href="{{ url_for('my_voices') }}" data-i18n="ft.voices">Giọng của tôi</a></li>
+                        <li><a href="{{ url_for('logout') }}" data-i18n="ft.logout">Đăng xuất</a></li>
                         {% else %}
-                        <li><a href="{{ url_for('login') }}">Đăng nhập</a></li>
-                        <li><a href="{{ url_for('register') }}">Đăng ký miễn phí</a></li>
-                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}">Nâng cấp tài khoản</a></li>
+                        <li><a href="{{ url_for('login') }}" data-i18n="ft.login">Đăng nhập</a></li>
+                        <li><a href="{{ url_for('register') }}" data-i18n="ft.register">Đăng ký miễn phí</a></li>
+                        <li><a href="{{ url_for('pricing') if session.user_id else url_for('register') }}" data-i18n="ft.upgrade">Nâng cấp tài khoản</a></li>
                         {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Pháp lý col -->
+                <div>
+                    <div class="footer-col-title" data-i18n="ft.col.legal">Pháp lý</div>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('privacy') }}" data-i18n="ft.privacy">Chính sách quyền riêng tư</a></li>
+                        <li><a href="{{ url_for('terms') }}" data-i18n="ft.terms">Điều khoản sử dụng</a></li>
+                        <li><a href="{{ url_for('data_deletion') }}" data-i18n="ft.deletion">Chính sách xóa dữ liệu</a></li>
+                        <li><a href="{{ url_for('support') }}" data-i18n="ft.support">Hỗ trợ & FAQ</a></li>
                     </ul>
                 </div>
             </div>
@@ -602,25 +653,27 @@
             <!-- Bottom row -->
             <div class="footer-bottom">
                 <span class="footer-copy">
-                    © 2026 VietVoice · Công nghệ AI ·
-                    <a href="{{ url_for('contact') }}">Điều khoản dịch vụ</a> &amp;
-                    <a href="{{ url_for('contact') }}">Chính sách bảo mật</a>
+                    <span data-i18n="ft.copy">© 2026 VietVoice · Công nghệ AI ·</span>
+                    <a href="{{ url_for('terms') }}" data-i18n="ft.terms-link">Điều khoản dịch vụ</a> &amp;
+                    <a href="{{ url_for('privacy') }}" data-i18n="ft.privacy-link">Chính sách bảo mật</a> &amp;
+                    <a href="{{ url_for('support') }}" data-i18n="ft.support-link">Hỗ trợ</a>
                 </span>
 
-                <span class="footer-disclaimer">
+                <span class="footer-disclaimer" data-i18n="ft.disclaimer">
                     Hệ thống đang trong giai đoạn thử nghiệm (beta). Mọi phản hồi đều giúp cải thiện trải nghiệm.
                 </span>
 
                 {% if session.user_id %}
-                <a href="{{ url_for('index') }}" class="footer-bottom-cta">✦ Bảng điều khiển</a>
+                <a href="{{ url_for('index') }}" class="footer-bottom-cta" data-i18n="ft.dashboard">✦ Bảng điều khiển</a>
                 {% else %}
-                <a href="{{ url_for('register') }}" class="footer-bottom-cta">✦ Bắt đầu miễn phí</a>
+                <a href="{{ url_for('register') }}" class="footer-bottom-cta" data-i18n="ft.start-free">✦ Bắt đầu miễn phí</a>
                 {% endif %}
             </div>
 
         </div>
     </footer>
 
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
 

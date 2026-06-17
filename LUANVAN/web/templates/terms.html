@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Điều khoản sử dụng — VietVoice{% endblock %}
+
+{% block extra_css %}
+<style>
+    .legal-hero {
+        text-align: center;
+        padding: 3rem 1.5rem 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .legal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 16px;
+        background: rgba(59,130,246,0.12);
+        border: 1px solid rgba(59,130,246,0.25);
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #93c5fd;
+        margin-bottom: 1.25rem;
+    }
+    .legal-hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.75rem;
+    }
+    .legal-hero p { color: #64748b; font-size: 0.9rem; margin: 0; }
+    .legal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1.5rem 4rem;
+    }
+    .legal-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 16px;
+        padding: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .legal-card h2 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0 0 1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .legal-card h2 .section-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        background: linear-gradient(135deg, #3b82f6, #7c3aed);
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+    }
+    .legal-card p, .legal-card li {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        line-height: 1.75;
+        margin: 0 0 0.75rem;
+    }
+    .legal-card ul { padding-left: 1.25rem; margin: 0.5rem 0 0.75rem; }
+    .legal-card li { margin-bottom: 0.4rem; }
+    .legal-card p:last-child { margin-bottom: 0; }
+    .warning-box {
+        background: rgba(239,68,68,0.07);
+        border: 1px solid rgba(239,68,68,0.18);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-top: 0.75rem;
+    }
+    .warning-box p { margin: 0; color: #fca5a5; font-size: 0.85rem; }
+    .highlight-box {
+        background: rgba(59,130,246,0.08);
+        border: 1px solid rgba(59,130,246,0.18);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-top: 0.75rem;
+    }
+    .highlight-box p { margin: 0; color: #93c5fd; font-size: 0.85rem; }
+    .last-updated {
+        text-align: center;
+        font-size: 0.78rem;
+        color: #334155;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-hero">
+    <div class="legal-badge">📄 Pháp lý</div>
+    <h1>Điều khoản sử dụng</h1>
+    <p>Cập nhật lần cuối: Tháng 6 năm 2026</p>
+</div>
+
+<div class="legal-container">
+
+    <!-- Chấp thuận -->
+    <div class="legal-card">
+        <h2><span class="section-num">1</span> Chấp thuận điều khoản</h2>
+        <p>
+            Bằng cách tạo tài khoản hoặc sử dụng VietVoice, bạn đồng ý bị ràng buộc bởi các
+            Điều khoản sử dụng này. Nếu bạn không đồng ý, vui lòng không sử dụng dịch vụ.
+        </p>
+        <div class="highlight-box">
+            <p>ℹ️ VietVoice là nền tảng chuyển văn bản thành giọng nói AI, hiện đang trong giai đoạn thử nghiệm (Beta).</p>
+        </div>
+    </div>
+
+    <!-- Điều kiện sử dụng -->
+    <div class="legal-card">
+        <h2><span class="section-num">2</span> Điều kiện sử dụng</h2>
+        <p>Để sử dụng VietVoice, bạn phải:</p>
+        <ul>
+            <li>Từ 13 tuổi trở lên (hoặc có sự đồng ý của phụ huynh nếu dưới 18 tuổi)</li>
+            <li>Cung cấp thông tin đăng ký chính xác và hợp lệ</li>
+            <li>Không dùng tài khoản cho người khác mà không có sự cho phép</li>
+            <li>Tuân thủ pháp luật Việt Nam và các quy định quốc tế áp dụng</li>
+        </ul>
+    </div>
+
+    <!-- Quyền và trách nhiệm -->
+    <div class="legal-card">
+        <h2><span class="section-num">3</span> Quyền và trách nhiệm người dùng</h2>
+        <p><strong style="color:#e2e8f0">Bạn có quyền:</strong></p>
+        <ul>
+            <li>Sử dụng dịch vụ TTS theo gói đăng ký của mình</li>
+            <li>Tải về các file âm thanh bạn đã tạo ra</li>
+            <li>Yêu cầu hỗ trợ kỹ thuật khi gặp sự cố</li>
+            <li>Hủy tài khoản và yêu cầu xóa dữ liệu bất kỳ lúc nào</li>
+        </ul>
+        <p><strong style="color:#e2e8f0">Bạn có trách nhiệm:</strong></p>
+        <ul>
+            <li>Bảo mật thông tin đăng nhập của mình</li>
+            <li>Chỉ sử dụng file giọng nói bạn có quyền sử dụng hợp pháp</li>
+            <li>Không vi phạm bản quyền khi sử dụng nội dung được tạo ra</li>
+        </ul>
+    </div>
+
+    <!-- Nội dung bị cấm -->
+    <div class="legal-card">
+        <h2><span class="section-num">4</span> Nội dung và hành vi bị cấm</h2>
+        <p>Nghiêm cấm sử dụng VietVoice để:</p>
+        <ul>
+            <li>Tạo nội dung giả mạo, lừa đảo, deepfake gây hại</li>
+            <li>Mạo danh cá nhân, tổ chức, cơ quan nhà nước</li>
+            <li>Phát tán nội dung thù địch, phân biệt đối xử, bạo lực</li>
+            <li>Tạo nội dung khiêu dâm hoặc xâm hại trẻ em</li>
+            <li>Clone giọng nói người khác mà không có sự đồng ý của họ</li>
+            <li>Khai thác tự động (bot) hoặc tấn công hệ thống</li>
+            <li>Bán lại dịch vụ mà không có thỏa thuận bằng văn bản</li>
+        </ul>
+        <div class="warning-box">
+            <p>⚠️ Vi phạm có thể dẫn đến tạm ngừng hoặc chấm dứt tài khoản ngay lập tức, không hoàn tiền.</p>
+        </div>
+    </div>
+
+    <!-- Tài khoản -->
+    <div class="legal-card">
+        <h2><span class="section-num">5</span> Quản lý tài khoản</h2>
+        <p>
+            Mỗi người dùng chỉ được phép tạo một tài khoản. Hạn ngạch ký tự được tính theo gói dịch vụ
+            và đặt lại hàng tháng theo chu kỳ đăng ký.
+        </p>
+        <p>
+            Tài khoản miễn phí có giới hạn sử dụng nhất định. Chi tiết xem tại
+            <a href="{{ url_for('pricing') if session.user_id else url_for('register') }}" style="color:#93c5fd">Bảng giá</a>.
+        </p>
+    </div>
+
+    <!-- Thanh toán -->
+    <div class="legal-card">
+        <h2><span class="section-num">6</span> Thanh toán và hoàn tiền</h2>
+        <p>
+            Các gói trả phí được thanh toán qua cổng SePay. Phí được tính theo tháng hoặc
+            theo gói đã chọn.
+        </p>
+        <p>
+            <strong style="color:#e2e8f0">Chính sách hoàn tiền:</strong> Trong vòng 3 ngày kể từ ngày thanh toán,
+            nếu dịch vụ không hoạt động đúng như mô tả, bạn có thể yêu cầu hoàn tiền bằng cách
+            liên hệ support@vietvoice.app.
+        </p>
+    </div>
+
+    <!-- Giới hạn trách nhiệm -->
+    <div class="legal-card">
+        <h2><span class="section-num">7</span> Giới hạn trách nhiệm</h2>
+        <p>VietVoice cung cấp dịch vụ "nguyên trạng" (as-is) và không đảm bảo:</p>
+        <ul>
+            <li>Dịch vụ hoạt động không gián đoạn (đặc biệt trong giai đoạn Beta)</li>
+            <li>Chất lượng âm thanh đáp ứng 100% mọi trường hợp sử dụng</li>
+            <li>Tính phù hợp cho mục đích thương mại quan trọng</li>
+        </ul>
+        <p>
+            Chúng tôi không chịu trách nhiệm về thiệt hại gián tiếp, mất doanh thu, hoặc thiệt hại
+            do việc sử dụng hoặc không thể sử dụng dịch vụ gây ra.
+        </p>
+    </div>
+
+    <!-- Chấm dứt tài khoản -->
+    <div class="legal-card">
+        <h2><span class="section-num">8</span> Chấm dứt tài khoản</h2>
+        <p>Chúng tôi có quyền chấm dứt hoặc tạm ngừng tài khoản trong trường hợp:</p>
+        <ul>
+            <li>Vi phạm các điều khoản được nêu trong mục 4</li>
+            <li>Nghi ngờ gian lận hoặc lạm dụng hệ thống</li>
+            <li>Theo yêu cầu của cơ quan pháp luật</li>
+        </ul>
+        <p>
+            Bạn cũng có thể tự xóa tài khoản bất kỳ lúc nào bằng cách liên hệ
+            <a href="mailto:support@vietvoice.app" style="color:#93c5fd">support@vietvoice.app</a>.
+        </p>
+    </div>
+
+    <!-- Thay đổi điều khoản -->
+    <div class="legal-card">
+        <h2><span class="section-num">9</span> Thay đổi điều khoản</h2>
+        <p>
+            Chúng tôi có thể cập nhật Điều khoản sử dụng này. Khi có thay đổi quan trọng,
+            chúng tôi sẽ thông báo qua email đã đăng ký. Tiếp tục sử dụng dịch vụ sau khi
+            thông báo đồng nghĩa với việc bạn chấp nhận điều khoản mới.
+        </p>
+    </div>
+
+    <!-- Luật áp dụng -->
+    <div class="legal-card">
+        <h2><span class="section-num">10</span> Luật áp dụng</h2>
+        <p>
+            Các điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được
+            giải quyết tại tòa án có thẩm quyền tại Việt Nam.
+        </p>
+        <div class="highlight-box">
+            <p>📧 Câu hỏi về điều khoản: <strong>support@vietvoice.app</strong></p>
+        </div>
+    </div>
+
+    <p class="last-updated">Điều khoản này có hiệu lực từ ngày 01/06/2026 và được cập nhật lần cuối vào tháng 6 năm 2026.</p>
+</div>
+{% endblock %}
