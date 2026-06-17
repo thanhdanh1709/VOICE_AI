@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Hồ sơ cá nhân - VietVoice</title>
+<title data-i18n="prof.title">Hồ sơ cá nhân - VietVoice</title>
 
 <script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
 
@@ -150,13 +150,13 @@ tailwind.config = {
       VietVoice
     </a>
     <div class="hidden md:flex items-center space-x-1">
-      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
-      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
-      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
-      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">History</a>
-      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.home">Workspace</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.voices">Voices</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.library">Library</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.history">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.pricing">Pricing</a>
       {% if session.user_role == 'admin' %}
-      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.admin">Admin</a>
       {% endif %}
     </div>
     <div class="flex items-center gap-1.5 md:gap-3">
@@ -180,7 +180,7 @@ tailwind.config = {
         </div>
         <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
           <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-          <span class="hidden sm:inline">Logout</span>
+          <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
         </a>
       </div>
       <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white p-2 rounded-full transition-all ml-1" onclick="toggleMobileNav()">
@@ -194,17 +194,17 @@ tailwind.config = {
 <div id="mobileNavOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileNav()"></div>
 <div id="mobileNavDrawer" class="fixed top-16 left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
   <div class="flex flex-col p-3 gap-0.5">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span>Workspace</a>
-    <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span>Giọng của tôi</a>
-    <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">library_music</span>Thư viện Audio</a>
-    <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">history</span>Lịch sử</a>
-    <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">bolt</span>Bảng giá</a>
-    <a href="{{ url_for('profile') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline"><span class="material-symbols-outlined" style="font-size:20px">manage_accounts</span>Hồ sơ</a>
+    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span><span data-i18n="nav.home">Workspace</span></a>
+    <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span><span data-i18n="nav.voices">Giọng của tôi</span></a>
+    <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">library_music</span><span data-i18n="nav.library">Thư viện Audio</span></a>
+    <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">history</span><span data-i18n="nav.history">Lịch sử</span></a>
+    <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">bolt</span><span data-i18n="nav.pricing">Bảng giá</span></a>
+    <a href="{{ url_for('profile') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline"><span class="material-symbols-outlined" style="font-size:20px">manage_accounts</span><span data-i18n="side.profile">Hồ sơ</span></a>
     {% if session.user_role == 'admin' %}
-    <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-tertiary hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">admin_panel_settings</span>Admin</a>
+    <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-tertiary hover:text-white hover:bg-white/5 no-underline"><span class="material-symbols-outlined" style="font-size:20px">admin_panel_settings</span><span data-i18n="nav.admin">Admin</span></a>
     {% endif %}
     <div class="border-t border-white/10 mt-1 pt-1">
-      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline"><span class="material-symbols-outlined" style="font-size:20px">logout</span>Đăng xuất</a>
+      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline"><span class="material-symbols-outlined" style="font-size:20px">logout</span><span data-i18n="nav.logout">Đăng xuất</span></a>
     </div>
   </div>
 </div>
@@ -223,32 +223,32 @@ tailwind.config = {
         </div>
         <div class="sb-logo-text overflow-hidden">
           <div class="text-sm font-bold text-white whitespace-nowrap">VietVoice Pro</div>
-          <div class="text-xs text-primary">AI Synthesis Active</div>
+          <div class="text-xs text-primary" data-i18n="prof.vvpro.label">AI Synthesis Active</div>
         </div>
       </div>
     </div>
 
     <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span><span class="sb-label">Tạo Audio mới</span>
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span><span class="sb-label" data-i18n="side.create_audio">Tạo Audio mới</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">library_music</span><span class="sb-label">Thư viện Audio</span>
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span><span class="sb-label" data-i18n="side.audio_library">Thư viện Audio</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span><span class="sb-label">Giọng của tôi</span>
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span><span class="sb-label" data-i18n="side.my_voices">Giọng của tôi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">history</span><span class="sb-label">Lịch sử chuyển đổi</span>
+        <span class="material-symbols-outlined" style="font-size:18px">history</span><span class="sb-label" data-i18n="side.history">Lịch sử chuyển đổi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">bolt</span><span class="sb-label">Bảng giá</span>
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span><span class="sb-label" data-i18n="side.pricing">Bảng giá</span>
       </a>
       <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('profile') }}">
-        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="sb-label">Hồ sơ cá nhân</span>
+        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="sb-label" data-i18n="side.profile">Hồ sơ cá nhân</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span><span class="sb-label">Liên hệ</span>
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span><span class="sb-label" data-i18n="side.contact">Liên hệ</span>
       </a>
     </nav>
 
@@ -260,7 +260,7 @@ tailwind.config = {
     <div class="px-3 pb-4 sb-upgrade">
       <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
         <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span class="sb-label">Nâng cấp gói</span>
+        <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
       </a>
     </div>
   </aside>
@@ -280,7 +280,7 @@ tailwind.config = {
             {{ user.role or 'user' }}
           </span>
           {% if user.created_at %}
-          <span class="ml-2 text-xs text-outline">Tham gia {{ user.created_at }}</span>
+          <span class="ml-2 text-xs text-outline"><span data-i18n="prof.subtitle.joined">Tham gia</span> {{ user.created_at }}</span>
           {% endif %}
         </p>
       </div>
@@ -292,29 +292,29 @@ tailwind.config = {
       <div class="card">
         <div class="flex items-center gap-2 mb-6">
           <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">person</span>
-          <h2 class="text-base font-bold text-on-surface">Thông tin cá nhân</h2>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.info">Thông tin cá nhân</h2>
         </div>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Tên đăng nhập</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.username">Tên đăng nhập</label>
             <input class="form-input" value="{{ user.username }}" disabled/>
-            <p class="text-[11px] text-outline mt-1">Tên đăng nhập không thể thay đổi.</p>
+            <p class="text-[11px] text-outline mt-1" data-i18n="prof.field.username.hint">Tên đăng nhập không thể thay đổi.</p>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Email</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.email">Email</label>
             <input class="form-input" value="{{ user.email or '—' }}" disabled/>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Họ và tên</label>
-            <input id="inputFullName" class="form-input" type="text" value="{{ user.full_name }}" placeholder="Nhập họ và tên..."/>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.fullname">Họ và tên</label>
+            <input id="inputFullName" class="form-input" type="text" value="{{ user.full_name }}" placeholder="Nhập họ và tên..." data-i18n-placeholder="prof.field.fullname.ph"/>
           </div>
         </div>
 
         <div class="mt-6 flex justify-end">
           <button id="btnUpdateProfile" class="btn-primary" onclick="updateProfile()">
             <span class="material-symbols-outlined" style="font-size:17px">save</span>
-            Lưu thay đổi
+            <span data-i18n="prof.btn.save">Lưu thay đổi</span>
           </button>
         </div>
       </div>
@@ -323,13 +323,13 @@ tailwind.config = {
       <div class="card">
         <div class="flex items-center gap-2 mb-6">
           <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">lock</span>
-          <h2 class="text-base font-bold text-on-surface">Đổi mật khẩu</h2>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.password">Đổi mật khẩu</h2>
         </div>
 
         {% if user.email %}
         <div class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Mật khẩu hiện tại</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.current_pw">Mật khẩu hiện tại</label>
             <div class="relative">
               <input id="inputCurrentPw" class="form-input pr-10" type="password" placeholder="••••••••"/>
               <button onclick="togglePw('inputCurrentPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
@@ -338,18 +338,18 @@ tailwind.config = {
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Mật khẩu mới</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.new_pw">Mật khẩu mới</label>
             <div class="relative">
-              <input id="inputNewPw" class="form-input pr-10" type="password" placeholder="Ít nhất 6 ký tự"/>
+              <input id="inputNewPw" class="form-input pr-10" type="password" placeholder="Ít nhất 6 ký tự" data-i18n-placeholder="prof.field.new_pw.ph"/>
               <button onclick="togglePw('inputNewPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
                 <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
               </button>
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">Xác nhận mật khẩu mới</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.confirm_pw">Xác nhận mật khẩu mới</label>
             <div class="relative">
-              <input id="inputConfirmPw" class="form-input pr-10" type="password" placeholder="Nhập lại mật khẩu mới"/>
+              <input id="inputConfirmPw" class="form-input pr-10" type="password" placeholder="Nhập lại mật khẩu mới" data-i18n-placeholder="prof.field.confirm_pw.ph"/>
               <button onclick="togglePw('inputConfirmPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
                 <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
               </button>
@@ -359,13 +359,13 @@ tailwind.config = {
         <div class="mt-6 flex justify-end">
           <button id="btnChangePw" class="btn-primary" onclick="changePassword()" style="background:linear-gradient(135deg,#009fb4,#2fd9f4)">
             <span class="material-symbols-outlined" style="font-size:17px">lock_reset</span>
-            Đổi mật khẩu
+            <span data-i18n="prof.btn.change_pw">Đổi mật khẩu</span>
           </button>
         </div>
         {% else %}
         <div class="py-6 text-center text-on-surface-variant text-sm">
           <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">lock</span>
-          <p class="mt-2">Tài khoản Google OAuth không thể đổi mật khẩu.</p>
+          <p class="mt-2" data-i18n="prof.oauth.no_pw">Tài khoản Google OAuth không thể đổi mật khẩu.</p>
         </div>
         {% endif %}
       </div>
@@ -374,7 +374,7 @@ tailwind.config = {
       <div class="card lg:col-span-2">
         <div class="flex items-center gap-2 mb-5">
           <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">receipt_long</span>
-          <h2 class="text-base font-bold text-on-surface">Lịch sử giao dịch</h2>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.tx">Lịch sử giao dịch</h2>
         </div>
 
         <div id="txLoading" class="flex items-center gap-3 py-6 text-on-surface-variant text-sm">
@@ -383,18 +383,18 @@ tailwind.config = {
         </div>
         <div id="txEmpty" style="display:none" class="py-6 text-center text-on-surface-variant text-sm">
           <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">receipt_long</span>
-          <p class="mt-2">Chưa có giao dịch nào.</p>
+          <p class="mt-2" data-i18n="prof.tx.empty">Chưa có giao dịch nào.</p>
         </div>
         <div id="txTable" style="display:none" class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-outline-variant/30 text-xs text-on-surface-variant">
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide">Gói</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden sm:table-cell">Mã GD</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide">Số tiền</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden md:table-cell">Ngày</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide">Trạng thái</th>
-                <th class="pb-3 text-right font-semibold uppercase tracking-wide">Hóa đơn</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.package">Gói</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden sm:table-cell" data-i18n="prof.tx.col.txid">Mã GD</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.amount">Số tiền</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden md:table-cell" data-i18n="prof.tx.col.date">Ngày</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.status">Trạng thái</th>
+                <th class="pb-3 text-right font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.invoice">Hóa đơn</th>
               </tr>
             </thead>
             <tbody id="txBody" class="divide-y divide-outline-variant/20"></tbody>
@@ -406,7 +406,7 @@ tailwind.config = {
       <div class="card lg:col-span-2">
         <div class="flex items-center gap-2 mb-5">
           <span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings:'FILL' 1">settings</span>
-          <h2 class="text-base font-bold text-on-surface">Cài đặt</h2>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.settings">Cài đặt</h2>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 
@@ -415,8 +415,8 @@ tailwind.config = {
             <div class="flex items-center gap-3">
               <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">dark_mode</span>
               <div>
-                <p class="text-sm font-semibold text-on-surface">Giao diện</p>
-                <p class="text-xs text-on-surface-variant">Sáng / Tối</p>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.theme.label">Giao diện</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.theme.desc">Sáng / Tối</p>
               </div>
             </div>
             <button id="themeToggleCard" onclick="toggleTheme()" class="relative w-11 h-6 rounded-full transition-all" style="background:rgba(208,188,255,0.2);border:1px solid rgba(208,188,255,0.3)">
@@ -429,8 +429,8 @@ tailwind.config = {
             <div class="flex items-center gap-3">
               <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">menu_open</span>
               <div>
-                <p class="text-sm font-semibold text-on-surface">Thanh bên</p>
-                <p class="text-xs text-on-surface-variant">Ẩn / Hiện</p>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.sidebar.label">Thanh bên</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.sidebar.desc">Ẩn / Hiện</p>
               </div>
             </div>
             <button onclick="document.getElementById('sidebarCollapseBtn').click()" class="px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-semibold text-on-surface-variant hover:bg-white/5 transition-colors">
@@ -443,8 +443,8 @@ tailwind.config = {
             <div class="flex items-center gap-3">
               <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">language</span>
               <div>
-                <p class="text-sm font-semibold text-on-surface">Ngôn ngữ</p>
-                <p class="text-xs text-on-surface-variant">VI / EN</p>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.lang.label">Ngôn ngữ</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.lang.desc">VI / EN</p>
               </div>
             </div>
             <button onclick="VVi18n && VVi18n.toggle()" class="vv-lang-toggle" aria-label="Switch language">
@@ -461,11 +461,11 @@ tailwind.config = {
 
 <!-- Mobile bottom nav -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#07111f]/95 backdrop-blur-xl border-t border-white/10 flex justify-around items-center h-[60px] px-1">
-  <a href="{{ url_for('index') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">graphic_eq</span><span class="text-[10px]">Tạo</span></a>
-  <a href="{{ url_for('audio_library') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">library_music</span><span class="text-[10px]">Thư viện</span></a>
-  <a href="{{ url_for('my_voices') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">record_voice_over</span><span class="text-[10px]">Giọng</span></a>
-  <a href="{{ url_for('history') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">history</span><span class="text-[10px]">Lịch sử</span></a>
-  <a href="{{ url_for('profile') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-primary no-underline"><span class="material-symbols-outlined" style="font-size:22px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="text-[10px] font-semibold">Hồ sơ</span></a>
+  <a href="{{ url_for('index') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">graphic_eq</span><span class="text-[10px]" data-i18n="bottom.create">Tạo</span></a>
+  <a href="{{ url_for('audio_library') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">library_music</span><span class="text-[10px]" data-i18n="bottom.library">Thư viện</span></a>
+  <a href="{{ url_for('my_voices') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">record_voice_over</span><span class="text-[10px]" data-i18n="bottom.voices">Giọng</span></a>
+  <a href="{{ url_for('history') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-slate-500 no-underline hover:text-white transition-colors"><span class="material-symbols-outlined" style="font-size:22px">history</span><span class="text-[10px]" data-i18n="bottom.history">Lịch sử</span></a>
+  <a href="{{ url_for('profile') }}" class="flex flex-col items-center gap-0.5 py-2 px-3 text-primary no-underline"><span class="material-symbols-outlined" style="font-size:22px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="text-[10px] font-semibold" data-i18n="side.profile">Hồ sơ</span></a>
 </nav>
 
 <!-- Toast -->
@@ -477,6 +477,7 @@ tailwind.config = {
 <!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}
 
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
 <script>
@@ -559,9 +560,9 @@ function togglePw(id) {
 async function updateProfile() {
   const btn  = document.getElementById('btnUpdateProfile');
   const name = document.getElementById('inputFullName').value.trim();
-  if (!name) { showToast('Tên không được để trống', 'error'); return; }
+  if (!name) { showToast((window.__ && __('prof.field.fullname')) + ' ' || 'Tên không được để trống', 'error'); return; }
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> Đang lưu...';
+  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : 'Đang lưu...');
   try {
     const res  = await fetch('/api/user/update-profile', {
       method: 'POST',
@@ -569,12 +570,12 @@ async function updateProfile() {
       body: JSON.stringify({ full_name: name })
     });
     const data = await res.json();
-    if (data.success) { showToast('Cập nhật thành công!', 'success'); }
-    else { showToast(data.message || 'Lỗi cập nhật', 'error'); }
-  } catch(e) { showToast('Lỗi kết nối', 'error'); }
+    if (data.success) { showToast(window.__ ? __('common.success') : 'Cập nhật thành công!', 'success'); }
+    else { showToast(data.message || (window.__ ? __('common.error') : 'Lỗi cập nhật'), 'error'); }
+  } catch(e) { showToast(window.__ ? __('common.error') : 'Lỗi kết nối', 'error'); }
   finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">save</span> Lưu thay đổi';
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">save</span> ' + (window.__ ? __('prof.btn.save') : 'Lưu thay đổi');
   }
 }
 
@@ -588,7 +589,7 @@ async function changePassword() {
   if (newPw !== confirmPw) { showToast('Mật khẩu xác nhận không khớp', 'error'); return; }
   if (newPw.length < 6) { showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error'); return; }
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> Đang xử lý...';
+  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : 'Đang xử lý...');
   try {
     const res  = await fetch('/api/user/change-password', {
       method: 'POST',
@@ -597,17 +598,17 @@ async function changePassword() {
     });
     const data = await res.json();
     if (data.success) {
-      showToast('Đổi mật khẩu thành công!', 'success');
+      showToast(window.__ ? __('common.success') : 'Đổi mật khẩu thành công!', 'success');
       document.getElementById('inputCurrentPw').value = '';
       document.getElementById('inputNewPw').value = '';
       document.getElementById('inputConfirmPw').value = '';
     } else {
-      showToast(data.message || 'Lỗi đổi mật khẩu', 'error');
+      showToast(data.message || (window.__ ? __('common.error') : 'Lỗi đổi mật khẩu'), 'error');
     }
-  } catch(e) { showToast('Lỗi kết nối', 'error'); }
+  } catch(e) { showToast(window.__ ? __('common.error') : 'Lỗi kết nối', 'error'); }
   finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">lock_reset</span> Đổi mật khẩu';
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">lock_reset</span> ' + (window.__ ? __('prof.btn.change_pw') : 'Đổi mật khẩu');
   }
 }
 
