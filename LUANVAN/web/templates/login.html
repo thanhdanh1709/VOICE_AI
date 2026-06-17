@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Đăng nhập - VietVoice{% endblock %}
+{% block title %}<span data-i18n="auth.login.title">Đăng nhập</span> - VietVoice{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -33,24 +33,23 @@
 <div class="auth-container">
     <div class="auth-box">
         <div class="auth-logo">🎤</div>
-        <h2>Đăng nhập</h2>
-        <p class="auth-subtitle">Chào mừng trở lại VietVoice</p>
+        <h2 data-i18n="auth.login.title">Đăng nhập</h2>
+        <p class="auth-subtitle" data-i18n="auth.login.subtitle">Chào mừng trở lại VietVoice</p>
 
         <form id="loginForm">
             <div class="form-group">
-                <label for="username"><span>👤</span> Tên đăng nhập</label>
-                <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
+                <label for="username"><span>👤</span> <span data-i18n="auth.username">Tên đăng nhập</span></label>
+                <input type="text" id="username" name="username" data-i18n-placeholder="auth.ph.username" placeholder="Nhập tên đăng nhập" required>
             </div>
             <div class="form-group">
-                <label for="password"><span>🔒</span> Mật khẩu</label>
-                <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                <label for="password"><span>🔒</span> <span data-i18n="auth.password">Mật khẩu</span></label>
+                <input type="password" id="password" name="password" data-i18n-placeholder="auth.ph.password" placeholder="Nhập mật khẩu" required>
             </div>
-            <button type="submit" class="btn-auth">🚀 Đăng nhập</button>
+            <button type="submit" class="btn-auth">🚀 <span data-i18n="auth.login.btn">Đăng nhập</span></button>
         </form>
 
-        <div class="auth-divider">hoặc</div>
+        <div class="auth-divider" data-i18n="auth.login.or">hoặc</div>
 
-        <!-- Nút Google: tự phát hiện môi trường WebView/Browser -->
         <button type="button" onclick="handleGoogleLogin()" class="btn-google">
             <svg width="20" height="20" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -59,30 +58,28 @@
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 <path fill="none" d="M0 0h48v48H0z"/>
             </svg>
-            Đăng nhập với Google
+            <span data-i18n="auth.login.google">Đăng nhập với Google</span>
         </button>
         <script>
         function handleGoogleLogin() {
-            // Nếu chạy trong Flutter WebView, FlutterBridge sẽ tồn tại
             if (typeof window.FlutterBridge !== 'undefined') {
-                // Mobile: Gửi tín hiệu để Flutter mở Chrome Custom Tab (tránh 403)
                 const sessionId = Date.now().toString();
                 window.FlutterBridge.postMessage('GOOGLE_LOGIN:' + sessionId);
             } else {
-                // Web browser thông thường: điều hướng bình thường
                 window.location.href = '{{ url_for("google_login") }}';
             }
         }
         </script>
 
         {% if request.args.get('error') == 'google_not_configured' %}
-        <div class="message error">Google OAuth chưa được cấu hình. Vui lòng dùng đăng nhập thường.</div>
+        <div class="message error" data-i18n="auth.login.google_err_cfg">Google OAuth chưa được cấu hình. Vui lòng dùng đăng nhập thường.</div>
         {% elif request.args.get('error') == 'google_auth_failed' %}
-        <div class="message error">Đăng nhập Google thất bại. Vui lòng thử lại.</div>
+        <div class="message error" data-i18n="auth.login.google_err">Đăng nhập Google thất bại. Vui lòng thử lại.</div>
         {% endif %}
 
         <p class="auth-link">
-            Chưa có tài khoản? <a href="{{ url_for('register') }}">Đăng ký miễn phí →</a>
+            <span data-i18n="auth.login.no_account">Chưa có tài khoản?</span>
+            <a href="{{ url_for('register') }}" data-i18n="auth.login.register_link">Đăng ký miễn phí →</a>
         </p>
         <div id="message" class="message"></div>
     </div>

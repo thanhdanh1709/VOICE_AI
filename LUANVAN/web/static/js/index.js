@@ -4,11 +4,68 @@
  */
 
 let voices = [];
+let currentAudioFilename = null;
+let ffmpegAvailable = true;
+
+function _msg(text) {
+    return (window.__msg ? window.__msg(text) : text);
+}
+
+function setCurrentAudio(filename) {
+    currentAudioFilename = filename || null;
+    syncExportBitrateVisibility();
+}
+
+function getExportDownloadUrl() {
+    if (!currentAudioFilename) return '#';
+    const fmt = document.getElementById('exportFormat')?.value || 'wav';
+    const bitrate = document.getElementById('exportBitrate')?.value || '192';
+    const base = `/api/audio/${encodeURIComponent(currentAudioFilename)}`;
+    if (fmt === 'wav') return base;
+    return `${base}/export?format=${fmt}&bitrate=${bitrate}`;
+}
+
+function syncExportBitrateVisibility() {
+    const fmt = document.getElementById('exportFormat')?.value || 'wav';
+    const wrap = document.getElementById('exportBitrateWrap');
+    if (wrap) wrap.style.display = fmt === 'wav' ? 'none' : 'block';
+}
+
+function handleDownloadClick() {
+    if (!currentAudioFilename) return;
+    const fmt = document.getElementById('exportFormat')?.value || 'wav';
+    let url = getExportDownloadUrl();
+    if (fmt !== 'wav' && !ffmpegAvailable) {
+        alert(window.__ ? __('export.ffmpeg_missing') : 'MP3/OGG cần ffmpeg. Đang tải WAV.');
+        url = `/api/audio/${encodeURIComponent(currentAudioFilename)}`;
+    }
+    const ext = fmt === 'wav' ? 'wav' : fmt;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentAudioFilename.replace(/\.wav$/i, '') + '.' + ext;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+async function initExportControls() {
+    try {
+        const r = await fetch('/api/audio/formats');
+        const d = await r.json();
+        if (d.success) ffmpegAvailable = !!d.ffmpeg;
+    } catch (e) { /* ignore */ }
+    const fmtSel = document.getElementById('exportFormat');
+    const dlBtn = document.getElementById('downloadBtn');
+    if (fmtSel) fmtSel.addEventListener('change', syncExportBitrateVisibility);
+    if (dlBtn) dlBtn.addEventListener('click', handleDownloadClick);
+    syncExportBitrateVisibility();
+}
 
 // Load voices on page load
 document.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
     await loadStatistics();
+    await initExportControls();
     
     // Character counter
     const textInput = document.getElementById('textInput');
@@ -327,16 +384,11 @@ async function handleConvert() {
         if (data.success) {
             // Show audio player
             const audioElement = document.getElementById('audioElement');
-            const downloadBtn = document.getElementById('downloadBtn');
             
-            // Reset audio element
             audioElement.pause();
             audioElement.currentTime = 0;
-            
-            // Set new source and load
             audioElement.src = data.audio_url;
-            downloadBtn.href = data.audio_url;
-            downloadBtn.download = `tts_${Date.now()}.wav`;
+            setCurrentAudio(data.audio_filename || `tts_${Date.now()}.wav`);
             
             // Load audio metadata
             audioElement.load();
@@ -367,12 +419,12 @@ async function handleConvert() {
             }
             
             // Show voice adjustment panel
-            showVoiceAdjustmentPanel(data.audio_filename || downloadBtn.download);
+            showVoiceAdjustmentPanel(data.audio_filename || currentAudioFilename);
             
             // Reload statistics
             await loadStatistics();
         } else {
-            errorMessage.textContent = data.message || 'Lỗi chuyển đổi';
+            errorMessage.textContent = _msg(data.message) || __('err.convert_failed');
             errorMessage.style.display = 'block';
         }
     } catch (error) {
@@ -520,7 +572,6 @@ function selectVoice(voiceId, voiceName) {
    VOICE ADJUSTMENT PANEL
    ======================================== */
 
-let currentAudioFilename = null;
 let voiceAdjustmentEnabled = false;
 
 // Initialize Voice Adjustment Panel
@@ -799,26 +850,17 @@ async function handleApplyVoiceEffect() {
  */
 function updateAudioPlayer(audioUrl, audioFilename) {
     const audioElement = document.getElementById('audioElement');
-    const downloadBtn = document.getElementById('downloadBtn');
     
     if (!audioElement) {
         console.error('[VOICE ADJUSTMENT] Audio element not found');
         return;
     }
     
-    // Pause current audio
     audioElement.pause();
     audioElement.currentTime = 0;
-    
-    // Set new source
     audioElement.src = audioUrl;
     audioElement.load();
-    
-    // Update download link
-    if (downloadBtn) {
-        downloadBtn.href = audioUrl;
-        downloadBtn.download = audioFilename || `adjusted_${Date.now()}.wav`;
-    }
+    setCurrentAudio(audioFilename || currentAudioFilename);
     
     // Auto play
     audioElement.play().catch(err => {
@@ -986,19 +1028,12 @@ async function handleEmotionalConvert() {
         if (data.success) {
             // Show audio player
             const audioElement = document.getElementById('audioElement');
-            const downloadBtn = document.getElementById('downloadBtn');
             
-            if (audioElement && downloadBtn) {
-                // Reset audio element
+            if (audioElement) {
                 audioElement.pause();
                 audioElement.currentTime = 0;
-                
-                // Set new source
                 audioElement.src = data.audio_url;
-                downloadBtn.href = data.audio_url;
-                downloadBtn.download = data.audio_filename || `emotional_${Date.now()}.wav`;
-                
-                // Load audio
+                setCurrentAudio(data.audio_filename || `emotional_${Date.now()}.wav`);
                 audioElement.load();
                 
                 if (audioPlayer) audioPlayer.style.display = 'block';
@@ -1016,7 +1051,7 @@ async function handleEmotionalConvert() {
             
         } else {
             if (errorMessage) {
-                errorMessage.textContent = data.message || 'Không thể chuyển đổi';
+                errorMessage.textContent = _msg(data.message) || __('err.convert_failed');
                 errorMessage.style.display = 'block';
             }
         }

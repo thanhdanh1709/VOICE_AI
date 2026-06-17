@@ -128,6 +128,17 @@ tailwind.config = {
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeInUp { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)} }
   .animate-in { animation: fadeInUp 0.35s ease-out both; }
+
+  .vv-lang-toggle {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border: 1px solid rgba(208,188,255,0.35);
+    border-radius: 9999px; background: rgba(160,120,255,0.1);
+    color: #958ea0; font-size: 0.72rem; font-weight: 700; cursor: pointer;
+    letter-spacing: 0.06em; height: 30px; text-transform: uppercase;
+  }
+  .lang-active { color: #d0bcff; font-weight: 800; }
+  .lang-inactive { color: #494454; font-weight: 600; }
+  .lang-sep { color: rgba(149,142,160,0.4); font-size: 0.65rem; }
 </style>
 </head>
 
@@ -140,34 +151,34 @@ tailwind.config = {
       <span class="material-symbols-outlined text-primary" style="font-size:22px">graphic_eq</span>
       <span class="text-xl font-black tracking-tighter text-white">VietVoice</span>
     </a>
-    <p class="text-xs text-on-surface-variant mt-1 font-medium">Admin Dashboard</p>
+    <p class="text-xs text-on-surface-variant mt-1 font-medium" data-i18n="admin.title">Admin Dashboard</p>
   </div>
 
   <div class="flex flex-col gap-1 p-4 flex-1">
     <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin') }}">
       <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
-      Bảng điều khiển
+      <span data-i18n="admin.nav.dashboard">Bảng điều khiển</span>
     </a>
     <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-users">
       <span class="material-symbols-outlined" style="font-size:18px">group</span>
-      Quản lý người dùng
+      <span data-i18n="admin.nav.users">Quản lý người dùng</span>
     </a>
     <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-voices">
       <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-      Quản lý giọng đọc
+      <span data-i18n="admin.nav.voices">Quản lý giọng đọc</span>
     </a>
     <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-payments">
       <span class="material-symbols-outlined" style="font-size:18px">payments</span>
-      Quản lý thanh toán
+      <span data-i18n="admin.nav.payments">Quản lý thanh toán</span>
     </a>
     <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin_landing') }}">
       <span class="material-symbols-outlined" style="font-size:18px">palette</span>
-      Landing Page
+      <span data-i18n="admin.nav.landing">Landing Page</span>
     </a>
     <div class="my-2"></div>
     <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
       <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-      Về trang chính
+      <span data-i18n="admin.nav.back">Về trang chính</span>
     </a>
   </div>
 
@@ -175,7 +186,7 @@ tailwind.config = {
     <button id="generateSamplesBtn"
       class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-semibold hover:shadow-[0_0_15px_rgba(160,120,255,0.4)] transition-all">
       <span class="material-symbols-outlined" style="font-size:16px">music_note</span>
-      Tạo mẫu giọng đọc
+      <span data-i18n="admin.gen_samples">Tạo mẫu giọng đọc</span>
     </button>
   </div>
 </nav>
@@ -195,6 +206,9 @@ tailwind.config = {
       </div>
       <div class="md:hidden text-base font-black text-white">VietVoice Admin</div>
       <div class="flex items-center gap-1.5 md:gap-3">
+        <button class="vv-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
+          <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+        </button>
         <div class="flex items-center gap-1.5">
           <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
             {{ (session.full_name or session.username or 'A')[0] | upper }}
@@ -202,7 +216,7 @@ tailwind.config = {
           <span class="hidden sm:block text-xs font-semibold text-on-surface">{{ session.full_name or session.username }}</span>
           <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
             <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-            <span class="hidden sm:inline">Logout</span>
+            <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
           </a>
         </div>
         <!-- Hamburger for admin mobile -->
@@ -246,19 +260,19 @@ tailwind.config = {
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 md:mb-7 gap-3 md:gap-4">
       <div>
-        <h2 class="text-2xl font-bold text-on-surface mb-1">Tổng quan hệ thống</h2>
-        <p class="text-sm text-on-surface-variant">Thống kê và hoạt động gần đây của VietVoice AI.</p>
+        <h2 class="text-2xl font-bold text-on-surface mb-1" data-i18n="admin.overview">Tổng quan hệ thống</h2>
+        <p class="text-sm text-on-surface-variant" data-i18n="admin.overview.sub">Thống kê và hoạt động gần đây của VietVoice AI.</p>
       </div>
       <div class="flex flex-wrap gap-2">
         <a href="{{ url_for('admin_landing') }}"
            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:16px">palette</span>
-          Chỉnh sửa Landing
+          <span data-i18n="admin.edit_landing">Chỉnh sửa Landing</span>
         </a>
         <button id="refreshUsersBtn"
           class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors">
           <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
-          Làm mới
+          <span data-i18n="admin.refresh">Làm mới</span>
         </button>
       </div>
     </div>
@@ -270,7 +284,7 @@ tailwind.config = {
         <div class="absolute top-3 right-3 opacity-10 text-primary">
           <span class="material-symbols-outlined" style="font-size:48px">group</span>
         </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng người dùng</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.users">Tổng người dùng</p>
         <h3 class="text-3xl font-extrabold text-on-surface" id="totalUsers">—</h3>
         <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
           <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
@@ -282,7 +296,7 @@ tailwind.config = {
         <div class="absolute top-3 right-3 opacity-10 text-tertiary">
           <span class="material-symbols-outlined" style="font-size:48px">swap_calls</span>
         </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng chuyển đổi</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.conversions">Tổng chuyển đổi</p>
         <h3 class="text-3xl font-extrabold text-on-surface" id="totalConversions">—</h3>
         <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
           <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
@@ -294,7 +308,7 @@ tailwind.config = {
         <div class="absolute top-3 right-3 opacity-10 text-primary">
           <span class="material-symbols-outlined" style="font-size:48px">mic</span>
         </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Số giọng đọc</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.voices">Số giọng đọc</p>
         <h3 class="text-3xl font-extrabold text-on-surface" id="totalVoices">—</h3>
         <p class="text-xs text-on-surface-variant mt-1">Active</p>
       </div>
@@ -303,7 +317,7 @@ tailwind.config = {
         <div class="absolute top-3 right-3 opacity-10 text-primary">
           <span class="material-symbols-outlined" style="font-size:48px">text_fields</span>
         </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Tổng ký tự (tháng)</p>
+        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.chars_month">Tổng ký tự (tháng)</p>
         <h3 class="text-3xl font-extrabold text-on-surface" id="totalCharacters">—</h3>
         <p class="text-xs text-on-surface-variant mt-1" id="avgTextLength">TB: —</p>
       </div>
@@ -537,6 +551,7 @@ function closeAdminMobileNav() {
 window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeAdminMobileNav(); });
 </script>
 
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
 </html>

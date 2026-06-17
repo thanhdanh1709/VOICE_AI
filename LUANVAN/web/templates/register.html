@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Đăng ký - VietVoice{% endblock %}
+{% block title %}<span data-i18n="auth.register.title">Đăng ký</span> - VietVoice{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -33,37 +33,37 @@
 <div class="auth-container">
     <div class="auth-box">
         <div class="auth-logo">✨</div>
-        <h2>Tạo tài khoản</h2>
-        <p class="auth-subtitle">Tham gia VietVoice và bắt đầu tạo giọng nói AI</p>
+        <h2 data-i18n="auth.register.title">Tạo tài khoản</h2>
+        <p class="auth-subtitle" data-i18n="auth.register.subtitle">Tham gia VietVoice và bắt đầu tạo giọng nói AI</p>
         <div style="text-align:center;margin-bottom:1.2rem">
-            <span class="free-badge-register">🎁 Miễn phí 100,000 ký tự ngay khi đăng ký</span>
+            <span class="free-badge-register" data-i18n="auth.register.free_badge">🎁 Miễn phí 100,000 ký tự ngay khi đăng ký</span>
         </div>
 
         <form id="registerForm">
             <div class="form-group">
-                <label for="full_name"><span>👤</span> Họ và tên</label>
-                <input type="text" id="full_name" name="full_name" placeholder="Nguyễn Văn A">
+                <label for="full_name"><span>👤</span> <span data-i18n="auth.fullname">Họ và tên</span></label>
+                <input type="text" id="full_name" name="full_name" data-i18n-placeholder="auth.ph.fullname" placeholder="Nguyễn Văn A">
             </div>
             <div class="form-group">
-                <label for="username"><span>🔑</span> Tên đăng nhập</label>
+                <label for="username"><span>🔑</span> <span data-i18n="auth.username">Tên đăng nhập</span></label>
                 <input type="text" id="username" name="username" placeholder="username123" required>
             </div>
             <div class="form-group">
-                <label for="email"><span>📧</span> Email</label>
-                <input type="email" id="email" name="email" placeholder="email@example.com" required>
+                <label for="email"><span>📧</span> <span data-i18n="auth.email">Email</span></label>
+                <input type="email" id="email" name="email" data-i18n-placeholder="auth.ph.email" placeholder="email@example.com" required>
             </div>
             <div class="form-group">
-                <label for="password"><span>🔒</span> Mật khẩu</label>
-                <input type="password" id="password" name="password" placeholder="Ít nhất 6 ký tự" required>
+                <label for="password"><span>🔒</span> <span data-i18n="auth.password">Mật khẩu</span></label>
+                <input type="password" id="password" name="password" data-i18n-placeholder="auth.ph.password_min" placeholder="Ít nhất 6 ký tự" required>
             </div>
             <div class="form-group">
-                <label for="confirm_password"><span>✅</span> Xác nhận mật khẩu</label>
-                <input type="password" id="confirm_password" name="confirm_password" placeholder="Nhập lại mật khẩu" required>
+                <label for="confirm_password"><span>✅</span> <span data-i18n="auth.register.confirm_pw">Xác nhận mật khẩu</span></label>
+                <input type="password" id="confirm_password" name="confirm_password" data-i18n-placeholder="auth.ph.confirm_pw" placeholder="Nhập lại mật khẩu" required>
             </div>
-            <button type="submit" class="btn-auth">🚀 Đăng ký miễn phí</button>
+            <button type="submit" class="btn-auth"><span data-i18n="auth.register.btn_free">🚀 Đăng ký miễn phí</span></button>
         </form>
 
-        <div class="auth-divider">hoặc</div>
+        <div class="auth-divider" data-i18n="auth.login.or">hoặc</div>
 
         <a href="{{ url_for('google_login') }}" class="btn-google">
             <svg width="20" height="20" viewBox="0 0 48 48">
@@ -73,11 +73,12 @@
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 <path fill="none" d="M0 0h48v48H0z"/>
             </svg>
-            Đăng ký nhanh với Google
+            <span data-i18n="auth.register.google">Đăng ký nhanh với Google</span>
         </a>
 
         <p class="auth-link">
-            Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập →</a>
+            <span data-i18n="auth.register.has_account">Đã có tài khoản?</span>
+            <a href="{{ url_for('login') }}" data-i18n="auth.register.login_link">Đăng nhập →</a>
         </p>
         <div id="message" class="message"></div>
     </div>

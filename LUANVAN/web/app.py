@@ -63,7 +63,8 @@ def resolve_audio_path(path: str) -> str:
 
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
-from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
+from audio_export import export_audio, ffmpeg_available, SUPPORTED_FORMATS, ALLOWED_BITRATES
 
 # Deep link scheme cho Flutter mobile OAuth callback (phải khớp AndroidManifest & config.dart)
 MOBILE_CALLBACK_SCHEME = 'petai'
@@ -113,7 +114,7 @@ app = Flask(__name__,
             static_folder='static',
             static_url_path='/static',
             template_folder='templates')
-app.secret_key = 'dev-secret-key-change-in-production'
+app.secret_key = SECRET_KEY
 
 # Hỗ trợ reverse proxy (ngrok, nginx...) - đọc X-Forwarded headers
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -1166,6 +1167,61 @@ def get_audio(filename):
     response.headers['Cache-Control'] = 'public, max-age=3600'
     
     return response
+
+@app.route('/api/audio/<filename>/export')
+def export_audio_file(filename):
+    """Xuất audio sang MP3/OGG với bitrate tùy chọn (WAV trả file gốc)."""
+    if not is_logged_in():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    fmt = request.args.get('format', 'mp3').lower()
+    try:
+        bitrate = int(request.args.get('bitrate', 192))
+    except (TypeError, ValueError):
+        bitrate = 192
+
+    safe_name = secure_filename(filename)
+    file_path = AUDIO_OUTPUT_DIR / safe_name
+    if not file_path.exists() or not file_path.is_file():
+        return jsonify({'success': False, 'message': 'File not found'}), 404
+
+    if fmt == 'wav':
+        return send_file(file_path, mimetype='audio/wav', as_attachment=True, download_name=safe_name)
+
+    if fmt not in SUPPORTED_FORMATS:
+        return jsonify({'success': False, 'message': f'Định dạng không hỗ trợ: {fmt}'}), 400
+
+    if not ffmpeg_available():
+        return jsonify({
+            'success': False,
+            'message': 'ffmpeg chưa được cài đặt trên server. Chỉ hỗ trợ tải WAV.'
+        }), 503
+
+    tmp_path = None
+    try:
+        out_path, download_name, mimetype = export_audio(file_path, fmt, bitrate)
+        tmp_path = out_path if out_path != file_path else None
+        return send_file(out_path, mimetype=mimetype, as_attachment=True, download_name=download_name)
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({'success': False, 'message': f'Lỗi chuyển đổi: {e}'}), 500
+    finally:
+        if tmp_path and tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
+
+@app.route('/api/audio/formats')
+def audio_formats_info():
+    """Thông tin định dạng xuất được hỗ trợ."""
+    return jsonify({
+        'success': True,
+        'formats': ['wav', 'mp3', 'ogg'],
+        'bitrates': sorted(ALLOWED_BITRATES),
+        'ffmpeg': ffmpeg_available(),
+    })
 
 @app.route('/api/emotional-tts/status', methods=['GET'])
 def check_emotional_tts_status():

@@ -618,11 +618,33 @@ tailwind.config = {
             <p id="wsSaveStatus" class="text-xs mt-1.5 hidden"></p>
           </div>
 
+          <div class="mb-3 p-3 rounded-xl bg-surface-container border border-outline-variant/30">
+            <div class="grid grid-cols-2 gap-3 mb-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide mb-1" data-i18n="export.format">Định dạng xuất</label>
+                <select id="exportFormat" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
+                  <option value="wav" data-i18n="export.format.wav">WAV (nguyên bản)</option>
+                  <option value="mp3" data-i18n="export.format.mp3">MP3</option>
+                  <option value="ogg" data-i18n="export.format.ogg">OGG Vorbis</option>
+                </select>
+              </div>
+              <div id="exportBitrateWrap">
+                <label class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide mb-1" data-i18n="export.bitrate">Bitrate</label>
+                <select id="exportBitrate" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
+                  <option value="128">128 kbps</option>
+                  <option value="192" selected>192 kbps</option>
+                  <option value="256">256 kbps</option>
+                  <option value="320">320 kbps</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div class="flex gap-2">
-            <a id="downloadBtn" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors no-underline" download>
+            <button type="button" id="downloadBtn" class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors">
               <span class="material-symbols-outlined" style="font-size:16px">download</span>
-              <span data-i18n="ws.result.download">Tải xuống</span>
-            </a>
+              <span data-i18n="export.download">Tải xuống</span>
+            </button>
             <a href="/audio_library" title="Xem thư viện"
                class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-tertiary/10 border border-tertiary/20 text-tertiary hover:bg-tertiary/20 transition-colors no-underline">
               <span class="material-symbols-outlined" style="font-size:16px">library_music</span>

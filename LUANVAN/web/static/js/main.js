@@ -85,7 +85,8 @@ const utils = {
     showMessage: (message, type = 'success') => {
         const messageEl = document.getElementById('message');
         if (messageEl) {
-            messageEl.textContent = message;
+            const text = (window.__msg ? window.__msg(message) : message);
+            messageEl.textContent = text;
             messageEl.className = `message ${type}`;
             messageEl.style.display = 'block';
             

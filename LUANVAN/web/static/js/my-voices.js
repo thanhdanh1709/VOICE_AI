@@ -328,7 +328,7 @@ async function deleteVoice(voiceId, voiceName) {
  */
 async function retryTraining(voiceId) {
     // TODO: Implement retry logic
-    showNotification('info', 'Tính năng retry đang được phát triển');
+    showNotification('info', window.__ ? __('err.retry_dev') : 'Tính năng retry đang được phát triển');
 }
 
 /**
