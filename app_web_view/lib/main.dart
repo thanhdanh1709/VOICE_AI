@@ -6,6 +6,9 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 
+// Channel để kéo Flutter task lên foreground sau khi CCT callback
+const _foregroundChannel = MethodChannel('app.petai/foreground');
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -91,10 +94,16 @@ class _WebViewScreenState extends State<WebViewScreen> {
           onProgress: (progress) => setState(() => _loadingProgress = progress / 100),
           onPageStarted: (_) => setState(() { _isLoading = true; _hasError = false; }),
           onPageFinished: (_) {
-            setState(() => _isLoading = false);
+            setState(() { _isLoading = false; _hasError = false; });
             if (_activeToken != null) _injectTokenToWeb(_activeToken!);
           },
-          onWebResourceError: (_) => setState(() { _isLoading = false; _hasError = true; }),
+          onWebResourceError: (error) {
+            // Chỉ hiện lỗi khi main frame thực sự mất kết nối,
+            // bỏ qua lỗi nhỏ từ subresource (JS/CSS/audio/API)
+            if (error.isForMainFrame == true) {
+              setState(() { _isLoading = false; _hasError = true; });
+            }
+          },
           onNavigationRequest: _handleNavigation,
         ),
       )
@@ -126,15 +135,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
   NavigationDecision _handleNavigation(NavigationRequest request) {
     final url = request.url;
 
-    // ✅ Cho phép các URL chứa callback hoặc token đi qua bình thường
-    if (url.contains('callback') || url.contains('token=')) {
-      return NavigationDecision.navigate;
+    // 🚫 Tuyệt đối chặn Google OAuth trong WebView → sẽ gây 403 disallowed_useragent
+    if (url.contains('accounts.google.com') ||
+        url.contains('oauth2.googleapis.com')) {
+      debugPrint('==> 🚫 Chặn Google OAuth URL (phải dùng CCT): $url');
+      return NavigationDecision.prevent;
     }
 
     if (url.startsWith(AppConfig.webBaseUrl)) {
       return NavigationDecision.navigate;
     }
-    debugPrint('==> Đã chặn điều hướng ngoài: ${request.url}');
+    debugPrint('==> Chặn URL ngoài domain: $url');
     return NavigationDecision.prevent;
   }
 
@@ -161,24 +172,96 @@ class _WebViewScreenState extends State<WebViewScreen> {
   Future<void> _triggerNativeGoogleLogin(String sessionId) async {
     if (_isAuthenticating) return;
     _isAuthenticating = true;
-    
+
     _cctOpenCount++;
-    debugPrint('==> 🚀 [CCT] Mở Tab login cho Session: $sessionId - Lần: $_cctOpenCount');
+    debugPrint('==> 🚀 [CCT] Mở Chrome Custom Tab - Session: $sessionId - Lần: $_cctOpenCount');
 
     try {
-      final loginUrl = '${AppConfig.apiBaseUrl}/auth/google/login/flutter?session_id=$sessionId';
-      
-      // Mở CCT. Ở luồng mới này, App chỉ cần mở Tab. 
-      // Người dùng login xong Server cập nhật DB, Web sẽ tự Polling thấy Token.
-      await FlutterWebAuth2.authenticate(
+      final loginUrl =
+          '${AppConfig.apiBaseUrl}/auth/google/login/flutter?session_id=$sessionId';
+
+      // Mở Chrome Custom Tab (không phải WebView) để tránh 403 disallowed_useragent.
+      // Backend sẽ redirect về petai://callback?mobile_token=... sau khi login xong.
+      final callbackUrl = await FlutterWebAuth2.authenticate(
         url: loginUrl,
-        callbackUrlScheme: 'none', // Không dùng callback scheme nữa
+        callbackUrlScheme: AppConfig.callbackScheme, // 'petai'
       );
+
+      debugPrint('==> ✅ CCT callback: $callbackUrl');
+
+      // Kéo Flutter task lên foreground ngay lập tức (Chrome CCT xuống background)
+      try {
+        await _foregroundChannel.invokeMethod('bringToFront');
+      } catch (e) {
+        debugPrint('==> bringToFront: $e');
+      }
+
+      final uri = Uri.parse(callbackUrl);
+      final mobileToken = uri.queryParameters['mobile_token'];
+      final error = uri.queryParameters['error'];
+
+      if (error != null && error.isNotEmpty) {
+        debugPrint('==> ❌ Google OAuth lỗi: $error');
+        return;
+      }
+
+      if (mobileToken != null && mobileToken.isNotEmpty) {
+        debugPrint('==> 🔑 Đang đăng nhập WebView với mobile_token...');
+        // Load session vào WebView
+        _controller.loadRequest(
+          Uri.parse(
+              '${AppConfig.webBaseUrl}/auth/mobile/callback?mobile_token=$mobileToken'),
+        );
+        // Hiện thông báo thành công trong app sau khi app lên foreground
+        await Future.delayed(const Duration(milliseconds: 700));
+        _showLoginSuccessSnackBar();
+      } else {
+        debugPrint('==> ⚠️ Callback không có mobile_token');
+      }
     } catch (e) {
-      debugPrint('==> CCT closed/cancelled');
+      debugPrint('==> CCT đã đóng hoặc bị huỷ: $e');
     } finally {
       _isAuthenticating = false;
     }
+  }
+
+  void _showLoginSuccessSnackBar() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
+            SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Đăng nhập thành công!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  'Chào mừng bạn quay trở lại 👋',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF166534), // green-800
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        duration: const Duration(seconds: 4),
+        elevation: 6,
+      ),
+    );
   }
 
   Future<void> _processLogout() async {
@@ -190,12 +273,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
     setState(() => _activeToken = null);
     _loadAppUrl(null);
-  }
-
-  Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', token);
-    setState(() => _activeToken = token);
   }
 
   Future<void> _injectTokenToWeb(String token) async {
@@ -266,7 +343,7 @@ class _ErrorView extends StatelessWidget {
             Icon(
               Icons.cloud_off_rounded,
               size: 80,
-              color: colorScheme.primary.withOpacity(0.6),
+              color: colorScheme.primary.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 24),
             Text(
