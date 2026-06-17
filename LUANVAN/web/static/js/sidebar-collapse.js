@@ -15,8 +15,16 @@
     const content = document.getElementById('sidebarMainContent');
     const btn     = document.getElementById('sidebarCollapseBtn');
     if (!sidebar) return;
-    // On mobile (< 768px) always ignore collapse
-    if (window.innerWidth < 768) return;
+
+    // On mobile (< 768px): reset margins so layout fills full width
+    if (window.innerWidth < 768) {
+      if (content) {
+        content.style.marginLeft = '0';
+        content.style.maxWidth   = '100%';
+        content.style.width      = '100%';
+      }
+      return;
+    }
 
     if (!animate) {
       sidebar.style.transition = 'none';
@@ -73,5 +81,14 @@
 
     const btn = document.getElementById('sidebarCollapseBtn');
     if (btn) btn.addEventListener('click', toggle);
+
+    // Re-apply on resize (e.g. rotate phone landscape→portrait)
+    let _resizeTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(function () {
+        applyState(isCollapsed(), false);
+      }, 100);
+    });
   });
 })();
