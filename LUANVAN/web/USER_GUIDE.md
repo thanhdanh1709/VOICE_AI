@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng VietVoice
 
-> **VietVoice** — Nền tảng chuyển văn bản thành giọng nói AI tiếng Việt  
+> Dành cho người dùng cuối  
 > Phiên bản: Beta | Cập nhật: Tháng 6/2026
 
 ---
@@ -9,36 +9,38 @@
 
 1. [Tổng quan hệ thống](#1-tổng-quan-hệ-thống)
 2. [Đăng ký & Đăng nhập](#2-đăng-ký--đăng-nhập)
-3. [Workspace — Chuyển văn bản thành giọng nói](#3-workspace--chuyển-văn-bản-thành-giọng-nói)
-4. [Emotional TTS — Giọng đọc cảm xúc](#4-emotional-tts--giọng-đọc-cảm-xúc)
-5. [Điều chỉnh giọng (RVC)](#5-điều-chỉnh-giọng-rvc)
-6. [Clone giọng cá nhân](#6-clone-giọng-cá-nhân)
-7. [Thư viện âm thanh (Library)](#7-thư-viện-âm-thanh-library)
-8. [Lịch sử chuyển đổi (History)](#8-lịch-sử-chuyển-đổi-history)
-9. [Hồ sơ & Quota ký tự](#9-hồ-sơ--quota-ký-tự)
-10. [Bảng giá & Nâng cấp](#10-bảng-giá--nâng-cấp)
-11. [Thanh toán qua SePay](#11-thanh-toán-qua-sepay)
-12. [Ứng dụng di động](#12-ứng-dụng-di-động)
-13. [Mẹo sử dụng](#13-mẹo-sử-dụng)
-14. [Xử lý lỗi thường gặp](#14-xử-lý-lỗi-thường-gặp)
+3. [Giao diện Workspace](#3-giao-diện-workspace)
+4. [Chuyển văn bản thành giọng nói (TTS cơ bản)](#4-chuyển-văn-bản-thành-giọng-nói-tts-cơ-bản)
+5. [Emotional TTS — Giọng đọc cảm xúc](#5-emotional-tts--giọng-đọc-cảm-xúc)
+6. [Điều chỉnh giọng nói (RVC Pitch)](#6-điều-chỉnh-giọng-nói-rvc-pitch)
+7. [Xuất file âm thanh (WAV / MP3 / OGG)](#7-xuất-file-âm-thanh-wav--mp3--ogg)
+8. [Clone giọng cá nhân](#8-clone-giọng-cá-nhân)
+9. [Thư viện âm thanh](#9-thư-viện-âm-thanh)
+10. [Lịch sử chuyển đổi](#10-lịch-sử-chuyển-đổi)
+11. [Bảng giá & Nâng cấp gói](#11-bảng-giá--nâng-cấp-gói)
+12. [Thanh toán qua SePay](#12-thanh-toán-qua-sepay)
+13. [Hồ sơ cá nhân](#13-hồ-sơ-cá-nhân)
+14. [Ứng dụng di động](#14-ứng-dụng-di-động)
+15. [Mẹo sử dụng nâng cao](#15-mẹo-sử-dụng-nâng-cao)
+16. [Xử lý lỗi thường gặp](#16-xử-lý-lỗi-thường-gặp)
 
 ---
 
 ## 1. Tổng quan hệ thống
 
-VietVoice chuyển văn bản tiếng Việt thành giọng nói tự nhiên bằng AI. Các trang chính sau khi đăng nhập:
+VietVoice là nền tảng **Text-to-Speech (TTS)** tiếng Việt sử dụng công nghệ AI, cung cấp:
 
-| Trang | Đường dẫn | Chức năng |
-|---|---|---|
-| **Workspace** | `/` | TTS cơ bản + Emotional TTS |
-| **Giọng của tôi** | `/my_voices` | Quản lý giọng clone |
-| **Library** | `/audio_library` | Thư viện file âm thanh |
-| **History** | `/history` | Lịch sử chuyển đổi |
-| **Pricing** | `/pricing` | Bảng giá & nâng cấp |
-| **Hồ sơ** | `/profile` | Thông tin tài khoản |
-| **Liên hệ** | `/contact` | Form hỗ trợ |
+| Tính năng | Mô tả |
+|---|---|
+| **TTS Cơ bản** | 10+ giọng hệ thống Nam/Nữ, Bắc/Nam/Trung với chất lượng cao |
+| **Emotional TTS** | Giọng đọc cảm xúc (Neutral, Vui, Phấn khích, Bình tĩnh, Buồn) nhờ mô hình viXTTS |
+| **Voice Clone** | Tạo giọng AI từ 10–60 giây mẫu giọng của chính bạn |
+| **Điều chỉnh giọng** | Thay đổi pitch, index rate, protect sau khi tạo âm thanh |
+| **Xuất đa định dạng** | Tải về WAV (gốc), MP3 (128/192/256/320 kbps), OGG Vorbis |
+| **Thư viện âm thanh** | Lưu trữ, tìm kiếm, đặt tên, chia sẻ tất cả file đã tạo |
+| **Đa ngôn ngữ UI** | Giao diện hỗ trợ Tiếng Việt / English (nút VI\|EN góc trên) |
 
-Giao diện hỗ trợ **song ngữ Việt / Anh** — nhấn nút **VI | EN** trên thanh điều hướng để chuyển đổi.
+**Giao diện:** Trình duyệt web tại `http://127.0.0.1:5000` hoặc qua ứng dụng Android (Flutter WebView).
 
 ---
 
@@ -46,362 +48,363 @@ Giao diện hỗ trợ **song ngữ Việt / Anh** — nhấn nút **VI | EN** t
 
 ### 2.1 Đăng ký tài khoản mới
 
-1. Truy cập trang **Landing** (`/landing`) hoặc nhấn **Bắt đầu miễn phí**
+1. Vào trang chủ → nhấn **"Bắt đầu miễn phí"** (hoặc `/register`)
 2. Điền thông tin:
-   - **Họ và tên** *(bắt buộc)*
-   - **Tên đăng nhập** *(bắt buộc, không dấu, không khoảng trắng)*
-   - **Email** *(bắt buộc)*
-   - **Mật khẩu** *(tối thiểu 6 ký tự)*
-3. Nhấn **Đăng ký**
-
-> Mỗi email chỉ đăng ký được một tài khoản.
+   - **Họ tên** (tên hiển thị)
+   - **Tên đăng nhập** (không dấu, không khoảng trắng)
+   - **Email** (hợp lệ, dùng để liên hệ)
+   - **Mật khẩu** (≥ 6 ký tự)
+3. Nhấn **"Đăng ký"** — tài khoản được tạo ngay, chuyển về trang đăng nhập
 
 ### 2.2 Đăng nhập
 
-- **Tài khoản thường:** Tên đăng nhập + mật khẩu
-- **Google:** Nhấn **Đăng nhập với Google** → chọn tài khoản → tự động tạo hoặc đăng nhập
+- **Bằng tài khoản:** Nhập username/email + mật khẩu → nhấn **"Đăng nhập"**
+- **Bằng Google:** Nhấn **"Đăng nhập với Google"** → chọn tài khoản Google (hệ thống tự tạo tài khoản nếu lần đầu)
 
-### 2.3 Quên mật khẩu
+> **Lưu ý:** Mỗi email chỉ đăng ký được một tài khoản. Nếu quên mật khẩu, liên hệ admin qua trang `/contact`.
 
-Hệ thống **chưa có** chức năng tự đặt lại mật khẩu. Liên hệ hỗ trợ qua:
+### 2.3 Đăng xuất
 
-- Trang **Liên hệ** (`/contact`)
-- Email: **danhvt388@gmail.com**
-- Hotline: **0866 005 541**
+Nhấn nút **"Logout"** ở góc trên bên phải navbar.
 
 ---
 
-## 3. Workspace — Chuyển văn bản thành giọng nói
+## 3. Giao diện Workspace
 
-### 3.1 Giao diện
+Workspace (`/`) là trang chính sau khi đăng nhập, gồm các khu vực:
 
-Workspace gồm hai khu vực:
-
-- **Trái:** Nhập văn bản, chọn giọng, chuyển đổi
-- **Phải:** Kết quả âm thanh, đặt tên file, tải về, điều chỉnh RVC
-
-Có hai tab: **TTS Cơ bản** và **Emotional TTS**.
-
-### 3.2 Các bước TTS cơ bản
-
-**Bước 1 — Nhập văn bản**
-- Gõ hoặc dán văn bản vào ô nhập
-- Số ký tự còn lại hiển thị ở thanh điều hướng (badge ⚡)
-- Tải file **TXT / PDF / DOCX** bằng nút **Tải file**
-
-**Bước 2 — Chọn giọng đọc**
-- Dropdown **Chọn giọng đọc** gồm:
-  - **Giọng hệ thống:** Bình, Tuyên, Vĩnh, Đoan, Ly, Ngọc…
-  - **Giọng cá nhân:** Giọng bạn đã tạo tại *Giọng của tôi*
-- Nhấn **Nghe thử** để nghe preview trước khi chuyển đổi
-
-**Bước 3 — Chuyển đổi**
-- Nhấn **Chuyển đổi ngay**
-- Thời gian xử lý: vài giây đến vài chục giây tuỳ độ dài văn bản
-- Kết quả hiện bên phải với trình phát âm thanh
-
-**Bước 4 — Đặt tên & tải về**
-- Sau khi chuyển đổi thành công, nhập tên tùy chọn (VD: *Bài thuyết trình Q3*) → **Lưu tên**
-- Nhấn **Tải xuống** để lưu file WAV
-- Nhấn biểu tượng **Library** để mở thư viện âm thanh
-
-> **Lưu ý:** Workspace **không có** thanh trượt tốc độ hay âm lượng khi chuyển đổi. Điều chỉnh cao độ giọng thực hiện **sau khi** có file âm thanh qua panel RVC (mục 5).
-
-### 3.3 Định dạng file đầu vào
-
-| Định dạng | Mô tả |
-|---|---|
-| `.txt` | Văn bản thuần |
-| `.pdf` | Chỉ đọc được text (không OCR ảnh) |
-| `.docx` | Microsoft Word |
-
----
-
-## 4. Emotional TTS — Giọng đọc cảm xúc
-
-Emotional TTS dùng mô hình **viXTTS** — giọng thay đổi cảm xúc theo nội dung văn bản.
-
-### 4.1 Cách sử dụng
-
-1. Trong Workspace, chọn tab **Emotional TTS**
-2. Chọn **giọng đọc Emotional** (chỉ hỗ trợ giọng **viXTTS Clone** — tạo tại *Thêm giọng mới*)
-3. Nhập văn bản kèm **emotion tags** trong ngoặc
-4. Nhấn **Chuyển đổi với cảm xúc**
-
-### 4.2 Emotion tags (không phải nút bấm)
-
-AI đọc theo tag bạn chèn trực tiếp vào văn bản:
-
-| Nhóm cảm xúc | Ví dụ tags |
-|---|---|
-| Vui / Cheerful | `(tươi sáng)`, `(nụ cười)`, `(vui vẻ)` |
-| Phấn khích | `(hào hứng)`, `(wow)` |
-| Bình tĩnh | `(chậm)`, `(ấm áp)`, `(nhẹ nhàng)` |
-| Buồn | `(buồn)`, `(tiếc thương)` |
-
-**Ví dụ:**
 ```
-(tươi sáng) Xin chào các bạn! Hôm nay là một ngày tuyệt vời.
-(buồn) Nhưng đôi khi chúng ta cũng cần một chút im lặng.
+┌─────────────────────────────────────────────────────┐
+│  NAVBAR: Logo | Menu | Ký tự còn lại | VI|EN | User │
+├──────────────┬──────────────────────────────────────┤
+│              │  Hero: tiêu đề                        │
+│  SIDEBAR     ├──────────────────────────────────────┤
+│  - Tạo Audio │  Bento Grid (2 cột):                 │
+│  - Thư viện  │  ┌──────────────┐ ┌────────────────┐ │
+│  - Giọng     │  │  INPUT CARD  │ │  STATS CARD    │ │
+│  - Lịch sử   │  │  (Text/File/ │ │  RESULT CARD   │ │
+│  - Bảng giá  │  │  Emotional)  │ │  RVC PANEL     │ │
+│  - Hồ sơ     │  └──────────────┘ │  TIPS / GALLERY│ │
+│  - Liên hệ   │  [CONVERT BTN]    └────────────────┘ │
+└──────────────┴──────────────────────────────────────┘
 ```
 
-### 4.3 Yêu cầu
-
-- Cần đăng nhập
-- Server phải có mô hình viXTTS (`vixtts_model/`) — trạng thái hiển thị khi khởi động server
-- Nên dùng đoạn văn ngắn (< 500 ký tự) để kết quả tốt nhất
+**Chuyển đổi ngôn ngữ UI:** Nhấn nút **VI | EN** để chuyển giao diện sang tiếng Anh hoặc tiếng Việt.
 
 ---
 
-## 5. Điều chỉnh giọng (RVC)
+## 4. Chuyển văn bản thành giọng nói (TTS cơ bản)
 
-Sau khi TTS hoàn tất, panel **Điều chỉnh giọng nói** xuất hiện bên phải Workspace.
+### 4.1 Nhập liệu từ văn bản
 
-### 5.1 Các thông số
+1. Trong tab **"Nhập văn bản"**, gõ hoặc dán văn bản vào ô nhập liệu
+2. Số ký tự hiển thị ở góc dưới phải ô nhập
+3. Chọn **giọng đọc** từ dropdown (nhóm *Giọng hệ thống* hoặc *Giọng của tôi*)
+4. Nhấn **"⊙ Chuyển đổi ngay"**
 
-| Thông số | Mô tả |
+### 4.2 Nhập liệu từ file
+
+1. Nhấn tab **"Tải file lên"**
+2. Kéo thả hoặc click để chọn file:
+
+| Định dạng | Ghi chú |
 |---|---|
-| **Cao độ (Pitch)** | -12 đến +12 (âm thấp hơn ↔ cao hơn) |
-| **Độ pha trộn (Index Rate)** | Mức độ áp dụng model RVC |
-| **Bảo vệ phụ âm (Protect)** | Giữ phụ âm tự nhiên |
+| `.txt` | Đọc trực tiếp trong trình duyệt |
+| `.pdf` | Server trích xuất text (không hỗ trợ PDF scan/ảnh) |
+| `.docx` | Microsoft Word, giữ nội dung thuần túy |
 
-### 5.2 Cài đặt nhanh
+3. Giới hạn file: **10 MB**
+4. Sau khi tải lên, văn bản tự động điền vào ô nhập liệu
+5. Chọn giọng → nhấn **"Chuyển đổi ngay"**
 
-Các preset có sẵn: **Nam→Nữ**, **Nữ→Nam**, **Cao hơn**, **Thấp hơn**, **Reset**
+### 4.3 Chọn giọng từ thư viện
 
-Nhấn **Áp dụng hiệu ứng** → chờ xử lý → nghe lại và tải file mới.
+Nhấn nút **"Nghe thử"** (bên cạnh dropdown) để mở cửa sổ Voice Gallery — nghe thử từng giọng rồi nhấn **"Chọn giọng này"**.
+
+### 4.4 Đặt tên cho audio vừa tạo
+
+Sau khi chuyển đổi thành công, hộp **"Đặt tên cho audio"** xuất hiện trong phần kết quả:
+
+1. Gõ tên mô tả (VD: *Bài thuyết trình Q3*)
+2. Nhấn **"Lưu tên"** hoặc Enter
+3. Tên sẽ hiển thị trong Thư viện âm thanh
 
 ---
 
-## 6. Clone giọng cá nhân
+## 5. Emotional TTS — Giọng đọc cảm xúc
 
-Trang **Giọng của tôi** (`/my_voices`) cho phép tạo giọng đọc từ mẫu âm thanh của bạn.
+Sử dụng mô hình **viXTTS** — giọng đọc thay đổi cảm xúc theo nội dung.
 
-### 6.1 Yêu cầu file mẫu
+### 5.1 Các cảm xúc hỗ trợ
+
+| Cảm xúc | Emoji tag | Ghi chú |
+|---|---|---|
+| Neutral | *(không tag)* | Giọng chuẩn, bình thường |
+| Cheerful (Vui) | `(tươi sáng)`, `(nụ cười)` | Giọng tươi vui, hứng khởi |
+| Excited (Phấn khích) | `(hào hứng)`, `(wow)` | Năng động, sôi nổi |
+| Calm (Bình tĩnh) | `(chậm)`, `(ấm áp)`, `(nhẹ nhàng)` | Chậm rãi, nhẹ nhàng |
+| Sad (Buồn) | `(buồn)`, `(tiếc thương)` | Trầm lắng, buồn bã |
+
+### 5.2 Cách sử dụng Emotional TTS
+
+1. Trong Workspace, nhấn tab **"Emotional TTS"**
+2. Nhập văn bản kèm **emotion tags** (đặt tag trên dòng riêng hoặc đầu đoạn):
+
+```
+(tươi sáng)
+Xin chào mọi người! Hôm nay là một ngày tuyệt vời!
+
+(buồn)
+Thật tiếc vì chúng ta phải chia tay ở đây.
+
+(hào hứng)
+Wow! Chúng tôi vừa đạt mốc 1 triệu người dùng!
+```
+
+3. (Tuỳ chọn) Chọn **giọng clone cá nhân** trong dropdown *"Giọng đọc (Emotional)"* — chỉ dùng được giọng loại viXTTS Clone
+4. Nhấn **"🎭 Chuyển đổi với cảm xúc"**
+5. Chờ xử lý (lâu hơn TTS cơ bản — ~10–60 giây tuỳ độ dài)
+
+> **Mẹo:** Emotional TTS hoạt động tốt nhất với đoạn văn ngắn dưới 500 ký tự/lần. Với văn bản dài, hãy chia thành nhiều đoạn.
+
+> **Lưu ý:** Lần đầu dùng sau khi khởi động server, model viXTTS cần 30–60 giây để load vào RAM.
+
+---
+
+## 6. Điều chỉnh giọng nói (RVC Pitch)
+
+Sau khi chuyển đổi thành công (TTS cơ bản), panel **"Điều chỉnh giọng nói"** xuất hiện:
+
+| Thông số | Phạm vi | Ý nghĩa |
+|---|---|---|
+| **Pitch** | -12 đến +12 | Âm cao hơn (+) hoặc thấp hơn (-) |
+| **Index Rate** | 0.0 – 1.0 | Mức độ pha trộn giọng gốc / giọng clone |
+| **Protect** | 0.0 – 0.5 | Bảo vệ âm phụ âm tránh nhiễu |
+
+**Cài đặt nhanh:**
+- **Nam → Nữ**: Pitch +8, Index 0.75
+- **Nữ → Nam**: Pitch -8, Index 0.75
+- **Cao hơn**: Pitch +4
+- **Thấp hơn**: Pitch -4
+- **↺ Reset**: Về giá trị mặc định
+
+Nhấn **"Áp dụng hiệu ứng"** để xử lý.
+
+> **Lưu ý:** Tính năng này yêu cầu `faiss` (RVC). Nếu `faiss` chưa cài, hệ thống dùng `librosa` fallback — chức năng pitch vẫn hoạt động nhưng giới hạn hơn.
+
+---
+
+## 7. Xuất file âm thanh (WAV / MP3 / OGG)
+
+Sau khi kết quả âm thanh xuất hiện trong phần *Kết quả*:
+
+1. Chọn **Định dạng xuất**: `WAV` (nguyên bản), `MP3`, `OGG Vorbis`
+2. Nếu chọn MP3 hoặc OGG, chọn thêm **Bitrate**: 128 / 192 / 256 / 320 kbps
+3. Nhấn **"⬇ Tải xuống"**
+
+| Định dạng | Ưu điểm | Khi nào dùng |
+|---|---|---|
+| WAV | Chất lượng lossless, không mất dữ liệu | Chỉnh sửa chuyên nghiệp, lưu trữ gốc |
+| MP3 | Phổ biến, file nhỏ | Podcast, chia sẻ, phát online |
+| OGG Vorbis | Nguồn mở, chất lượng tốt | Game, ứng dụng, web |
+
+> **Yêu cầu:** Xuất MP3/OGG cần **ffmpeg** được cài sẵn trên server. WAV luôn hoạt động mà không cần ffmpeg.
+
+---
+
+## 8. Clone giọng cá nhân
+
+### 8.1 Yêu cầu file mẫu
 
 | Tiêu chí | Yêu cầu |
 |---|---|
-| **Định dạng** | WAV, MP3, M4A |
-| **Thời lượng** | 6 giây – 2 phút (tối ưu 10–60 giây) |
-| **Chất lượng** | Phòng yên tĩnh, ít tạp âm |
-| **Dung lượng** | Tối đa 10 MB |
+| **Định dạng** | WAV, MP3, M4A, OGG, FLAC |
+| **Thời lượng** | Tối thiểu 10 giây — tốt nhất 30–60 giây |
+| **Chất lượng** | Phòng yên tĩnh, không tạp âm, rõ ràng |
+| **Dung lượng** | Tối đa 50 MB |
 
-### 6.2 Ba loại giọng
+### 8.2 Tạo giọng clone
 
-| Loại | Mô tả |
-|---|---|
-| **RVC** | Huấn luyện model RVC từ mẫu giọng |
-| **Zero-shot** | Clone từ mẫu + transcript (bản ghi nội dung đọc) |
-| **viXTTS Clone** | Dùng cho Emotional TTS — cần file rõ, 10–60 giây |
+1. Vào menu **Voices** (Giọng của tôi) → nhấn **"+ Thêm giọng mới"**
+2. Đặt **tên giọng** (VD: *Giọng Minh*, *Narrator 1*)
+3. Tải lên file âm thanh mẫu (kéo thả hoặc chọn file)
+4. Chọn **loại giọng**:
+   - **VieNeu Zero-shot**: Nhập thêm đoạn văn bản phiên âm mẫu
+   - **viXTTS Clone**: Chỉ cần file audio — dùng được ở Emotional TTS
+5. Nhấn **"Tạo giọng"** — chờ 1–5 phút hệ thống xử lý
+6. Trạng thái: *Chờ xử lý → Đang xử lý → Hoàn thành*
 
-### 6.3 Các bước
+### 8.3 Sử dụng giọng clone
 
-1. Vào **Giọng của tôi** → **Thêm giọng mới**
-2. Đặt tên giọng
-3. Tải lên file âm thanh mẫu
-4. Chọn loại giọng (RVC / Zero-shot / viXTTS Clone)
-5. Chờ xử lý — giọng xuất hiện trong dropdown Workspace khi hoàn tất
+- **TTS cơ bản:** Giọng clone xuất hiện trong nhóm *"Giọng của tôi"* trong dropdown Workspace
+- **Emotional TTS:** Chỉ giọng loại **viXTTS Clone** mới dùng được tại dropdown *"Giọng đọc (Emotional)"*
 
-### 6.4 Mẹo chất lượng cao
+### 8.4 Kiểm tra & Xóa giọng
 
-- Đọc đa dạng ngữ điệu: câu hỏi, khẳng định, cảm thán
-- Tránh nhạc nền, tiếng ồn, gió
-- Giữ khoảng cách micro ổn định (15–20 cm)
+- Tại trang Voices, nhấn **"Kiểm tra"** để nghe thử giọng clone
+- Nhấn **"Xóa"** để xóa giọng không còn dùng
+
+> **Mẹo chất lượng:** Đọc đa dạng ngữ điệu, tránh nền nhạc và tiếng ồn, giữ khoảng cách mic ổn định 15–20 cm.
 
 ---
 
-## 7. Thư viện âm thanh (Library)
+## 9. Thư viện âm thanh
 
-Trang **Library** (`/audio_library`) lưu tất cả file âm thanh đã tạo.
+Trang **Library** (`/audio-library`) lưu trữ tất cả file âm thanh đã tạo.
 
-### 7.1 Tính năng chính
+### 9.1 Tính năng
 
 | Tính năng | Mô tả |
 |---|---|
-| **Xem dạng lưới / danh sách** | Chuyển đổi bằng nút Lưới / Danh sách |
-| **Nghe lại** | Phát trực tiếp trong thư viện |
-| **Tải về** | Tải file WAV |
-| **Đặt tên** | Đặt `display_name` cho từng file (modal chỉnh sửa) |
-| **Chia sẻ công khai** | Tạo link `/audio/share/<token>` — ai có link đều nghe được |
-| **Tìm kiếm** | Theo nội dung văn bản hoặc tên đã đặt |
+| **Phát lại** | Nghe trực tiếp trong trình duyệt |
+| **Tải về** | Tải lại file WAV bất kỳ lúc nào |
+| **Đặt tên** | Đổi tên hiển thị cho dễ tìm (tại Workspace sau convert hoặc tại Library) |
+| **Chia sẻ** | Tạo link chia sẻ công khai (`/audio/share/<token>`) |
+| **Tìm kiếm** | Tìm theo tên hoặc nội dung văn bản |
 | **Lọc** | Theo giọng đọc, khoảng ngày |
-| **Sắp xếp** | Mới nhất, Cũ nhất, Thời lượng, Kích thước |
-| **Phân trang** | 12 file mỗi trang |
-| **Xóa** | Xóa file khỏi thư viện |
+| **Sắp xếp** | Mới nhất, cũ nhất, thời lượng, kích thước |
+| **Xóa** | Xóa vĩnh viễn file không cần thiết |
 
-### 7.2 Chia sẻ công khai
+### 9.2 Chia sẻ audio
 
-1. Nhấn **Chia sẻ** trên card audio
-2. Bật chia sẻ → hệ thống tạo link dạng:
-   ```
-   https://your-domain.com/audio/share/abc123...
-   ```
-3. Sao chép link và gửi cho người khác
-4. Nhấn lại để **tắt chia sẻ** — link sẽ không còn hoạt động
-
-### 7.3 Thông tin hiển thị
-
-Mỗi audio hiển thị: tên (nếu có), nội dung văn bản, giọng đọc, thời lượng, kích thước, ngày tạo, badge **Đã chia sẻ** (nếu public).
+1. Nhấn icon **chia sẻ** bên cạnh file
+2. Hệ thống tạo **link công khai** — ai có link đều nghe được
+3. Để thu hồi: xóa file hoặc liên hệ admin
 
 ---
 
-## 8. Lịch sử chuyển đổi (History)
+## 10. Lịch sử chuyển đổi
 
-Trang **History** (`/history`) hiển thị **bảng danh sách** các lần chuyển đổi.
+Trang **History** (`/history`) hiển thị toàn bộ các lần chuyển đổi:
 
-### 8.1 Nội dung hiển thị
+- Tổng số lần đã chuyển đổi
+- Trạng thái từng bản ghi: *Hoàn thành* / *Đang xử lý* / *Thất bại*
+- Thông tin: nội dung văn bản, giọng đọc, số ký tự, thời gian tạo
+- Tìm kiếm theo nội dung văn bản
+- Phân trang — mỗi trang 20 bản ghi
 
-| Cột | Mô tả |
-|---|---|
-| ID | Mã bản ghi |
-| Văn bản | Nội dung rút gọn |
-| Giọng đọc | Tên giọng đã dùng |
-| Trạng thái | Thành công / Chờ xử lý / Đang xử lý / Thất bại |
-| Thời gian | Ngày giờ tạo |
-| Thao tác | Tải xuống, Xóa |
-
-### 8.2 Tìm kiếm & phân trang
-
-- Tìm theo nội dung văn bản hoặc ID
-- **10 bản ghi mỗi trang**
-- Badge tổng số bản ghi ở góc phải thanh công cụ
-
-> History **không có** biểu đồ thống kê hay bảng xếp hạng giọng đọc — chỉ là danh sách có tìm kiếm và phân trang.
+> **Lưu ý:** Lịch sử chỉ ghi thông tin metadata — không lưu lại file âm thanh (dùng Thư viện âm thanh để truy cập file).
 
 ---
 
-## 9. Hồ sơ & Quota ký tự
+## 11. Bảng giá & Nâng cấp gói
 
-### 9.1 Trang Hồ sơ (`/profile`)
+Xem trang **Pricing** (`/pricing`) để biết thông tin đầy đủ.
 
-Xem và cập nhật: họ tên, email, thông tin tài khoản.
-
-### 9.2 Quota ký tự
-
-- Badge **⚡ số ký tự còn lại** hiển thị trên thanh điều hướng (mọi trang)
-- Khi gần hết (< 10.000 ký tự), hệ thống hiển thị cảnh báo
-- Quota theo gói đăng ký, reset theo chu kỳ gói (thường 30 ngày)
-
----
-
-## 10. Bảng giá & Nâng cấp
-
-Trang **Pricing** (`/pricing`) hiển thị các gói từ database:
-
-| Gói | Ký tự/tháng | Giá (VND) |
+| Gói | Ký tự / tháng | Ghi chú |
 |---|---|---|
-| **Free Plan** | 100.000 | Miễn phí |
-| **Basic Plan** | 1.500.000 | 500.000 |
-| **Standard Plan** | 4.000.000 | 1.000.000 |
-| **Premium Plan** | 10.000.000 | 2.000.000 |
-| **Enterprise Plan** | 27.000.000 | 5.000.000 |
+| **Free Plan** | 100.000 | Miễn phí, TTS cơ bản |
+| **Basic Plan** | 1.500.000 | 1000 VND/tháng |
+| **Standard Plan** | 4.000.000 | 5000 VND/tháng |
+| **Premium Plan** | 10.000.000 | 10.000 VND/tháng |
+| **Enterprise Plan** | 27.000.000 | 15.000 VND/tháng |
 
-Nhấn **Nâng cấp** trên gói mong muốn → chuyển sang bước thanh toán.
+**Số ký tự còn lại** hiển thị ở **badge góc trên phải navbar** sau khi đăng nhập.
+
+Gói được kích hoạt **ngay sau khi SePay xác nhận giao dịch** (thường 1–5 phút).
 
 ---
 
-## 11. Thanh toán qua SePay
+## 12. Thanh toán qua SePay
 
-### 11.1 Quy trình
-
-1. Chọn gói tại **Pricing** → **Nâng cấp**
+1. Vào **Pricing** → chọn gói → nhấn **"Nâng cấp"**
 2. Hệ thống hiển thị **mã QR chuyển khoản** (VietQR)
-3. Mở app ngân hàng → quét QR hoặc chuyển khoản thủ công
-4. **Nhập đúng nội dung chuyển khoản** hiển thị trên màn hình
-5. Hệ thống tự kiểm tra mỗi ~5 giây
-6. Tài khoản được nâng cấp khi giao dịch xác nhận (thường 1–5 phút)
+3. Quét QR bằng app ngân hàng (MB, Vietcombank, Techcombank...)
+4. Nhập **đúng nội dung chuyển khoản** hiển thị trên màn hình *(quan trọng — đây là mã định danh giao dịch)*
+5. Hệ thống xác nhận tự động trong **1–5 phút** — tài khoản nâng cấp ngay
 
-### 11.2 Lưu ý
-
-> **Nội dung chuyển khoản phải khớp chính xác** — đây là mã định danh giao dịch của bạn.
-
-- Số tiền phải đúng với giá niêm yết
-- Nếu chờ quá 10 phút: liên hệ qua `/contact` kèm ảnh chụp giao dịch
+> **Cảnh báo:** Sai nội dung chuyển khoản = hệ thống không nhận ra giao dịch. Nếu chờ quá 10 phút, liên hệ support kèm ảnh chụp biên lai.
 
 ---
 
-## 12. Ứng dụng di động
+## 13. Hồ sơ cá nhân
 
-VietVoice có app **Flutter WebView** — bọc toàn bộ giao diện web cho màn hình điện thoại.
+Trang **Profile** (`/profile`):
 
-### 12.1 Cách cài đặt
-
-> App **chưa có** trên Google Play hay App Store.
-
-Để dùng trên điện thoại:
-
-1. Developer build file **APK** từ thư mục `app_web_view/`
-2. Cài APK trực tiếp trên Android (bật *Cài từ nguồn không xác định*)
-3. App kết nối tới server đã cấu hình trong `lib/config.dart`
-
-### 12.2 Đặc điểm
-
-- Đầy đủ tính năng web (Workspace, Library, Pricing…)
-- Đăng nhập Google qua Chrome Custom Tab
-- Giao diện responsive cho màn hình nhỏ
-- File tải về lưu trong thư mục **Downloads**
-
-### 12.3 Lưu ý
-
-- Cần internet ổn định
-- Server phải truy cập được từ điện thoại (cùng WiFi hoặc domain public)
-- iOS cần build qua Xcode trên macOS
+- **Thông tin cá nhân:** Cập nhật họ tên, email
+- **Đổi mật khẩu:** Nhập mật khẩu cũ → mật khẩu mới → xác nhận
+- **Thống kê:** Tổng số lần chuyển đổi, ký tự đã dùng
+- **Thông tin gói:** Gói đang dùng, ngày hết hạn, ký tự còn lại
 
 ---
 
-## 13. Mẹo sử dụng
+## 14. Ứng dụng di động
 
-### 13.1 Tối ưu chất lượng giọng đọc
+VietVoice cung cấp ứng dụng **Android** xây dựng bằng **Flutter WebView** — bọc toàn bộ giao diện web trong ứng dụng native.
 
-```
-✅ Dùng dấu câu đầy đủ: phẩy, chấm, chấm than, chấm hỏi
-✅ Tách đoạn dài thành nhiều phần nhỏ
-✅ Viết số thành chữ: "1000" → "một nghìn"
-✅ Viết tắt thành đầy đủ: "TP.HCM" → "Thành phố Hồ Chí Minh"
-✅ Dùng "..." để tạo khoảng dừng dài hơn
-```
+### 14.1 Cài đặt APK
 
-### 13.2 Chọn giọng phù hợp
+1. Nhận file APK từ nhà phát triển (chưa có trên Google Play)
+2. Bật **Cài đặt không xác định** trên Android: *Cài đặt → Bảo mật → Cho phép cài từ nguồn không rõ*
+3. Cài file `.apk`
+4. Mở app → đăng nhập bình thường
 
-| Mục đích | Gợi ý |
+### 14.2 Tính năng trên mobile
+
+- Toàn bộ tính năng giống trình duyệt web
+- Hỗ trợ đăng nhập Google qua Chrome Custom Tab
+- Phiên đăng nhập được lưu tự động
+
+> **Yêu cầu:** Android 6.0+, kết nối Internet ổn định đến server VietVoice.
+
+---
+
+## 15. Mẹo sử dụng nâng cao
+
+### 15.1 Tối ưu chất lượng giọng đọc
+
+| Mục đích | Giọng khuyến nghị |
 |---|---|
-| Truyện, tiểu thuyết | Giọng Nam miền Bắc (Bình, Tuyên) |
-| Tin tức, báo cáo | Giọng Nữ miền Nam (Đoan) |
-| Nội dung sáng tạo | Emotional TTS + tags `(tươi sáng)`, `(hào hứng)` |
-| Thiền, thư giãn | Emotional TTS + tags `(nhẹ nhàng)`, `(chậm)` |
+| Truyện, tiểu thuyết | Nam miền Bắc, tốc độ chậm |
+| Tin tức, báo cáo | Nữ miền Nam, giọng chuẩn |
+| Học tiếng Việt | Giọng chuẩn Hà Nội |
+| Podcast sáng tạo | Emotional TTS — Cheerful |
+| Thiền, thư giãn | Emotional TTS — Calm |
+| Thông báo hệ thống | Giọng ngắn gọn, trung tính |
 
-### 13.3 Tiết kiệm quota
+### 15.2 Kỹ thuật viết văn bản cho TTS
 
-- Dùng **Nghe thử** trước khi chuyển đổi đoạn dài
-- Tải lại file từ **Library** thay vì chuyển đổi lại
-- Đặt tên file ngay tại Workspace để dễ tìm sau này
+- **Dùng dấu câu đầy đủ** — dấu chấm `.` tạo nghỉ ngắn, dấu `...` tạo nghỉ dài
+- **Chia đoạn dài < 2000 ký tự** mỗi lần chuyển đổi
+- **Viết số thành chữ** khi cần: `1000` → *một nghìn*; `12/05` → *mười hai tháng năm*
+- **Viết tắt** nên giải thích: `TPHCM` → *Thành phố Hồ Chí Minh*
+- **Tiếng nước ngoài** trong văn bản tiếng Việt: thêm chú thích phát âm nếu cần
+
+### 15.3 Tiết kiệm quota ký tự
+
+- Tái sử dụng file từ **Thư viện âm thanh** thay vì convert lại
+- Thử với đoạn văn ngắn trước khi convert toàn bộ
+- Dùng tính năng **đặt tên** để dễ tìm lại file trong thư viện
+
+### 15.4 Emotional TTS — Kỹ thuật viết emotion tags
+
+```
+(tươi sáng)
+Chào buổi sáng! Hôm nay trời đẹp quá!
+
+(chậm)
+Hãy dừng lại và hít thở sâu...
+
+(hào hứng)
+Wow! Đây là kết quả tuyệt vời nhất từ trước đến nay!
+
+Văn bản không có tag sẽ đọc theo cảm xúc neutral.
+```
 
 ---
 
-## 14. Xử lý lỗi thường gặp
+## 16. Xử lý lỗi thường gặp
 
-### "Không thể kết nối server"
-- Kiểm tra internet
-- Refresh trang (F5)
-- Server có thể đang khởi động — thử lại sau 1 phút
-
-### "Hết quota ký tự"
-- Quota đã hết trong chu kỳ hiện tại
-- Nâng cấp tại **Pricing** hoặc đợi gói mới
-
-### "Model chưa sẵn sàng" (Emotional TTS)
-- Server đang load viXTTS (30–60 giây sau restart)
-- Chờ 1 phút rồi thử lại
-
-### "File âm thanh không hợp lệ" (khi tạo giọng)
-- Định dạng: WAV, MP3, M4A
-- Thời lượng: tối thiểu 6 giây
-- Dung lượng: tối đa 10 MB
-
-### "Thanh toán chưa được xác nhận"
-- Kiểm tra nội dung chuyển khoản
-- Chờ thêm 5–10 phút
-- Liên hệ qua `/contact` kèm ảnh giao dịch
+| Lỗi | Nguyên nhân | Giải pháp |
+|---|---|---|
+| **"Hết quota ký tự"** | Đã dùng hết giới hạn gói hiện tại | Nâng cấp gói tại `/pricing` |
+| **"Đang tải model..."** | Emotional TTS chưa load xong | Chờ 30–60 giây rồi thử lại |
+| **"Server không phản hồi"** | Flask server chưa chạy hoặc lỗi kết nối | Liên hệ admin hoặc kiểm tra kết nối mạng |
+| **File không tải lên được** | File quá lớn (> 10 MB) hoặc sai định dạng | Chuyển sang TXT hoặc nén file |
+| **Giọng clone chất lượng kém** | File mẫu có tiếng ồn hoặc quá ngắn | Ghi lại mẫu trong môi trường yên tĩnh, > 30 giây |
+| **Không nhận được gói sau thanh toán** | Sai nội dung chuyển khoản | Liên hệ support kèm ảnh biên lai chuyển khoản |
+| **Điều chỉnh giọng không hoạt động** | RVC/faiss chưa cài đặt | Tính năng có thể bị giới hạn — liên hệ admin |
+| **"Unknown error" khi Emotional TTS** | Lỗi xử lý phía server | Kiểm tra text có ký tự đặc biệt không; thử đoạn ngắn hơn |
 
 ---
 
@@ -409,12 +412,11 @@ VietVoice có app **Flutter WebView** — bọc toàn bộ giao diện web cho m
 
 | Kênh | Thông tin |
 |---|---|
-| Form liên hệ | Trang **Liên hệ** (`/contact`) |
-| Email | danhvt388@gmail.com |
-| Hotline | 0866 005 541 |
-| Văn phòng | 146/MO Long Tuyền, Bình Thủy, Cần Thơ |
-| Giờ làm việc | T2–T6: 9:00–18:00 · T7: 9:00–12:00 |
+| **Trang liên hệ** | `/contact` trong ứng dụng |
+| **Email** | danhvt388@gmail.com |
+| **Hotline** | 0866 005 541 |
+| **Hướng dẫn kỹ thuật** | `INSTALLATION_GUIDE.md` |
 
 ---
 
-*© 2026 VietVoice. Tài liệu này được cập nhật theo phiên bản hệ thống hiện tại.*
+*© 2026 VietVoice. Tài liệu dành cho người dùng cuối.*
