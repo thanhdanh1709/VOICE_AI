@@ -1,0 +1,42 @@
+<!-- Page Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-3 md:gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-on-surface mb-1 tracking-tight" data-i18n="mv.title">Giọng của tôi</h1>
+        <p class="text-sm text-on-surface-variant" data-i18n="mv.subtitle">Quản lý và tạo giọng nói tùy chỉnh của bạn</p>
+      </div>
+      <a href="{{ url_for('add_voice_page') }}"
+         class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(139,92,246,0.3)] no-underline">
+        <span class="material-symbols-outlined" style="font-size:18px">add</span>
+        <span data-i18n="mv.add_voice">Thêm giọng mới</span>
+      </a>
+    </div>
+
+    {% if error %}
+    <div class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm font-medium">
+      <span class="material-symbols-outlined text-red-400" style="font-size:18px">error_outline</span>
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if total == 0 %}
+    <!-- Empty State -->
+    <div class="flex flex-col items-center justify-center py-24 gap-5 text-center">
+      <div class="w-20 h-20 rounded-2xl bg-surface-container border border-primary/15 flex items-center justify-center">
+        <span class="material-symbols-outlined text-on-surface-variant" style="font-size:40px;opacity:0.5">mic</span>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-on-surface" data-i18n="mv.empty.title">Chưa có giọng nào</p>
+        <p class="text-sm text-on-surface-variant mt-1 max-w-md" data-i18n="mv.empty.desc">Tạo giọng nói đầu tiên của bạn bằng cách upload audio sample hoặc chọn giọng nền có sẵn</p>
+      </div>
+      <a href="{{ url_for('add_voice_page') }}"
+         class="flex items-center gap-2 px-6 py-3 rounded-full bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">add_circle</span>
+        <span data-i18n="mv.empty.cta">Tạo giọng đầu tiên</span>
+      </a>
+    </div>
+
+    {% else %}
+    <div id="voicesPageContent" data-page="{{ page }}" data-total="{{ total }}">
+      {% include 'partials/my_voices_grid.html' %}
+    </div>
+    {% endif %}

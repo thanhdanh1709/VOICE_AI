@@ -352,7 +352,10 @@ async function handleConvert() {
     
     // Show loading, hide others
     if (emptyState) emptyState.style.display = 'none';
-    loadingIndicator.style.display = 'block';
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden');
+        loadingIndicator.style.display = 'block';
+    }
     audioPlayer.style.display = 'none';
     errorMessage.style.display = 'none';
     
@@ -379,7 +382,10 @@ async function handleConvert() {
         console.log('[TTS] Response data:', data);
         
         // Hide loading
-        loadingIndicator.style.display = 'none';
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+            loadingIndicator.classList.add('hidden');
+        }
         
         if (data.success) {
             // Show audio player
@@ -428,7 +434,10 @@ async function handleConvert() {
             errorMessage.style.display = 'block';
         }
     } catch (error) {
-        loadingIndicator.style.display = 'none';
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+            loadingIndicator.classList.add('hidden');
+        }
         console.error('Convert error:', error);
         
         // Kiểm tra loại lỗi
@@ -983,7 +992,10 @@ async function handleEmotionalConvert() {
     
     // Show loading, hide others
     if (emptyState) emptyState.style.display = 'none';
-    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('hidden');
+        loadingIndicator.style.display = 'block';
+    }
     if (audioPlayer) audioPlayer.style.display = 'none';
     if (errorMessage) errorMessage.style.display = 'none';
     
@@ -1023,7 +1035,10 @@ async function handleEmotionalConvert() {
         console.log('[EMOTIONAL TTS] Response:', data);
         
         // Hide loading
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+            loadingIndicator.classList.add('hidden');
+        }
         
         if (data.success) {
             // Show audio player
@@ -1058,7 +1073,10 @@ async function handleEmotionalConvert() {
     } catch (error) {
         console.error('[EMOTIONAL TTS] Error:', error);
         
-        if (loadingIndicator) loadingIndicator.style.display = 'none';
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+            loadingIndicator.classList.add('hidden');
+        }
         
         let errorMsg = 'Lỗi kết nối';
         if (error.message === 'Failed to fetch') {

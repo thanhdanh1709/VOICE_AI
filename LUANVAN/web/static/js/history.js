@@ -7,11 +7,16 @@ let currentPage = 1;
 let currentSearch = '';
 const perPage = 10;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initHistoryPage() {
+    if (!document.getElementById('historyTableBody')) return;
+
+    currentPage = 1;
+    currentSearch = '';
     loadHistory();
 
     const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
+    if (searchBtn && !searchBtn.dataset.bound) {
+        searchBtn.dataset.bound = '1';
         searchBtn.addEventListener('click', () => {
             currentSearch = document.getElementById('searchInput').value.trim();
             currentPage = 1;
@@ -20,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
+    if (searchInput && !searchInput.dataset.bound) {
+        searchInput.dataset.bound = '1';
         searchInput.addEventListener('keypress', e => {
             if (e.key === 'Enter') {
                 currentSearch = searchInput.value.trim();
@@ -30,13 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Expose reset for inline onclick
     window.historyReset = () => {
         currentSearch = '';
         currentPage = 1;
         loadHistory();
     };
-});
+}
+
+document.addEventListener('DOMContentLoaded', initHistoryPage);
 
 // ── Load from API ─────────────────────────────────────────────────────────────
 async function loadHistory() {

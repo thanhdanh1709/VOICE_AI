@@ -1,0 +1,223 @@
+<!-- Header -->
+    <header class="mb-8 flex items-center gap-4">
+      <div class="avatar-upload-wrap" id="profileAvatarWrap">
+        {% if user.avatar_url %}
+        <img src="{{ user.avatar_url }}{% if not user.avatar_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}" alt="Avatar" class="avatar-img" id="profileAvatarImg">
+        <div class="avatar-fallback" id="profileAvatarFallback" style="display:none">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+        {% else %}
+        <img src="" alt="Avatar" class="avatar-img" id="profileAvatarImg" style="display:none">
+        <div class="avatar-fallback" id="profileAvatarFallback">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+        {% endif %}
+        <label for="avatarInput" class="avatar-upload-overlay" data-i18n-title="prof.avatar.change" title="Đổi ảnh đại diện">
+          <span class="material-symbols-outlined" style="font-size:22px">photo_camera</span>
+        </label>
+        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"/>
+      </div>
+      <div>
+        <h1 class="text-2xl font-extrabold text-on-surface">{{ user.full_name or user.username }}</h1>
+        <p class="text-sm text-on-surface-variant mt-0.5">
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);color:#d0bcff">
+            {{ user.role or 'user' }}
+          </span>
+          {% if user.created_at %}
+          <span class="ml-2 text-xs text-outline"><span data-i18n="prof.subtitle.joined">Tham gia</span> {{ user.created_at }}</span>
+          {% endif %}
+        </p>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- ── Card 1: Thông tin cá nhân ── -->
+      <div class="card">
+        <div class="flex items-center gap-2 mb-6">
+          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">person</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.info">Thông tin cá nhân</h2>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.avatar">Ảnh đại diện</label>
+            <div class="flex items-center gap-4">
+              <div class="avatar-upload-wrap" style="width:3.5rem;height:3.5rem">
+                {% if user.avatar_url %}
+                <img src="{{ user.avatar_url }}{% if not user.avatar_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}" alt="" class="avatar-img" id="profileAvatarImgCard">
+                <div class="avatar-fallback" id="profileAvatarFallbackCard" style="display:none">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+                {% else %}
+                <img src="" alt="" class="avatar-img" id="profileAvatarImgCard" style="display:none">
+                <div class="avatar-fallback" id="profileAvatarFallbackCard">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+                {% endif %}
+              </div>
+              <div>
+                <label for="avatarInput" class="btn-secondary cursor-pointer inline-flex" style="padding:8px 14px;font-size:13px">
+                  <span class="material-symbols-outlined" style="font-size:16px">upload</span>
+                  <span data-i18n="prof.btn.upload_avatar">Tải ảnh lên</span>
+                </label>
+                <p class="avatar-upload-hint" data-i18n="prof.field.avatar.hint">JPG, PNG hoặc WEBP — tối đa 2MB</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.username">Tên đăng nhập</label>
+            <input class="form-input" value="{{ user.username }}" disabled/>
+            <p class="text-[11px] text-outline mt-1" data-i18n="prof.field.username.hint">Tên đăng nhập không thể thay đổi.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.email">Email</label>
+            <input class="form-input" value="{{ user.email or '—' }}" disabled/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.fullname">Họ và tên</label>
+            <input id="inputFullName" class="form-input" type="text" value="{{ user.full_name }}" placeholder="Nhập họ và tên..." data-i18n-placeholder="prof.field.fullname.ph"/>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button id="btnUpdateProfile" class="btn-primary" onclick="updateProfile()">
+            <span class="material-symbols-outlined" style="font-size:17px">save</span>
+            <span data-i18n="prof.btn.save">Lưu thay đổi</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Card 2: Đổi mật khẩu ── -->
+      <div class="card">
+        <div class="flex items-center gap-2 mb-6">
+          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">lock</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.password">Đổi mật khẩu</h2>
+        </div>
+
+        {% if user.email %}
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.current_pw">Mật khẩu hiện tại</label>
+            <div class="relative">
+              <input id="inputCurrentPw" class="form-input pr-10" type="password" placeholder="••••••••"/>
+              <button onclick="togglePw('inputCurrentPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.new_pw">Mật khẩu mới</label>
+            <div class="relative">
+              <input id="inputNewPw" class="form-input pr-10" type="password" placeholder="Ít nhất 6 ký tự" data-i18n-placeholder="prof.field.new_pw.ph"/>
+              <button onclick="togglePw('inputNewPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.confirm_pw">Xác nhận mật khẩu mới</label>
+            <div class="relative">
+              <input id="inputConfirmPw" class="form-input pr-10" type="password" placeholder="Nhập lại mật khẩu mới" data-i18n-placeholder="prof.field.confirm_pw.ph"/>
+              <button onclick="togglePw('inputConfirmPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end">
+          <button id="btnChangePw" class="btn-primary" onclick="changePassword()" style="background:linear-gradient(135deg,#009fb4,#2fd9f4)">
+            <span class="material-symbols-outlined" style="font-size:17px">lock_reset</span>
+            <span data-i18n="prof.btn.change_pw">Đổi mật khẩu</span>
+          </button>
+        </div>
+        {% else %}
+        <div class="py-6 text-center text-on-surface-variant text-sm">
+          <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">lock</span>
+          <p class="mt-2" data-i18n="prof.oauth.no_pw">Tài khoản Google OAuth không thể đổi mật khẩu.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ── Card 3: Lịch sử giao dịch ── -->
+      <div class="card lg:col-span-2">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">receipt_long</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.tx">Lịch sử giao dịch</h2>
+        </div>
+
+        <div id="txLoading" class="flex items-center gap-3 py-6 text-on-surface-variant text-sm">
+          <div style="width:18px;height:18px;border:2px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%" class="spin"></div>
+          Đang tải...
+        </div>
+        <div id="txEmpty" style="display:none" class="py-6 text-center text-on-surface-variant text-sm">
+          <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">receipt_long</span>
+          <p class="mt-2" data-i18n="prof.tx.empty">Chưa có giao dịch nào.</p>
+        </div>
+        <div id="txTable" style="display:none" class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-outline-variant/30 text-xs text-on-surface-variant">
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.package">Gói</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden sm:table-cell" data-i18n="prof.tx.col.txid">Mã GD</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.amount">Số tiền</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden md:table-cell" data-i18n="prof.tx.col.date">Ngày</th>
+                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.status">Trạng thái</th>
+                <th class="pb-3 text-right font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.invoice">Hóa đơn</th>
+              </tr>
+            </thead>
+            <tbody id="txBody" class="divide-y divide-outline-variant/20"></tbody>
+          </table>
+          <div id="txPaginationWrap" style="display:none" class="pt-4 mt-2 border-t border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
+            <span id="txPaginationInfo" class="text-xs text-on-surface-variant"></span>
+            <div id="txPagination" class="flex items-center gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Card 4: Cài đặt hệ thống ── -->
+      <div class="card lg:col-span-2">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings:'FILL' 1">settings</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.settings">Cài đặt</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+          <!-- Theme -->
+          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">dark_mode</span>
+              <div>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.theme.label">Giao diện</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.theme.desc">Sáng / Tối</p>
+              </div>
+            </div>
+            <button id="themeToggleCard" onclick="toggleTheme()" class="relative w-11 h-6 rounded-full transition-all" style="background:rgba(208,188,255,0.2);border:1px solid rgba(208,188,255,0.3)">
+              <span id="themeToggleDot" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-primary transition-all"></span>
+            </button>
+          </div>
+
+          <!-- Sidebar collapse -->
+          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">menu_open</span>
+              <div>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.sidebar.label">Thanh bên</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.sidebar.desc">Ẩn / Hiện</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('sidebarCollapseBtn').click()" class="px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-semibold text-on-surface-variant hover:bg-white/5 transition-colors">
+              Toggle
+            </button>
+          </div>
+
+          <!-- Language -->
+          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">language</span>
+              <div>
+                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.lang.label">Ngôn ngữ</p>
+                <p class="text-xs text-on-surface-variant" data-i18n="prof.lang.desc">VI / EN</p>
+              </div>
+            </div>
+            <button onclick="VVi18n && VVi18n.toggle()" class="vv-lang-toggle" aria-label="Switch language">
+              <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /grid -->

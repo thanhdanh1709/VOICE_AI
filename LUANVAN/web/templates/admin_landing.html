@@ -198,9 +198,13 @@ tailwind.config = {
   </div>
 
   <div class="p-4 flex items-center gap-3">
+    {% if session.avatar_url %}
+    <img src="{{ session.avatar_url }}" alt="" class="w-9 h-9 rounded-full object-cover shrink-0"/>
+    {% else %}
     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
       {{ (session.full_name or session.username or 'A')[0] | upper }}
     </div>
+    {% endif %}
     <div class="min-w-0">
       <div class="text-sm font-semibold text-white truncate">{{ session.full_name or session.username }}</div>
       <div class="text-xs text-slate-400">Administrator</div>

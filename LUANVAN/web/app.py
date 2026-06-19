@@ -23,7 +23,7 @@ if sys.platform == 'win32':
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pymysql
@@ -64,10 +64,19 @@ def resolve_audio_path(path: str) -> str:
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
 from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
+from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, APP_BASE_URL, DEBUG, SMTP_USE_SSL
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from audio_export import export_audio, ffmpeg_available, SUPPORTED_FORMATS, ALLOWED_BITRATES
 
 # Deep link scheme cho Flutter mobile OAuth callback (phải khớp AndroidManifest & config.dart)
 MOBILE_CALLBACK_SCHEME = 'petai'
+
+ALLOWED_AVATAR_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+AVATAR_UPLOAD_DIR = UPLOAD_DIR / 'avatars'
+AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 from authlib.integrations.flask_client import OAuth
 import qrcode
 import io
@@ -157,6 +166,232 @@ def _consume_mobile_token(token: str):
         return data['user_id']
     return None
 
+PASSWORD_RESET_EXPIRY_HOURS = 1
+
+_password_reset_waits: dict = {}
+_password_reset_waits_lock = _threading.Lock()
+
+def _create_password_reset_wait(token):
+    """Phiên chờ laptop — điện thoại xác nhận qua email."""
+    wait_id = secrets.token_urlsafe(16)
+    expires = time.time() + PASSWORD_RESET_EXPIRY_HOURS * 3600
+    with _password_reset_waits_lock:
+        expired = [k for k, v in _password_reset_waits.items() if v['expires'] < time.time()]
+        for k in expired:
+            del _password_reset_waits[k]
+        _password_reset_waits[wait_id] = {
+            'token': token,
+            'confirmed': False,
+            'expires': expires,
+        }
+    return wait_id
+
+def _confirm_password_reset_on_phone(token):
+    with _password_reset_waits_lock:
+        for data in _password_reset_waits.values():
+            if data['token'] == token and data['expires'] > time.time():
+                data['confirmed'] = True
+                return True
+    return False
+
+def _get_password_reset_wait_status(wait_id):
+    with _password_reset_waits_lock:
+        data = _password_reset_waits.get(wait_id)
+        if not data:
+            return {'status': 'not_found'}
+        if data['expires'] < time.time():
+            del _password_reset_waits[wait_id]
+            return {'status': 'expired'}
+        if data['confirmed']:
+            return {'status': 'confirmed', 'token': data['token']}
+        return {'status': 'pending'}
+
+def ensure_password_reset_table():
+    """Tạo bảng password_reset_tokens nếu chưa có."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    token VARCHAR(64) NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_token (token),
+                    KEY idx_user_id (user_id),
+                    KEY idx_expires (expires_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            conn.commit()
+        return True
+    except Exception as e:
+        print(f"[ERROR] ensure_password_reset_table: {e}")
+        return False
+    finally:
+        conn.close()
+
+def _get_app_base_url():
+    if APP_BASE_URL:
+        return APP_BASE_URL.rstrip('/')
+    try:
+        return request.host_url.rstrip('/')
+    except RuntimeError:
+        return 'http://127.0.0.1:5000'
+
+def _share_audio_url(token):
+    """URL công khai để chia sẻ audio (ưu tiên APP_BASE_URL / ngrok)."""
+    if not token:
+        return None
+    return f"{_get_app_base_url()}/audio/share/{token}"
+
+def send_email(to_email, subject, html_body, text_body=None):
+    """Gửi email qua SMTP. Trả về True nếu thành công."""
+    if not to_email:
+        return False
+
+    if not SMTP_HOST or not SMTP_USER:
+        print(f"[EMAIL] SMTP chưa cấu hình — gửi tới {to_email}: {subject}")
+        if text_body:
+            print(f"[EMAIL] {text_body}")
+        elif html_body:
+            print(f"[EMAIL] (html body omitted)")
+        return DEBUG
+
+    from_addr = SMTP_FROM or SMTP_USER
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = from_addr
+        msg['To'] = to_email
+        if text_body:
+            msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+        payload = msg.as_string()
+
+        use_ssl = SMTP_USE_SSL or SMTP_PORT == 465
+        if use_ssl:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+                if SMTP_PASSWORD:
+                    server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(from_addr, [to_email], payload)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                if SMTP_PASSWORD:
+                    server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(from_addr, [to_email], payload)
+
+        print(f"[EMAIL] Đã gửi tới {to_email}: {subject}")
+        return True
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[ERROR] send_email auth failed: {e}")
+        print("[EMAIL] Gmail/Outlook: dùng App Password, không dùng mật khẩu đăng nhập thường.")
+        return False
+    except Exception as e:
+        print(f"[ERROR] send_email failed: {e}")
+        return False
+
+def _create_password_reset_token(user_id):
+    ensure_password_reset_table()
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now() + timedelta(hours=PASSWORD_RESET_EXPIRY_HOURS)
+
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE password_reset_tokens SET used = 1 WHERE user_id = %s AND used = 0",
+                (user_id,),
+            )
+            cursor.execute(
+                "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (%s, %s, %s)",
+                (user_id, token, expires_at),
+            )
+            conn.commit()
+        return token
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] _create_password_reset_token: {e}")
+        return None
+    finally:
+        conn.close()
+
+def _validate_password_reset_token(token):
+    if not token:
+        return None
+    ensure_password_reset_table()
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT user_id FROM password_reset_tokens
+                WHERE token = %s AND used = 0 AND expires_at > NOW()
+            """, (token,))
+            row = cursor.fetchone()
+            return row['user_id'] if row else None
+    except Exception as e:
+        print(f"[ERROR] _validate_password_reset_token: {e}")
+        return None
+    finally:
+        conn.close()
+
+def _mark_password_reset_token_used(token):
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE password_reset_tokens SET used = 1 WHERE token = %s",
+                (token,),
+            )
+            conn.commit()
+    except Exception as e:
+        print(f"[ERROR] _mark_password_reset_token_used: {e}")
+    finally:
+        conn.close()
+
+def _send_password_reset_email(user, token):
+    confirm_url = f"{_get_app_base_url()}/reset-password/confirm/{token}"
+    name = user.get('full_name') or user.get('username') or 'bạn'
+    subject = 'VietVoice — Xác nhận đặt lại mật khẩu'
+    text_body = (
+        f"Xin chào {name},\n\n"
+        f"Bạn vừa yêu cầu đặt lại mật khẩu VietVoice.\n"
+        f"Mở email này trên ĐIỆN THOẠI và nhấn xác nhận (hiệu lực {PASSWORD_RESET_EXPIRY_HOURS} giờ):\n{confirm_url}\n\n"
+        f"Sau khi xác nhận, quay lại MÁY TÍNH để nhập mật khẩu mới.\n\n"
+        f"Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\n— VietVoice"
+    )
+    html_body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+      <h2 style="color:#7c3aed;margin:0 0 12px">VietVoice</h2>
+      <p>Xin chào <strong>{name}</strong>,</p>
+      <p>Bạn vừa yêu cầu đặt lại mật khẩu trên máy tính.</p>
+      <p><strong>📱 Mở email này trên điện thoại</strong> và nhấn nút xác nhận bên dưới (hiệu lực {PASSWORD_RESET_EXPIRY_HOURS} giờ):</p>
+      <p style="text-align:center;margin:28px 0">
+        <a href="{confirm_url}" style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:16px">
+          ✅ Xác nhận trên điện thoại
+        </a>
+      </p>
+      <p style="font-size:12px;color:#94a3b8;text-align:center">Sau khi xác nhận, quay lại <strong>máy tính</strong> — trang web sẽ tự chuyển sang đặt mật khẩu mới.</p>
+      <p style="font-size:13px;color:#64748b">Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
+    </div>
+  """
+    sent = send_email(user['email'], subject, html_body, text_body)
+    if not sent and DEBUG:
+        print(f"[DEV] Phone confirm link: {confirm_url}")
+    return sent
+
 def _mobile_cct_response(callback_url: str):
     """Trả về HTML tối giản để Chrome Custom Tab kích hoạt deep link và tự đóng.
     Page này user hầu như không thấy vì app sẽ tự kéo lên foreground.
@@ -189,6 +424,30 @@ def _mobile_cct_response(callback_url: str):
     return resp
 
 # Request logging
+@app.after_request
+def add_ngrok_skip_warning(response):
+    """Bỏ trang cảnh báo ngrok khi mở link từ Gmail/điện thoại."""
+    response.headers['ngrok-skip-browser-warning'] = 'true'
+    return response
+
+@app.before_request
+def sync_session_avatar():
+    """Đồng bộ avatar_url vào session nếu thiếu (phiên đăng nhập cũ)."""
+    if 'user_id' not in session or session.get('avatar_url'):
+        return
+    conn = get_db_connection()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT avatar_url FROM users WHERE id = %s", (session['user_id'],))
+            row = cursor.fetchone()
+            session['avatar_url'] = (row.get('avatar_url') or '') if row else ''
+    except Exception as e:
+        print(f'[WARN] sync_session_avatar: {e}')
+    finally:
+        conn.close()
+
 @app.before_request
 def log_request_info():
     """Log request information"""
@@ -398,8 +657,11 @@ def login():
         if not data:
             return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
         
-        username = data.get('username')
+        username = (data.get('username') or '').strip()
         password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập tên đăng nhập và mật khẩu'}), 400
         
         conn = get_db_connection()
         if not conn:
@@ -407,7 +669,12 @@ def login():
         
         try:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM users WHERE username = %s AND is_active = 1", (username,))
+                cursor.execute(
+                    """SELECT * FROM users WHERE is_active = 1 AND (
+                        username = %s OR LOWER(TRIM(email)) = %s
+                    )""",
+                    (username, username.lower()),
+                )
                 user = cursor.fetchone()
                 
                 if user and check_password_hash(user['password'], password):
@@ -415,6 +682,7 @@ def login():
                     session['username'] = user['username']
                     session['user_role'] = user['role']
                     session['full_name'] = user['full_name']
+                    session['avatar_url'] = user.get('avatar_url') or ''
                     session.permanent = True
                     
                     return jsonify({
@@ -435,7 +703,146 @@ def login():
         finally:
             conn.close()
     
-    return render_template('login.html')
+    return render_template('login.html', auth_page=True)
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Quên mật khẩu — gửi link đặt lại qua email."""
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        identifier = (data.get('email') or '').strip().lower()
+        generic_msg = 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư (cả thư mục spam).'
+
+        if not identifier:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập email'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """SELECT id, email, username, full_name FROM users
+                       WHERE is_active = 1 AND (
+                           LOWER(TRIM(email)) = %s
+                           OR (username = %s AND %s NOT LIKE '%%@%%')
+                       )""",
+                    (identifier, identifier, identifier),
+                )
+                user = cursor.fetchone()
+
+            if user and not user.get('email'):
+                if DEBUG:
+                    print(f"[FORGOT] User '{user.get('username')}' has no email on file — cannot send")
+                user = None
+
+            wait_id = None
+            if user:
+                token = _create_password_reset_token(user['id'])
+                if token:
+                    wait_id = _create_password_reset_wait(token)
+                    sent = _send_password_reset_email(user, token)
+                    if DEBUG:
+                        print(f"[FORGOT] Reset email → {user['email']} (wait_id={wait_id}, sent={sent})")
+                elif DEBUG:
+                    print(f"[FORGOT] Failed to create token for user_id={user['id']}")
+            elif DEBUG:
+                print(f"[FORGOT] No account for '{identifier}' — no email sent (by design)")
+
+            payload = {'success': True, 'message': generic_msg}
+            if wait_id:
+                payload['wait_id'] = wait_id
+                payload['message'] = (
+                    'Đã gửi email. Mở email trên điện thoại và nhấn Xác nhận. '
+                    'Trang máy tính này sẽ tự chuyển sang đặt mật khẩu mới.'
+                )
+            return jsonify(payload)
+        except Exception as e:
+            print(f"[ERROR] forgot_password: {e}")
+            return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+        finally:
+            conn.close()
+
+    return render_template('forgot_password.html', auth_page=True)
+
+@app.route('/api/forgot-password/status/<wait_id>')
+def forgot_password_status(wait_id):
+    """Laptop poll — chờ điện thoại xác nhận qua email."""
+    status = _get_password_reset_wait_status(wait_id)
+    if status['status'] == 'not_found':
+        return jsonify({'success': False, 'status': 'not_found'}), 404
+    if status['status'] == 'expired':
+        return jsonify({'success': False, 'status': 'expired', 'message': 'Phiên đặt lại mật khẩu đã hết hạn'})
+    if status['status'] == 'confirmed':
+        return jsonify({
+            'success': True,
+            'status': 'confirmed',
+            'redirect': url_for('reset_password', token=status['token']),
+        })
+    return jsonify({'success': True, 'status': 'pending'})
+
+@app.route('/reset-password/confirm/<token>')
+def reset_password_confirm(token):
+    """Điện thoại: chỉ xác nhận, không nhập mật khẩu tại đây."""
+    user_id = _validate_password_reset_token(token)
+    if not user_id:
+        return render_template('reset_confirm.html', invalid=True, auth_page=True)
+    _confirm_password_reset_on_phone(token)
+    return render_template('reset_confirm.html', invalid=False, auth_page=True)
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Đặt lại mật khẩu bằng token từ email."""
+    user_id = _validate_password_reset_token(token)
+
+    if request.method == 'POST':
+        if not user_id:
+            return jsonify({'success': False, 'message': 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn'}), 400
+
+        data = request.get_json() or {}
+        new_pw = data.get('new_password', '')
+        confirm_pw = data.get('confirm_password', '')
+
+        if not new_pw:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập mật khẩu mới'}), 400
+        if new_pw != confirm_pw:
+            return jsonify({'success': False, 'message': 'Mật khẩu xác nhận không khớp'}), 400
+        if len(new_pw) < 6:
+            return jsonify({'success': False, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+        try:
+            new_hash = generate_password_hash(new_pw)
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE users SET password = %s WHERE id = %s AND is_active = 1",
+                    (new_hash, user_id),
+                )
+                if cursor.rowcount == 0:
+                    return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+                conn.commit()
+            _mark_password_reset_token_used(token)
+            return jsonify({'success': True, 'message': 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập ngay.'})
+        except Exception as e:
+            conn.rollback()
+            print(f"[ERROR] reset_password: {e}")
+            return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+        finally:
+            conn.close()
+
+    return render_template('reset_password.html', token=token, invalid=not user_id, auth_page=True)
+
+@app.route('/reset-password', methods=['GET'])
+def reset_password_link():
+    """Hỗ trợ link dạng ?token=... (một số app email mở kiểu này)."""
+    token = (request.args.get('token') or '').strip()
+    if token:
+        return redirect(url_for('reset_password', token=token))
+    return redirect(url_for('forgot_password'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -449,6 +856,8 @@ def register():
         email = data.get('email')
         password = data.get('password')
         full_name = data.get('full_name', '')
+        if email:
+            email = email.strip().lower()
         
         conn = get_db_connection()
         if not conn:
@@ -490,7 +899,7 @@ def register():
         finally:
             conn.close()
     
-    return render_template('register.html')
+    return render_template('register.html', auth_page=True)
 
 @app.route('/logout')
 def logout():
@@ -620,6 +1029,7 @@ def google_callback():
             session['username']  = user['username']
             session['user_role'] = user.get('role', 'user')
             session['full_name'] = user.get('full_name', '')
+            session['avatar_url'] = user.get('avatar_url') or ''
             session.permanent    = True
             print(f"[GOOGLE AUTH] Web login OK: {user['username']} ({email})")
             return redirect(url_for('index'))
@@ -667,6 +1077,7 @@ def mobile_auth_callback():
         session['username']  = user['username']
         session['user_role'] = user.get('role', 'user')
         session['full_name'] = user.get('full_name', '')
+        session['avatar_url'] = user.get('avatar_url') or ''
         session.permanent    = True
 
         print(f"[MOBILE AUTH] WebView session tạo thành công: {user['username']}")
@@ -2455,6 +2866,8 @@ def profile():
             print(f'[ERROR] profile: {e}')
         finally:
             conn.close()
+    if user_data:
+        session['avatar_url'] = user_data.get('avatar_url') or ''
     return render_template('profile.html', user=user_data)
 
 
@@ -2480,6 +2893,82 @@ def update_profile():
         session['full_name'] = full_name
         return jsonify({'success': True, 'message': 'Cập nhật thành công'})
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/uploads/<path:subpath>')
+def serve_upload(subpath):
+    """Phục vụ file tải lên (avatar, v.v.)"""
+    base = UPLOAD_DIR.resolve()
+    file_path = (UPLOAD_DIR / subpath).resolve()
+    if not str(file_path).startswith(str(base)) or not file_path.is_file():
+        abort(404)
+    return send_file(file_path)
+
+
+@app.route('/api/user/upload-avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    """Upload / thay ảnh đại diện"""
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': 'Không có file ảnh'}), 400
+
+    file = request.files['avatar']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'Không có file ảnh'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_AVATAR_EXTENSIONS:
+        return jsonify({'success': False, 'message': 'Chỉ chấp nhận JPG, PNG hoặc WEBP'}), 400
+
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_AVATAR_BYTES:
+        return jsonify({'success': False, 'message': 'Ảnh tối đa 2MB'}), 400
+
+    user_id = session['user_id']
+    filename = f'user_{user_id}.{ext}'
+    save_path = AVATAR_UPLOAD_DIR / filename
+    avatar_url = f'/uploads/avatars/{filename}'
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        old_url = ''
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT avatar_url FROM users WHERE id = %s", (user_id,))
+            row = cursor.fetchone()
+            if row:
+                old_url = (row.get('avatar_url') or '').split('?')[0]
+
+        for old_file in AVATAR_UPLOAD_DIR.glob(f'user_{user_id}.*'):
+            try:
+                old_file.unlink()
+            except OSError:
+                pass
+
+        file.save(str(save_path))
+
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET avatar_url = %s WHERE id = %s",
+                (avatar_url, user_id)
+            )
+            conn.commit()
+
+        session['avatar_url'] = avatar_url
+        return jsonify({
+            'success': True,
+            'message': 'Cập nhật ảnh đại diện thành công',
+            'avatar_url': f'{avatar_url}?t={int(time.time())}'
+        })
+    except Exception as e:
+        print(f'[ERROR] upload_avatar: {e}')
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
@@ -2806,7 +3295,7 @@ def audio_library():
     """Trang thư viện audio"""
     if not is_logged_in():
         return redirect(url_for('login'))
-    return render_template('audio_library.html')
+    return render_template('audio_library.html', app_base_url=APP_BASE_URL.rstrip('/') if APP_BASE_URL else '')
 
 @app.route('/api/audio-library')
 def get_audio_library():
@@ -2875,12 +3364,16 @@ def get_audio_library():
             cursor.execute(query, params)
             audios = cursor.fetchall()
             
-            # Convert datetime to string
+            # Convert datetime to string + share URL công khai
             for audio in audios:
                 if audio['created_at']:
                     audio['created_at'] = audio['created_at'].isoformat()
                 if audio['completed_at']:
                     audio['completed_at'] = audio['completed_at'].isoformat()
+                if audio.get('is_public') and audio.get('share_token'):
+                    audio['share_url'] = _share_audio_url(audio['share_token'])
+                else:
+                    audio['share_url'] = None
             
             return jsonify({
                 'success': True,
@@ -2992,7 +3485,7 @@ def toggle_share_audio(audio_id):
                 # Tắt chia sẻ
                 cursor.execute("UPDATE conversions SET is_public = 0 WHERE id = %s", (audio_id,))
                 conn.commit()
-                return jsonify({'success': True, 'is_public': False, 'share_token': None})
+                return jsonify({'success': True, 'is_public': False, 'share_token': None, 'share_url': None})
             else:
                 # Bật chia sẻ — tạo token nếu chưa có
                 token = audio['share_token'] or secrets.token_urlsafe(32)
@@ -3001,7 +3494,12 @@ def toggle_share_audio(audio_id):
                     (token, audio_id)
                 )
                 conn.commit()
-                return jsonify({'success': True, 'is_public': True, 'share_token': token})
+                return jsonify({
+                    'success': True,
+                    'is_public': True,
+                    'share_token': token,
+                    'share_url': _share_audio_url(token),
+                })
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -4125,27 +4623,39 @@ def get_user_subscription_status():
 
 @app.route('/api/admin/payments', methods=['GET'])
 def admin_get_payments():
-    """Admin xem danh sách payments"""
+    """Admin xem danh sách payments (có phân trang)"""
     if not is_logged_in() or not is_admin():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-    
+
+    page = max(request.args.get('page', 1, type=int), 1)
+    per_page = request.args.get('per_page', 15, type=int)
+    per_page = min(max(per_page, 5), 100)
+
     conn = get_db_connection()
     if not conn:
         return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-    
+
     try:
         with conn.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) AS total FROM payments")
+            total_row = cursor.fetchone()
+            total = total_row['total'] if total_row else 0
+            total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
+
+            if page > total_pages and total > 0:
+                page = total_pages
+
+            offset = (page - 1) * per_page
             cursor.execute("""
                 SELECT p.*, u.username, sp.package_name
                 FROM payments p
                 LEFT JOIN users u ON p.user_id = u.id
                 LEFT JOIN subscription_packages sp ON p.package_id = sp.id
                 ORDER BY p.created_at DESC
-                LIMIT 50
-            """)
+                LIMIT %s OFFSET %s
+            """, (per_page, offset))
             payments = cursor.fetchall()
-            
-            # Convert datetime to string for JSON serialization
+
             for payment in payments:
                 if payment['created_at']:
                     payment['created_at'] = payment['created_at'].strftime('%Y-%m-%d %H:%M:%S')
@@ -4153,13 +4663,16 @@ def admin_get_payments():
                     payment['updated_at'] = payment['updated_at'].strftime('%Y-%m-%d %H:%M:%S')
                 if payment['completed_at']:
                     payment['completed_at'] = payment['completed_at'].strftime('%Y-%m-%d %H:%M:%S')
-            
+
             return jsonify({
                 'success': True,
                 'payments': payments,
-                'total': len(payments)
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages,
             })
-            
+
     except Exception as e:
         print(f"[ERROR] Admin get payments error: {e}")
         return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
@@ -4554,13 +5067,29 @@ def download_invoice(payment_id):
 @app.route('/api/user/payments')
 @login_required
 def get_user_payments():
-    """Lịch sử thanh toán của user hiện tại"""
+    """Lịch sử thanh toán của user hiện tại (có phân trang)"""
+    page = max(request.args.get('page', 1, type=int), 1)
+    per_page = request.args.get('per_page', 8, type=int)
+    per_page = min(max(per_page, 5), 50)
+
     conn = get_db_connection()
     if not conn:
         return jsonify({'success': False, 'payments': []}), 500
 
     try:
         with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) AS total FROM payments WHERE user_id = %s",
+                (session['user_id'],),
+            )
+            total_row = cursor.fetchone()
+            total = total_row['total'] if total_row else 0
+            total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
+
+            if page > total_pages and total > 0:
+                page = total_pages
+
+            offset = (page - 1) * per_page
             cursor.execute("""
                 SELECT p.id, p.transaction_id, p.amount_vnd, p.payment_method,
                        p.payment_status, p.created_at, p.completed_at,
@@ -4569,8 +5098,8 @@ def get_user_payments():
                 LEFT JOIN subscription_packages sp ON p.package_id = sp.id
                 WHERE p.user_id = %s
                 ORDER BY p.created_at DESC
-                LIMIT 20
-            """, (session['user_id'],))
+                LIMIT %s OFFSET %s
+            """, (session['user_id'], per_page, offset))
             rows = cursor.fetchall()
 
         payments = []
@@ -4588,7 +5117,14 @@ def get_user_payments():
                 'completed_at':    r['completed_at'].strftime('%d/%m/%Y %H:%M') if r['completed_at'] else None,
             })
 
-        return jsonify({'success': True, 'payments': payments})
+        return jsonify({
+            'success': True,
+            'payments': payments,
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': total_pages,
+        })
 
     except Exception as e:
         print(f'[ERROR] get_user_payments: {e}')
@@ -4597,33 +5133,81 @@ def get_user_payments():
         conn.close()
 
 
+def _fetch_my_voices_page(user_id, page=1, per_page=9):
+    """Lấy danh sách giọng có phân trang."""
+    if page < 1:
+        page = 1
+
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) AS total FROM custom_voices WHERE user_id = %s",
+        (user_id,),
+    )
+    total_row = cursor.fetchone()
+    total = total_row['total'] if total_row else 0
+    total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
+
+    if page > total_pages and total > 0:
+        page = total_pages
+
+    offset = (page - 1) * per_page
+    cursor.execute("""
+        SELECT * FROM custom_voices
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+        LIMIT %s OFFSET %s
+    """, (user_id, per_page, offset))
+    voices = cursor.fetchall()
+    conn.close()
+
+    return {
+        'voices': voices,
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
+    }
+
+
 @app.route('/my-voices')
 @login_required
 def my_voices():
     """Page: My custom voices"""
     user_id = session.get('user_id')
-    
+    per_page = 9
+    page = request.args.get('page', 1, type=int)
+
     try:
-        conn = get_db_connection()
-        if not conn:
-            return render_template('my_voices.html', voices=[], error="Database connection failed")
-        
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM custom_voices 
-            WHERE user_id = %s 
-            ORDER BY created_at DESC
-        """, (user_id,))
-        voices = cursor.fetchall()
-        conn.close()
-        
-        return render_template('my_voices.html', voices=voices)
+        result = _fetch_my_voices_page(user_id, page, per_page)
+        if result is None:
+            return render_template(
+                'my_voices.html',
+                voices=[],
+                error="Database connection failed",
+                page=1,
+                per_page=per_page,
+                total=0,
+                total_pages=1,
+            )
+
+        return render_template('my_voices.html', error=None, **result)
     except Exception as e:
         print(f"[ERROR] My voices page error: {e}")
         import traceback
         traceback.print_exc()
-        return render_template('my_voices.html', voices=[], error=str(e))
-
+        return render_template(
+            'my_voices.html',
+            voices=[],
+            error=str(e),
+            page=1,
+            per_page=per_page,
+            total=0,
+            total_pages=1,
+        )
 @app.route('/add-voice')
 @login_required
 def add_voice_page():
@@ -5448,6 +6032,10 @@ if __name__ == '__main__':
     print("[TTS] 🎉 SERVER READY - SẴN SÀNG PHỤC VỤ!")
     print("[TTS] URL: http://127.0.0.1:5000")
     print("[TTS] Emotional TTS: " + ("✅ Sẵn sàng" if is_ready else "❌ Không khả dụng"))
+    if SMTP_HOST and SMTP_USER:
+        print(f"[EMAIL] SMTP: ✅ {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
+    else:
+        print("[EMAIL] SMTP: ❌ Chưa cấu hình (thêm SMTP_* vào .env.local để gửi email thật)")
     print("[TTS] Nhấn Ctrl+C để dừng server")
     print("=" * 60)
     print()

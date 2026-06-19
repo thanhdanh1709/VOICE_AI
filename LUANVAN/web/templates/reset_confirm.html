@@ -1,0 +1,25 @@
+{% extends "auth_layout.html" %}
+
+{% block title %}Xác nhận - VietVoice{% endblock %}
+
+{% block auth_visual_title %}<span data-i18n="auth.brand.confirm_title">Xác nhận bảo mật</span>{% endblock %}
+{% block auth_visual_desc %}<span data-i18n="auth.brand.confirm_desc">Bước xác nhận trên điện thoại đảm bảo chỉ bạn mới có thể đặt lại mật khẩu.</span>{% endblock %}
+
+{% block auth_form %}
+{% if invalid %}
+<div class="text-center py-6">
+    <div class="auth-v2-status-icon mx-auto"><span class="material-symbols-outlined">link_off</span></div>
+    <h2 class="text-headline-sm text-on-background mb-2" data-i18n="auth.confirm.invalid_title">Link không hợp lệ</h2>
+    <p class="text-body-md text-on-surface-variant" data-i18n="auth.confirm.invalid">Link xác nhận đã hết hạn hoặc đã được sử dụng.</p>
+</div>
+{% else %}
+<div class="text-center py-4">
+    <div class="auth-v2-status-icon mx-auto"><span class="material-symbols-outlined">check_circle</span></div>
+    <h2 class="text-headline-sm text-on-background mb-2" data-i18n="auth.confirm.success_title">Đã xác nhận</h2>
+    <p class="text-body-md text-on-surface-variant mb-4" data-i18n="auth.confirm.success">Bạn đã xác nhận thành công trên điện thoại.</p>
+    <div class="text-left p-4 rounded-xl bg-primary/10 border border-primary/20 text-sm text-primary-fixed leading-relaxed" data-i18n="auth.confirm.hint">
+        Quay lại máy tính — trang web sẽ tự chuyển sang màn hình đặt mật khẩu mới.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

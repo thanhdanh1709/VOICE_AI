@@ -1,0 +1,95 @@
+    setTimeout(() => { element.textContent = orig; element.style.color = ''; }, 2000);
+  }).catch(() => {
+    alert('Không thể copy. Vui lòng copy thủ công: ' + text);
+  });
+}
+
+// ── Payment History ──────────────────────────────────────────
+let paymentHistoryPage = 1;
+const PAYMENT_HISTORY_PER_PAGE = 8;
+
+function renderPaymentRow(p) {
+  const isCompleted = p.payment_status === 'completed';
+  const statusHtml = isCompleted
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:9999px;background:rgba(0,159,180,0.15);border:1px solid rgba(47,217,244,0.3);font-size:11px;font-weight:600;color:#2fd9f4"><span style="width:5px;height:5px;border-radius:50%;background:#2fd9f4;flex-shrink:0"></span>Đã TT</span>`
+    : p.payment_status === 'pending'
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:9999px;background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);font-size:11px;font-weight:600;color:#d0bcff"><span style="width:5px;height:5px;border-radius:50%;background:#d0bcff;flex-shrink:0;animation:pulse 1.5s infinite"></span>Chờ</span>`
+      : `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:9999px;background:rgba(147,0,10,0.2);border:1px solid rgba(255,180,171,0.3);font-size:11px;font-weight:600;color:#ffb4ab"><span style="width:5px;height:5px;border-radius:50%;background:#ffb4ab;flex-shrink:0"></span>${p.payment_status}</span>`;
+
+  const invoiceBtn = isCompleted
+    ? `<a href="/invoice/${p.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors no-underline" style="background:rgba(47,217,244,0.12);border:1px solid rgba(47,217,244,0.3);color:#2fd9f4" onmouseover="this.style.background='rgba(47,217,244,0.22)'" onmouseout="this.style.background='rgba(47,217,244,0.12)'"><span class="material-symbols-outlined" style="font-size:14px">download</span>PDF</a>`
+    : `<span class="text-xs text-outline">—</span>`;
+
+  const amt = p.amount_vnd.toLocaleString('vi-VN') + 'đ';
+  const date = p.completed_at || p.created_at || '—';
+
+  return `<tr class="hover:bg-surface-container/40 transition-colors">
+    <td class="px-4 py-3 font-mono text-xs text-on-surface-variant">${p.transaction_id || ('#' + p.id)}</td>
+    <td class="px-4 py-3 text-on-surface hidden sm:table-cell">${p.package_name}</td>
+    <td class="px-4 py-3 font-semibold text-primary">${amt}</td>
+    <td class="px-4 py-3 text-on-surface-variant text-xs hidden md:table-cell">${date}</td>
+    <td class="px-4 py-3">${statusHtml}</td>
+    <td class="px-4 py-3 text-right">${invoiceBtn}</td>
+  </tr>`;
+}
+
+async function loadPaymentHistory(page = paymentHistoryPage) {
+  paymentHistoryPage = page;
+  const loadingEl = document.getElementById('paymentHistoryLoading');
+  const emptyEl = document.getElementById('paymentHistoryEmpty');
+  const tableEl = document.getElementById('paymentHistoryTable');
+  const pagWrap = document.getElementById('paymentHistoryPaginationWrap');
+
+  if (loadingEl) loadingEl.style.display = 'flex';
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (tableEl) tableEl.style.display = 'none';
+  if (pagWrap) pagWrap.style.display = 'none';
+
+  try {
+    const res = await fetch(`/api/user/payments?page=${page}&per_page=${PAYMENT_HISTORY_PER_PAGE}`);
+    const data = await res.json();
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (!data.success || !data.payments.length) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      VVPagination.render({
+        id: 'paymentHistory',
+        containerId: 'paymentHistoryPagination',
+        infoId: 'paymentHistoryPaginationInfo',
+        page: 1,
+        total: 0,
+        perPage: PAYMENT_HISTORY_PER_PAGE,
+      });
+      return;
+    }
+
+    if (tableEl) tableEl.style.display = 'block';
+    document.getElementById('paymentHistoryBody').innerHTML = data.payments.map(renderPaymentRow).join('');
+
+    if (pagWrap) pagWrap.style.display = 'flex';
+    VVPagination.render({
+      id: 'paymentHistory',
+      containerId: 'paymentHistoryPagination',
+      infoId: 'paymentHistoryPaginationInfo',
+      page: data.page,
+      total: data.total,
+      perPage: data.per_page,
+    });
+  } catch (e) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'block';
+  }
+}
+
+VVPagination.register('paymentHistory', (p) => {
+  loadPaymentHistory(p);
+  document.getElementById('paymentHistoryTable')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
+document.addEventListener('DOMContentLoaded', () => loadPaymentHistory(1));
+</script>
+<script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
+<script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+</body>
+</html>

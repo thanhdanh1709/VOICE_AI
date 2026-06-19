@@ -9,9 +9,14 @@ function _t(key, fallback) {
     return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initPricingPage() {
+    if (!document.getElementById('pricingGrid')) return;
     loadSubscriptionStatus();
     loadPackages();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initPricingPage();
 
     // Re-render package cards whenever language is switched
     window.addEventListener('vv:langChanged', () => {
@@ -271,3 +276,4 @@ async function verifyBankTransfer() {
         }, 3000);
     }
 }
+

@@ -1,0 +1,86 @@
+<!-- Page Header -->
+    <header class="mb-5 md:mb-8">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-1 md:mb-2 tracking-tight" data-i18n="lib.title">Thư viện Audio</h1>
+      <p class="text-sm md:text-base text-on-surface-variant" data-i18n="lib.subtitle">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
+    </header>
+
+    <!-- Filter Bar -->
+    <section class="glass-panel rounded-xl p-4 mb-5">
+      <!-- Search -->
+      <div class="relative mb-3">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px">search</span>
+        <input id="searchInput" type="search"
+          class="w-full bg-surface-container border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors placeholder-on-surface-variant/60"
+          placeholder="Tìm kiếm theo nội dung âm thanh..." data-i18n-placeholder="lib.search_placeholder"/>
+      </div>
+
+      <!-- Filters row 1: voice + sort -->
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <select id="voiceFilter" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+          <option value="" data-i18n="lib.filter.all_voices">Tất cả giọng đọc</option>
+        </select>
+        <select id="sortBy" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
+          <option value="newest" data-i18n="lib.sort.newest">Mới nhất</option>
+          <option value="oldest" data-i18n="lib.sort.oldest">Cũ nhất</option>
+          <option value="duration" data-i18n="lib.sort.duration">Thời lượng</option>
+          <option value="size" data-i18n="lib.sort.size">Kích thước</option>
+        </select>
+      </div>
+
+      <!-- Filters row 2: dates -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <input id="dateFrom" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+        <input id="dateTo" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-2">
+        <button id="filterBtn" class="flex-1 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors flex items-center justify-center gap-1.5">
+          <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
+          <span data-i18n="lib.btn.filter">Lọc</span>
+        </button>
+        <button id="resetBtn" class="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant text-sm font-medium hover:bg-white/10 transition-colors">
+          <span data-i18n="common.reset">Đặt lại</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- View Toggles & Stats -->
+    <div class="flex items-center justify-between mb-5">
+      <div class="inline-flex bg-surface-container rounded-lg p-1 border border-outline-variant gap-1">
+        <button class="view-btn-modern active flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="grid">
+          <span class="material-symbols-outlined" style="font-size:16px">grid_view</span>
+          <span data-i18n="lib.view.grid">Lưới</span>
+        </button>
+        <button class="view-btn-modern flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="list">
+          <span class="material-symbols-outlined" style="font-size:16px">view_list</span>
+          <span data-i18n="lib.view.list">Danh sách</span>
+        </button>
+      </div>
+      <div id="audioCount" class="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-primary/20 flex items-center gap-1.5">
+        <span class="material-symbols-outlined" style="font-size:14px">folder</span>
+        Tổng: <strong>0</strong> audio
+      </div>
+    </div>
+
+    <!-- Audio Container (populated by JS) -->
+    <div id="audioContainer" class="audio-grid-modern gap-5 mb-8">
+      <!-- Loading state -->
+      <div style="grid-column:1/-1" class="flex flex-col items-center justify-center py-16 gap-3 text-on-surface-variant">
+        <div style="width:32px;height:32px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+        <p class="text-sm" data-i18n="lib.loading">Đang tải thư viện...</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="flex items-center justify-center gap-4 mt-4" style="display:none!important">
+      <button id="prevBtn" disabled
+        class="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-colors text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+        <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span> <span data-i18n="common.prev">Trước</span>
+      </button>
+      <span id="pageInfo" class="text-sm font-semibold text-on-surface px-4 py-2 bg-surface-container rounded-lg border border-outline-variant">Trang 1 / 1</span>
+      <button id="nextBtn" disabled
+        class="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed">
+        <span data-i18n="common.next">Sau</span> <span class="material-symbols-outlined" style="font-size:18px">chevron_right</span>
+      </button>
+    </div>

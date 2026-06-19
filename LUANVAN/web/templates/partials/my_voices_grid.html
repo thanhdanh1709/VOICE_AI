@@ -1,0 +1,156 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {% for voice in voices %}
+  <div class="voice-card-modern bg-surface-container/50 backdrop-blur-xl border border-outline-variant/30 rounded-xl p-6 flex flex-col hover:border-primary/50 transition-all duration-300"
+       data-voice-id="{{ voice.id }}"
+       data-status="{{ voice.status }}">
+
+    <div class="flex justify-between items-start mb-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-primary/20 shrink-0">
+          <span class="material-symbols-outlined" style="font-size:24px;font-variation-settings:'FILL' 1">mic</span>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-on-surface leading-tight">{{ voice.voice_name }}</h3>
+          {% if voice.description %}
+          <p class="text-xs text-on-surface-variant mt-0.5 line-clamp-1">{{ voice.description }}</p>
+          {% endif %}
+          <div class="mt-1.5">
+            {% if voice.status == 'completed' %}
+            <span class="badge badge-ready"><span class="badge-dot bg-tertiary"></span><span data-i18n="mv.status.ready">Đã sẵn sàng</span></span>
+            {% elif voice.status == 'processing' %}
+            <span class="badge badge-proc"><span class="badge-dot bg-primary" style="animation:pulse 1.2s infinite"></span><span data-i18n="mv.status.training">Đang train...</span></span>
+            {% elif voice.status == 'pending' %}
+            <span class="badge badge-pending"><span class="badge-dot bg-yellow-400"></span><span data-i18n="mv.status.pending">Đang chờ...</span></span>
+            {% elif voice.status == 'failed' %}
+            <span class="badge badge-fail"><span class="badge-dot bg-error"></span><span data-i18n="mv.status.failed">Thất bại</span></span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% if voice.quality_score %}
+      <div class="text-right shrink-0">
+        <div class="text-sm font-bold text-primary">{{ "%.1f"|format(voice.quality_score) }}</div>
+        <div class="text-[10px] text-on-surface-variant">Quality</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if voice.status == 'processing' %}
+    <div class="mb-4">
+      <div class="flex justify-between text-xs text-on-surface-variant mb-1">
+        <span>Đang train</span>
+        <span>{{ voice.training_progress }}%</span>
+      </div>
+      <div class="progress-bar-modern">
+        <div class="progress-fill-modern" style="width:{{ voice.training_progress }}%">
+          <span class="progress-text-modern">{{ voice.training_progress }}%</span>
+        </div>
+      </div>
+      {% if voice.training_mode == 'background' %}
+      <p class="text-[11px] text-on-surface-variant mt-1 italic">Training trong background, sẽ nhận thông báo khi xong</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if voice.status == 'failed' and voice.error_message %}
+    <div class="mb-4 px-3 py-2 rounded-lg bg-error/10 border border-error/25 text-error text-xs">
+      {{ voice.error_message }}
+    </div>
+    {% endif %}
+
+    <div class="space-y-2 mb-5 flex-1 text-sm">
+      <div class="flex justify-between">
+        <span class="text-on-surface-variant" data-i18n="mv.meta.created">Đã tạo:</span>
+        <span class="text-on-surface font-medium">{{ voice.created_at.strftime('%d/%m/%Y') if voice.created_at else 'N/A' }}</span>
+      </div>
+      {% if voice.sample_duration %}
+      <div class="flex justify-between">
+        <span class="text-on-surface-variant" data-i18n="mv.meta.sample">Mẫu audio:</span>
+        <span class="text-on-surface font-medium">{{ "%.1f"|format(voice.sample_duration) }}s</span>
+      </div>
+      {% endif %}
+      {% if voice.status == 'completed' %}
+      <div class="flex justify-between">
+        <span class="text-on-surface-variant" data-i18n="mv.meta.usage">Số lần dùng:</span>
+        <span class="text-on-surface font-medium">{{ voice.usage_count or 0 }} lần</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="flex items-center gap-2 pt-4 border-t border-outline-variant/20">
+      {% if voice.status == 'completed' %}
+      <button onclick="testVoice({{ voice.id }})"
+        class="flex-1 bg-surface-container-highest text-on-surface py-2 rounded-lg text-xs font-semibold hover:bg-surface-bright transition-colors border border-outline-variant/30">
+        <span class="material-symbols-outlined" style="font-size:14px">headphones</span>
+        <span data-i18n="mv.btn.preview">Nghe thử</span>
+      </button>
+      <button onclick="useVoice({{ voice.id }})"
+        class="flex-1 bg-primary text-on-primary py-2 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined" style="font-size:14px">play_arrow</span>
+        <span data-i18n="mv.btn.use">Sử dụng</span>
+      </button>
+      {% elif voice.status == 'processing' %}
+      <button onclick="refreshProgress({{ voice.id }})"
+        class="flex-1 bg-surface-container-highest text-on-surface py-2 rounded-lg text-xs font-semibold hover:bg-surface-bright transition-colors border border-outline-variant/30 flex items-center justify-center gap-1">
+        <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
+        Refresh
+      </button>
+      {% elif voice.status == 'failed' %}
+      <button onclick="retryTraining({{ voice.id }})"
+        class="flex-1 bg-yellow-500/15 border border-yellow-500/30 text-yellow-400 py-2 rounded-lg text-xs font-semibold hover:bg-yellow-500/25 transition-colors flex items-center justify-center gap-1">
+        <span class="material-symbols-outlined" style="font-size:14px">replay</span>
+        <span data-i18n="mv.btn.retry">Thử lại</span>
+      </button>
+      {% endif %}
+      <button onclick="deleteVoice({{ voice.id }}, '{{ voice.voice_name | e }}')"
+        class="p-2 text-error hover:bg-error/10 rounded-lg transition-colors border border-transparent hover:border-error/20">
+        <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if total > per_page %}
+{% set start_idx = (page - 1) * per_page + 1 %}
+{% set end_idx = [page * per_page, total] | min %}
+<div class="mt-8 px-4 py-3.5 rounded-xl border border-outline-variant/30 bg-surface-container/30 flex items-center justify-between gap-4 flex-wrap" id="voicesPagination">
+  <span class="text-xs text-on-surface-variant" id="voicesPaginationInfo">
+    Hiển thị {{ start_idx }}–{{ end_idx }} của {{ total }} giọng
+  </span>
+  <div class="flex items-center gap-1.5 flex-wrap">
+    {% if page > 1 %}
+    <a href="{{ url_for('my_voices', page=page - 1) }}"
+       class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors flex items-center justify-center text-on-surface no-underline">
+      <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span>
+    </a>
+    {% else %}
+    <span class="p-2 border border-outline-variant/30 rounded-lg opacity-40 flex items-center justify-center text-on-surface-variant">
+      <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span>
+    </span>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+      {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+    <a href="{{ url_for('my_voices', page=p) }}"
+       class="page-btn w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/40 hover:bg-surface-container text-on-surface text-xs font-semibold transition-colors no-underline {% if p == page %}active{% endif %}">
+      {{ p }}
+    </a>
+      {% elif p == page - 3 or p == page + 3 %}
+    <span class="text-outline-variant px-1 text-sm">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="{{ url_for('my_voices', page=page + 1) }}"
+       class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container transition-colors flex items-center justify-center text-on-surface no-underline">
+      <span class="material-symbols-outlined" style="font-size:18px">chevron_right</span>
+    </a>
+    {% else %}
+    <span class="p-2 border border-outline-variant/30 rounded-lg opacity-40 flex items-center justify-center text-on-surface-variant">
+      <span class="material-symbols-outlined" style="font-size:18px">chevron_right</span>
+    </span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

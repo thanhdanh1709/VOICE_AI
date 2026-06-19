@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
     <!-- Design System CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
@@ -138,17 +139,45 @@
 
         .nav-brand { display: flex; align-items: center; }
 
-        .nav-brand h1 {
+        .nav-brand-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none !important;
+            transition: opacity 0.15s ease;
+            color: inherit;
+        }
+
+        .nav-brand-link:hover {
+            opacity: 0.85;
+            text-decoration: none !important;
+        }
+
+        .navbar .nav-brand-link .nav-brand-icon {
+            font-family: 'Material Symbols Outlined';
+            font-size: 24px;
+            line-height: 1;
+            color: #d0bcff !important;
+            -webkit-text-fill-color: #d0bcff !important;
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .nav-brand-text {
             margin: 0;
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .nav-brand-text-gradient {
+            background: linear-gradient(90deg, #8b5cf6 0%, #22d3ee 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            white-space: nowrap;
-            text-decoration: none;
+            color: transparent;
         }
 
         .nav-menu {
@@ -234,6 +263,10 @@
             box-shadow: 0 4px 20px rgba(124,58,237,0.6);
             color: white !important;
             text-decoration: none;
+        }
+
+        .nav-menu a.nav-active {
+            color: #c4b5fd !important;
         }
 
         .theme-toggle {
@@ -329,6 +362,14 @@
             min-height: calc(100vh - 64px - 280px);
             padding-top: calc(64px + 2rem);
             padding-bottom: 2rem;
+        }
+        .main-content.auth-page-main {
+            min-height: calc(100vh - 64px);
+            height: auto;
+            padding: 64px 0 0;
+            margin: 0;
+            overflow: visible;
+            box-sizing: border-box;
         }
         @media (max-width: 540px) {
             .main-content { padding-top: calc(64px + 1rem); padding-left: 0.5rem; padding-right: 0.5rem; }
@@ -493,7 +534,7 @@
         }
     </style>
 </head>
-<body>
+<body{% if auth_page %} class="auth-v2-page dark"{% endif %}>
     <!-- Background orbs -->
     <div class="bg-orbs" aria-hidden="true">
         <div class="bg-orb bg-orb-1"></div>
@@ -504,9 +545,14 @@
     <!-- ══ NAVBAR ══ -->
     <nav class="navbar" id="mainNavbar">
         <div class="container">
-            <div class="nav-brand">
-                <h1>🎤 VietVoice</h1>
-            </div>
+            <a href="{{ url_for('index') if session.user_id else url_for('landing') }}" class="nav-brand-link">
+                <span class="material-symbols-outlined nav-brand-icon" aria-hidden="true">graphic_eq</span>
+                {% if session.user_id %}
+                <span class="nav-brand-text">VietVoice</span>
+                {% else %}
+                <span class="nav-brand-text nav-brand-text-gradient">VietVoice AI</span>
+                {% endif %}
+            </a>
             <ul class="nav-menu">
                 {% if session.user_id %}
                     <li><a href="{{ url_for('index') }}" data-i18n="nav.home">Trang chủ</a></li>
@@ -525,8 +571,8 @@
                 {% else %}
                     <li><a href="{{ url_for('landing') }}" data-i18n="nav.features">Tính năng</a></li>
                     <li><a href="{{ url_for('contact') }}" data-i18n="nav.contact">Liên hệ</a></li>
-                    <li><a href="{{ url_for('login') }}" data-i18n="nav.login">Đăng nhập</a></li>
-                    <li><a href="{{ url_for('register') }}" class="nav-cta" data-i18n="nav.register">Bắt đầu miễn phí</a></li>
+                    <li><a href="{{ url_for('login') }}" class="{% if request.endpoint == 'login' %}nav-active{% endif %}" data-i18n="nav.login">Đăng nhập</a></li>
+                    <li><a href="{{ url_for('register') }}" class="nav-cta{% if request.endpoint == 'register' %} nav-active{% endif %}" data-i18n="nav.register">Bắt đầu miễn phí</a></li>
                 {% endif %}
                 <li>
                     <button id="themeToggle" class="theme-toggle" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
@@ -576,11 +622,12 @@
     </div>
 
     <!-- ══ MAIN CONTENT ══ -->
-    <main class="main-content">
+    <main class="main-content{% if auth_page %} auth-page-main{% endif %}">
         {% block content %}{% endblock %}
     </main>
 
     <!-- ══ FOOTER — Zephyr Style ══ -->
+    {% if not auth_page %}
     <footer class="site-footer">
         <div class="footer-inner">
 
@@ -672,6 +719,7 @@
 
         </div>
     </footer>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

@@ -24,15 +24,30 @@ const WAVEFORMS = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
+    initAudioLibraryPage();
+});
+
+function initAudioLibraryPage() {
+    if (!document.getElementById('audioContainer')) return;
+
     loadVoicesForFilter();
     loadAudioLibrary();
 
-    // Filter button
-    document.getElementById('filterBtn').addEventListener('click', applyFilters);
-    document.getElementById('resetBtn').addEventListener('click', resetFilters);
+    const filterBtn = document.getElementById('filterBtn');
+    if (filterBtn && !filterBtn.dataset.bound) {
+        filterBtn.dataset.bound = '1';
+        filterBtn.addEventListener('click', applyFilters);
+    }
 
-    // View toggle
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn && !resetBtn.dataset.bound) {
+        resetBtn.dataset.bound = '1';
+        resetBtn.addEventListener('click', resetFilters);
+    }
+
     document.querySelectorAll('.view-btn-modern').forEach(btn => {
+        if (btn.dataset.bound) return;
+        btn.dataset.bound = '1';
         btn.addEventListener('click', function () {
             currentView = this.dataset.view;
             document.querySelectorAll('.view-btn-modern').forEach(b => b.classList.remove('active'));
@@ -47,19 +62,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Pagination
-    document.getElementById('prevBtn').addEventListener('click', () => {
-        if (currentPage > 1) { currentPage--; loadAudioLibrary(); }
-    });
-    document.getElementById('nextBtn').addEventListener('click', () => {
-        if (currentPage < totalPages) { currentPage++; loadAudioLibrary(); }
-    });
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn && !prevBtn.dataset.bound) {
+        prevBtn.dataset.bound = '1';
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) { currentPage--; loadAudioLibrary(); }
+        });
+    }
 
-    // Search on Enter
-    document.getElementById('searchInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') applyFilters();
-    });
-});
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn && !nextBtn.dataset.bound) {
+        nextBtn.dataset.bound = '1';
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) { currentPage++; loadAudioLibrary(); }
+        });
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && !searchInput.dataset.bound) {
+        searchInput.dataset.bound = '1';
+        searchInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') applyFilters();
+        });
+    }
+}
 
 // ── Voice filter ──────────────────────────────────────────────────────────────
 async function loadVoicesForFilter() {
@@ -239,7 +265,7 @@ function renderAudioItems(audios) {
     });
     document.querySelectorAll('.share-btn').forEach(btn => {
         btn.addEventListener('click', function () {
-            openShareModal(this.dataset.id, parseInt(this.dataset.public), this.dataset.token);
+            openShareModal(this.dataset.id, parseInt(this.dataset.public), this.dataset.token, this.dataset.shareUrl);
         });
     });
     document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -332,7 +358,7 @@ function createGridCard(audio, idx) {
         <!-- Actions -->
         <div class="flex items-center justify-between gap-1 border-t border-outline-variant/25 pt-3">
             <button class="share-btn flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold ${audio.is_public ? 'text-green-400 hover:bg-green-500/10' : 'text-on-surface-variant hover:bg-surface-variant hover:text-on-surface'}"
-               data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}">
+               data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}" data-share-url="${escapeHtml(audio.share_url || '')}">
                 <span class="material-symbols-outlined" style="font-size:15px">${audio.is_public ? 'link' : 'share'}</span>
                 ${audio.is_public ? 'Đã chia sẻ' : 'Chia sẻ'}
             </button>
@@ -376,7 +402,7 @@ function createListRow(audio) {
             <span class="material-symbols-outlined" style="font-size:13px">edit</span>
         </button>
         <button class="share-btn inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors ${audio.is_public ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-surface-container border-outline-variant/50 text-on-surface-variant hover:text-primary'}"
-           data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}" title="Chia sẻ">
+           data-id="${audio.id}" data-public="${audio.is_public ? 1 : 0}" data-token="${escapeHtml(audio.share_token || '')}" data-share-url="${escapeHtml(audio.share_url || '')}" title="Chia sẻ">
             <span class="material-symbols-outlined" style="font-size:13px">${audio.is_public ? 'link' : 'share'}</span>
         </button>
         <a href="${audioUrl}" download
@@ -520,7 +546,18 @@ async function saveRename() {
 // ── Share modal ────────────────────────────────────────────────────────────────
 let _shareAudioId = null;
 
-function openShareModal(id, isPublic, shareToken) {
+function getPublicBaseUrl() {
+    const cfg = (window.APP_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+    return cfg || location.origin;
+}
+
+function buildShareLink(token, shareUrl) {
+    if (shareUrl) return shareUrl;
+    if (!token) return '';
+    return `${getPublicBaseUrl()}/audio/share/${token}`;
+}
+
+function openShareModal(id, isPublic, shareToken, shareUrl) {
     _shareAudioId = id;
     const modal = document.getElementById('shareModal');
     const enabledEl  = document.getElementById('shareEnabled');
@@ -529,8 +566,7 @@ function openShareModal(id, isPublic, shareToken) {
     if (isPublic && shareToken) {
         enabledEl.style.display  = 'block';
         disabledEl.style.display = 'none';
-        const link = `${location.origin}/audio/share/${shareToken}`;
-        document.getElementById('shareLinkInput').value = link;
+        document.getElementById('shareLinkInput').value = buildShareLink(shareToken, shareUrl);
         document.getElementById('disableShareBtn').onclick = () => doToggleShare(id, true);
     } else {
         // Chưa bật → gọi API bật ngay rồi mới mở modal
@@ -558,8 +594,7 @@ async function doToggleShare(id, currentlyPublic) {
         const disabledEl = document.getElementById('shareDisabled');
 
         if (data.is_public) {
-            const link = `${location.origin}/audio/share/${data.share_token}`;
-            document.getElementById('shareLinkInput').value = link;
+            document.getElementById('shareLinkInput').value = buildShareLink(data.share_token, data.share_url);
             enabledEl.style.display  = 'block';
             disabledEl.style.display = 'none';
             document.getElementById('disableShareBtn').onclick = () => doToggleShare(id, true);

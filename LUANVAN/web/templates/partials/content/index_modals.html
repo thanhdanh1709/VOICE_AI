@@ -1,0 +1,23 @@
+<!-- ═══ VOICE GALLERY MODAL ═══ -->
+<div id="voiceGalleryModal" class="vv-modal">
+  <div class="vv-modal-content">
+    <div class="vv-modal-header">
+      <h2 class="text-base font-bold text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary" style="font-size:20px">library_music</span>
+        <span data-i18n="gallery.title">Thư viện giọng đọc</span>
+      </h2>
+      <button class="close-voice-gallery text-on-surface-variant hover:text-on-surface hover:bg-white/5 p-1.5 rounded-lg transition-all">
+        <span class="material-symbols-outlined" style="font-size:20px">close</span>
+      </button>
+    </div>
+    <div class="vv-modal-body">
+      <p class="text-sm text-on-surface-variant mb-5" data-i18n="gallery.subtitle">Nghe thử và chọn giọng đọc phù hợp với nội dung của bạn</p>
+      <div id="voiceGalleryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div class="col-span-full flex flex-col items-center justify-center py-10 gap-3 text-on-surface-variant">
+          <div class="vv-spinner"></div>
+          <p class="text-sm" data-i18n="gallery.loading">Đang tải danh sách giọng...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -161,9 +161,7 @@ tailwind.config = {
         <span class="material-symbols-outlined">help_outline</span>
       </a>
       <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
-          {{ (session.full_name or session.username or 'U')[0] | upper }}
-        </div>
+        {% include 'partials/_nav_avatar.html' %}
         <div class="hidden sm:flex flex-col">
           <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
           <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>

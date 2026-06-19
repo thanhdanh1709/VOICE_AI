@@ -1,0 +1,37 @@
+/* Sidebar cố định khi scroll; footer full-width, sidebar dừng trước footer */
+.vv-app-shell {
+    width: 100%;
+    padding-top: 4rem;
+}
+
+.vv-sidebar {
+    position: fixed;
+    left: 0;
+    top: 4rem;
+    bottom: 0;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+#sidebarMainContent,
+#content {
+    margin-left: 240px;
+    max-width: calc(100% - 240px);
+    min-width: 0;
+    width: auto;
+}
+
+.zf-site-footer {
+    width: 100%;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 20;
+}
+
+@media (max-width: 767px) {
+    #sidebarMainContent,
+    #content {
+        margin-left: 0 !important;
+        max-width: 100% !important;
+    }
+}

@@ -5,13 +5,74 @@
 
 let trendChart = null;
 let voiceDistributionChart = null;
+let adminPaymentsPage = 1;
+const ADMIN_PAYMENTS_PER_PAGE = 15;
+
+function isAdminMobileView() {
+    return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function paymentStatusBadge(status) {
+    const mobile = isAdminMobileView();
+    if (mobile) {
+        const map = {
+            pending: '<span class="pay-status" style="color:#f59e0b;background:rgba(245,158,11,0.12)">⏳ Chờ</span>',
+            completed: '<span class="pay-status" style="color:#10b981;background:rgba(16,185,129,0.12)">✅ Xong</span>',
+            failed: '<span class="pay-status" style="color:#ef4444;background:rgba(239,68,68,0.12)">❌ Lỗi</span>',
+            cancelled: '<span class="pay-status" style="color:#6b7280;background:rgba(107,114,128,0.12)">🚫 Hủy</span>',
+        };
+        return map[status] || status;
+    }
+    const map = {
+        pending: '<span class="pay-status" style="color:#f59e0b;background:rgba(245,158,11,0.12)">⏳ Chờ duyệt</span>',
+        completed: '<span class="pay-status" style="color:#10b981;background:rgba(16,185,129,0.12)">✅ Hoàn thành</span>',
+        failed: '<span class="pay-status" style="color:#ef4444;background:rgba(239,68,68,0.12)">❌ Thất bại</span>',
+        cancelled: '<span class="pay-status" style="color:#6b7280;background:rgba(107,114,128,0.12)">🚫 Hủy</span>',
+    };
+    return map[status] || status;
+}
+
+function applyAdminChartLayout() {
+    const mobile = isAdminMobileView();
+
+    if (trendChart) {
+        trendChart.options.plugins.legend.position = mobile ? 'bottom' : 'top';
+        trendChart.options.plugins.legend.labels.font.size = mobile ? 11 : 13;
+        trendChart.options.plugins.legend.labels.padding = mobile ? 10 : 16;
+        trendChart.options.scales.x.ticks.maxRotation = mobile ? 40 : 0;
+        trendChart.options.scales.x.ticks.font.size = mobile ? 10 : 12;
+        trendChart.options.scales.y.ticks.font.size = mobile ? 10 : 12;
+        trendChart.options.layout.padding = mobile ? { left: 2, right: 12, top: 4, bottom: 0 } : { left: 0, right: 4, top: 0, bottom: 0 };
+        trendChart.update();
+        trendChart.resize();
+    }
+
+    if (voiceDistributionChart) {
+        voiceDistributionChart.options.plugins.legend.position = mobile ? 'bottom' : 'right';
+        voiceDistributionChart.options.plugins.legend.labels.font.size = mobile ? 10 : 12;
+        voiceDistributionChart.options.plugins.legend.labels.padding = mobile ? 8 : 14;
+        voiceDistributionChart.options.radius = mobile ? '72%' : '88%';
+        voiceDistributionChart.update();
+        voiceDistributionChart.resize();
+    }
+}
+
+let _adminChartResizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(_adminChartResizeTimer);
+    _adminChartResizeTimer = setTimeout(applyAdminChartLayout, 150);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     loadAdminStatistics();
     loadTimeBasedStatistics();
     loadTopRankings();
     loadUsers();
-    loadPayments();
+    VVPagination.register('adminPayments', (page) => {
+        loadPayments(page);
+        document.getElementById('section-payments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    loadPayments(1);
     
     // Refresh button
     const refreshBtn = document.getElementById('refreshUsersBtn');
@@ -27,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Refresh payments button
     const refreshPaymentsBtn = document.getElementById('refreshPaymentsBtn');
     if (refreshPaymentsBtn) {
-        refreshPaymentsBtn.addEventListener('click', loadPayments);
+        refreshPaymentsBtn.addEventListener('click', () => loadPayments(adminPaymentsPage));
     }
     
     // Auto-approve button
@@ -205,6 +266,7 @@ function renderTrendChart(chartData) {
 
     if (trendChart) trendChart.destroy();
 
+    const mobile = isAdminMobileView();
     const canvas = ctx.getContext('2d');
     const gradient = canvas.createLinearGradient(0, 0, 0, 320);
     gradient.addColorStop(0,   'rgba(160, 120, 255, 0.35)');
@@ -226,7 +288,7 @@ function renderTrendChart(chartData) {
                 pointBackgroundColor: '#0d1c2d',
                 pointBorderColor: '#d0bcff',
                 pointBorderWidth: 2.5,
-                pointRadius: 4,
+                pointRadius: mobile ? 3 : 4,
                 pointHoverRadius: 6,
                 pointHoverBackgroundColor: '#d0bcff',
                 pointHoverBorderColor: '#0d1c2d',
@@ -236,16 +298,21 @@ function renderTrendChart(chartData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: mobile ? { left: 2, right: 12, top: 4, bottom: 0 } : { left: 0, right: 4, top: 0, bottom: 0 }
+            },
             plugins: {
                 legend: {
                     display: true,
-                    position: 'top',
+                    position: mobile ? 'bottom' : 'top',
+                    align: 'start',
                     labels: {
-                        font: { size: 13, weight: '600', family: 'Manrope' },
+                        font: { size: mobile ? 11 : 13, weight: '600', family: 'Manrope' },
                         color: '#cbc3d7',
                         usePointStyle: true,
                         pointStyle: 'circle',
-                        padding: 16
+                        padding: mobile ? 10 : 16,
+                        boxWidth: mobile ? 8 : 12
                     }
                 },
                 tooltip: {
@@ -277,7 +344,10 @@ function renderTrendChart(chartData) {
                 },
                 x: {
                     ticks: {
-                        font: { size: 12, family: 'Manrope' },
+                        maxRotation: mobile ? 40 : 0,
+                        autoSkip: true,
+                        maxTicksLimit: mobile ? 5 : 8,
+                        font: { size: mobile ? 10 : 12, family: 'Manrope' },
                         color: '#958ea0'
                     },
                     grid: { display: false }
@@ -285,6 +355,8 @@ function renderTrendChart(chartData) {
             }
         }
     });
+
+    setTimeout(() => { if (trendChart) trendChart.resize(); }, 100);
 }
 
 function renderVoiceDistributionChart(voiceData) {
@@ -293,8 +365,8 @@ function renderVoiceDistributionChart(voiceData) {
 
     if (voiceDistributionChart) voiceDistributionChart.destroy();
 
+    const mobile = isAdminMobileView();
     const sliceColors  = DONUT_COLORS.slice(0, voiceData.length);
-    // Hover: tăng độ sáng nhẹ bằng cách dùng opacity cao hơn
     const hoverColors  = sliceColors.map(c => c + 'dd');
 
     voiceDistributionChart = new Chart(ctx, {
@@ -314,17 +386,21 @@ function renderVoiceDistributionChart(voiceData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: mobile ? 4 : 0
+            },
             plugins: {
                 legend: {
                     display: true,
-                    position: 'right',
+                    position: mobile ? 'bottom' : 'right',
+                    align: mobile ? 'center' : 'center',
                     labels: {
-                        font: { size: 12, weight: '600', family: 'Manrope' },
+                        font: { size: mobile ? 10 : 12, weight: '600', family: 'Manrope' },
                         color: '#cbc3d7',
-                        padding: 14,
+                        padding: mobile ? 8 : 14,
                         usePointStyle: true,
                         pointStyle: 'circle',
-                        boxWidth: 10
+                        boxWidth: mobile ? 8 : 10
                     }
                 },
                 tooltip: {
@@ -346,8 +422,8 @@ function renderVoiceDistributionChart(voiceData) {
                     }
                 }
             },
-            cutout: '62%',
-            radius: '88%',
+            cutout: mobile ? '58%' : '62%',
+            radius: mobile ? '72%' : '88%',
             animation: {
                 animateRotate: true,
                 animateScale: false,
@@ -356,6 +432,8 @@ function renderVoiceDistributionChart(voiceData) {
             }
         }
     });
+
+    setTimeout(() => { if (voiceDistributionChart) voiceDistributionChart.resize(); }, 100);
 }
 
 function formatNumber(num) {
@@ -405,14 +483,14 @@ async function loadUsers() {
                 
                 return `
                     <tr>
-                        <td>${user.id}</td>
+                        <td class="hide-mobile">${user.id}</td>
                         <td>${user.username}</td>
-                        <td>${user.email}</td>
-                        <td>${user.full_name || '-'}</td>
+                        <td class="hide-mobile">${user.email}</td>
+                        <td class="hide-mobile">${user.full_name || '-'}</td>
                         <td>${roleSelect}</td>
-                        <td>${statusBadge}</td>
-                        <td>${user.total_conversions}</td>
-                        <td class="action-buttons">
+                        <td class="hide-mobile">${statusBadge}</td>
+                        <td class="hide-mobile">${user.total_conversions}</td>
+                        <td class="action-buttons admin-action-col">
                             ${statusButton}
                             ${deleteButton}
                         </td>
@@ -548,51 +626,67 @@ async function deleteUser(userId, username) {
     }
 }
 
-async function loadPayments() {
+async function loadPayments(page = adminPaymentsPage) {
+    adminPaymentsPage = page;
     const tbody = document.getElementById('paymentsTableBody');
+    const pagWrap = document.getElementById('adminPaymentsPaginationWrap');
     if (!tbody) return;
-    
+
     tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Đang tải...</td></tr>';
-    
+    if (pagWrap) pagWrap.style.display = 'none';
+
     try {
-        const response = await fetch('/api/admin/payments');
+        const response = await fetch(`/api/admin/payments?page=${page}&per_page=${ADMIN_PAYMENTS_PER_PAGE}`);
         const data = await response.json();
-        
+
         if (data.success) {
             const countEl = document.getElementById('paymentsCount');
             if (countEl) countEl.textContent = `Tổng: ${data.total} giao dịch`;
-            
+
             if (data.payments.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="loading-text">Chưa có giao dịch nào</td></tr>';
+                VVPagination.render({
+                    id: 'adminPayments',
+                    containerId: 'adminPaymentsPagination',
+                    infoId: 'adminPaymentsPaginationInfo',
+                    page: 1,
+                    total: 0,
+                    perPage: ADMIN_PAYMENTS_PER_PAGE,
+                });
                 return;
             }
-            
+
             tbody.innerHTML = data.payments.map(p => {
-                const statusBadge = {
-                    'pending': '<span style="color:#f59e0b;background:rgba(245,158,11,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">⏳ Chờ duyệt</span>',
-                    'completed': '<span style="color:#10b981;background:rgba(16,185,129,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">✅ Hoàn thành</span>',
-                    'failed': '<span style="color:#ef4444;background:rgba(239,68,68,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">❌ Thất bại</span>',
-                    'cancelled': '<span style="color:#6b7280;background:rgba(107,114,128,0.12);padding:3px 10px;border-radius:9999px;font-size:0.8rem;font-weight:600;">🚫 Hủy</span>'
-                }[p.payment_status] || p.payment_status;
-                
-                const approveBtn = p.payment_status === 'pending' 
-                    ? `<button class="btn btn-sm" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:4px 12px;font-size:0.8rem;cursor:pointer;border-radius:6px;" onclick="approvePayment(${p.id})">✓ Duyệt</button>`
+                const statusBadge = paymentStatusBadge(p.payment_status);
+
+                const approveBtn = p.payment_status === 'pending'
+                    ? `<button class="btn btn-sm" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);padding:4px 8px;font-size:0.72rem;cursor:pointer;border-radius:6px;white-space:nowrap" onclick="approvePayment(${p.id})">✓ Duyệt</button>`
                     : '';
-                
+
                 return `
                     <tr>
                         <td>#${p.id}</td>
-                        <td>${p.username || '-'}</td>
-                        <td>${p.package_name || '-'}</td>
-                        <td style="font-weight:600;color:#10b981;">${formatNumber(p.amount_vnd)}₫</td>
-                        <td>${p.payment_method || '-'}</td>
+                        <td class="hide-mobile">${p.username || '-'}</td>
+                        <td class="hide-mobile">${p.package_name || '-'}</td>
+                        <td style="font-weight:600;color:#10b981;white-space:nowrap">${formatNumber(p.amount_vnd)}₫</td>
+                        <td class="hide-mobile">${p.payment_method || '-'}</td>
                         <td>${statusBadge}</td>
-                        <td style="font-size:0.8rem;color:var(--text-tertiary);">${p.transaction_id ? p.transaction_id.substring(0,16)+'...' : '-'}</td>
-                        <td style="font-size:0.8rem;">${p.created_at || '-'}</td>
-                        <td>${approveBtn}</td>
+                        <td class="hide-mobile" style="font-size:0.8rem;color:var(--text-tertiary);">${p.transaction_id ? p.transaction_id.substring(0,16)+'...' : '-'}</td>
+                        <td class="hide-mobile" style="font-size:0.8rem;">${p.created_at || '-'}</td>
+                        <td class="admin-action-col">${approveBtn}</td>
                     </tr>
                 `;
             }).join('');
+
+            if (pagWrap) pagWrap.style.display = 'flex';
+            VVPagination.render({
+                id: 'adminPayments',
+                containerId: 'adminPaymentsPagination',
+                infoId: 'adminPaymentsPaginationInfo',
+                page: data.page,
+                total: data.total,
+                perPage: data.per_page,
+            });
         } else {
             tbody.innerHTML = `<tr><td colspan="9" class="error-text">Lỗi: ${data.message}</td></tr>`;
         }
