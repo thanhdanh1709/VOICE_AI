@@ -49,7 +49,16 @@
         </div>
     </div>
 
-    <button type="submit" class="auth-btn-primary glow-effect" style="margin-top:0.25rem">
+    <label class="auth-checkbox auth-terms-checkbox">
+        <input type="checkbox" id="acceptTerms" name="accept_terms" required>
+        <span>
+            <span data-i18n="auth.register.terms_prefix">Tôi đồng ý với</span>
+            <a href="{{ url_for('terms') }}" target="_blank" rel="noopener noreferrer" data-i18n="auth.register.terms_link">Điều khoản sử dụng</a>
+            <span data-i18n="auth.register.terms_suffix">của VietVoice</span>
+        </span>
+    </label>
+
+    <button type="submit" id="registerSubmitBtn" class="auth-btn-primary glow-effect" style="margin-top:0.25rem" disabled>
         <span data-i18n="auth.register.btn_free">Đăng ký miễn phí</span>
         <span class="material-symbols-outlined" style="font-size:1.1rem">arrow_forward</span>
     </button>

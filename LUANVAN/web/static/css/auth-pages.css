@@ -173,13 +173,13 @@ body.auth-v2-page .navbar.scrolled {
     font-size: 1.3rem;
     font-weight: 700;
     color: #f8fafc;
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.75rem;
     letter-spacing: -0.02em;
 }
 
 .auth-visual-inner p {
     font-size: 0.88rem;
-    line-height: 1.6;
+    line-height: 1.65;
     color: #94a3b8;
     margin: 0;
 }
@@ -257,7 +257,7 @@ body.auth-v2-page .navbar.scrolled {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1.75rem 1.5rem;
+    padding: 2rem 1.75rem;
     background: linear-gradient(180deg, #131c2e 0%, #0f172a 100%);
     overflow-y: auto;
     min-height: 0;
@@ -265,7 +265,7 @@ body.auth-v2-page .navbar.scrolled {
 
 @media (min-width: 768px) {
     .auth-form-panel {
-        padding: 2rem 2.25rem;
+        padding: 2.5rem 2.5rem;
     }
 }
 
@@ -276,7 +276,7 @@ body.auth-v2-page .navbar.scrolled {
 
 /* ── Form elements ── */
 .auth-form-head {
-    margin-bottom: 1.35rem;
+    margin-bottom: 1.5rem;
 }
 
 .auth-form-head h2 {
@@ -284,18 +284,18 @@ body.auth-v2-page .navbar.scrolled {
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #f8fafc;
-    margin: 0 0 0.3rem;
+    margin: 0 0 0.5rem;
 }
 
 .auth-form-head p {
     font-size: 0.875rem;
     color: #94a3b8;
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
 .auth-field {
-    margin-bottom: 0.95rem;
+    margin-bottom: 1.15rem;
 }
 
 .auth-field label {
@@ -303,7 +303,7 @@ body.auth-v2-page .navbar.scrolled {
     font-size: 0.8rem;
     font-weight: 600;
     color: #94a3b8;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.45rem;
 }
 
 .auth-input-wrap {
@@ -323,9 +323,9 @@ body.auth-v2-page .navbar.scrolled {
 
 .auth-input-wrap input {
     width: 100%;
-    padding: 0.7rem 0.85rem 0.7rem 2.5rem;
+    padding: 0.78rem 0.9rem 0.78rem 2.55rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.6rem;
+    border-radius: 0.65rem;
     background: rgba(0, 0, 0, 0.25);
     color: #f1f5f9;
     font-size: 0.9rem;
@@ -371,6 +371,24 @@ body.auth-v2-page .navbar.scrolled {
     height: 15px;
     accent-color: #7c3aed;
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+.auth-terms-checkbox {
+    margin: 0.75rem 0 0.5rem;
+    align-items: flex-start;
+    line-height: 1.45;
+}
+
+.auth-terms-checkbox a {
+    color: #a78bfa;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-terms-checkbox a:hover {
+    color: #c4b5fd;
+    text-decoration: underline;
 }
 
 .auth-options-row a {
@@ -385,11 +403,18 @@ body.auth-v2-page .navbar.scrolled {
     color: #c4b5fd;
 }
 
+.auth-btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+}
+
 .auth-btn-primary {
     width: 100%;
-    padding: 0.78rem 1rem;
+    padding: 0.82rem 1rem;
+    margin-top: 0.25rem;
     border: none;
-    border-radius: 0.6rem;
+    border-radius: 0.65rem;
     background: linear-gradient(90deg, #7c3aed 0%, #0891b2 100%);
     color: #fff;
     font-size: 0.92rem;
@@ -404,7 +429,7 @@ body.auth-v2-page .navbar.scrolled {
     box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
 }
 
-.auth-btn-primary:hover {
+.auth-btn-primary:hover:not(:disabled) {
     opacity: 0.93;
     transform: translateY(-1px);
     box-shadow: 0 6px 24px rgba(124, 58, 237, 0.45);

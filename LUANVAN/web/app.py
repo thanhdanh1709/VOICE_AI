@@ -856,6 +856,9 @@ def register():
         email = data.get('email')
         password = data.get('password')
         full_name = data.get('full_name', '')
+        accept_terms = data.get('accept_terms')
+        if not accept_terms:
+            return jsonify({'success': False, 'message': 'Vui lòng đồng ý với điều khoản sử dụng'}), 400
         if email:
             email = email.strip().lower()
         

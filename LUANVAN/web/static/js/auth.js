@@ -63,6 +63,20 @@ if (loginForm) {
 // Register form handler
 const registerForm = document.getElementById('registerForm');
 if (registerForm) {
+    const acceptTermsCheckbox = document.getElementById('acceptTerms');
+    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+
+    function syncRegisterSubmitState() {
+        if (registerSubmitBtn && acceptTermsCheckbox) {
+            registerSubmitBtn.disabled = !acceptTermsCheckbox.checked;
+        }
+    }
+
+    if (acceptTermsCheckbox) {
+        acceptTermsCheckbox.addEventListener('change', syncRegisterSubmitState);
+        syncRegisterSubmitState();
+    }
+
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -72,6 +86,11 @@ if (registerForm) {
         const password = document.getElementById('password').value;
         const confirm_password = document.getElementById('confirm_password').value;
         
+        if (!acceptTermsCheckbox || !acceptTermsCheckbox.checked) {
+            utils.showMessage(__('err.terms_required'), 'error');
+            return;
+        }
+
         if (password !== confirm_password) {
             utils.showMessage(__('err.password_mismatch'), 'error');
             return;
@@ -83,7 +102,13 @@ if (registerForm) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ full_name, username, email, password })
+                body: JSON.stringify({
+                    full_name,
+                    username,
+                    email,
+                    password,
+                    accept_terms: true
+                })
             });
             
             const data = await response.json();
