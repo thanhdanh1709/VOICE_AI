@@ -1,3 +1,4 @@
+<a href="{{ url_for('profile') }}" class="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50" title="Hồ sơ cá nhân" aria-label="Hồ sơ cá nhân">
 {% if session.avatar_url %}
 <img src="{{ session.avatar_url }}" alt="" class="w-8 h-8 rounded-full object-cover shrink-0 nav-user-avatar" id="navAvatarImg"/>
 {% else %}
@@ -5,3 +6,4 @@
   {{ (session.full_name or session.username or 'U')[0] | upper }}
 </div>
 {% endif %}
+</a>

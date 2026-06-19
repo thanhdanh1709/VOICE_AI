@@ -178,32 +178,8 @@ tailwind.config = {
   </div>
 </nav>
 
-<!-- ═══ MOBILE NAV OVERLAY + DRAWER ═══ -->
-<div id="mobileNavOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileNav()"></div>
-<div id="mobileNavDrawer" class="fixed top-16 left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
-  <div class="flex flex-col p-3 gap-0.5">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span> Workspace
-    </a>
-    <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> <span data-i18n="mob.voices">Giọng của tôi</span>
-    </a>
-    <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">library_music</span> <span data-i18n="mob.library">Thư viện Audio</span>
-    </a>
-    <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">history</span> <span data-i18n="mob.history">Lịch sử</span>
-    </a>
-    <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">bolt</span> <span data-i18n="mob.pricing">Bảng giá</span>
-    </a>
-    <div class="border-t border-white/10 mt-1 pt-1">
-      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline">
-        <span class="material-symbols-outlined" style="font-size:20px">logout</span> <span data-i18n="mob.logout">Đăng xuất</span>
-      </a>
-    </div>
-  </div>
-</div>
+{% set mob_nav_active = 'my_voices' %}
+{% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <main class="pt-20 md:pt-24 pb-16 px-4 md:px-6 overflow-hidden">

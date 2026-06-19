@@ -1,0 +1,23 @@
+{% set mob = mob_nav_active|default('') %}
+<nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#07111f]/95 backdrop-blur-xl border-t border-white/10 flex justify-around items-center h-[60px] px-1">
+  <a href="{{ url_for('index') }}" class="flex flex-col items-center gap-0.5 py-2 px-2 no-underline transition-colors {{ 'text-primary' if mob == 'index' else 'text-slate-500 hover:text-white' }}">
+    <span class="material-symbols-outlined" style="font-size:22px;{% if mob == 'index' %}font-variation-settings:'FILL' 1{% endif %}">graphic_eq</span>
+    <span class="text-[10px] {{ 'font-semibold' if mob == 'index' else 'font-medium' }}" data-i18n="bottom.create">Tạo</span>
+  </a>
+  <a href="{{ url_for('audio_library') }}" class="flex flex-col items-center gap-0.5 py-2 px-2 no-underline transition-colors {{ 'text-primary' if mob == 'audio_library' else 'text-slate-500 hover:text-white' }}">
+    <span class="material-symbols-outlined" style="font-size:22px;{% if mob == 'audio_library' %}font-variation-settings:'FILL' 1{% endif %}">library_music</span>
+    <span class="text-[10px] {{ 'font-semibold' if mob == 'audio_library' else 'font-medium' }}" data-i18n="bottom.library">Thư viện</span>
+  </a>
+  <a href="{{ url_for('my_voices') }}" class="flex flex-col items-center gap-0.5 py-2 px-2 no-underline transition-colors {{ 'text-primary' if mob == 'my_voices' else 'text-slate-500 hover:text-white' }}">
+    <span class="material-symbols-outlined" style="font-size:22px;{% if mob == 'my_voices' %}font-variation-settings:'FILL' 1{% endif %}">record_voice_over</span>
+    <span class="text-[10px] {{ 'font-semibold' if mob == 'my_voices' else 'font-medium' }}" data-i18n="bottom.voices">Giọng</span>
+  </a>
+  <a href="{{ url_for('history') }}" class="flex flex-col items-center gap-0.5 py-2 px-2 no-underline transition-colors {{ 'text-primary' if mob == 'history' else 'text-slate-500 hover:text-white' }}">
+    <span class="material-symbols-outlined" style="font-size:22px;{% if mob == 'history' %}font-variation-settings:'FILL' 1{% endif %}">history</span>
+    <span class="text-[10px] {{ 'font-semibold' if mob == 'history' else 'font-medium' }}" data-i18n="bottom.history">Lịch sử</span>
+  </a>
+  <a href="{{ url_for('profile') }}" class="flex flex-col items-center gap-0.5 py-2 px-2 no-underline transition-colors {{ 'text-primary' if mob == 'profile' else 'text-slate-500 hover:text-white' }}">
+    <span class="material-symbols-outlined" style="font-size:22px;{% if mob == 'profile' %}font-variation-settings:'FILL' 1{% endif %}">manage_accounts</span>
+    <span class="text-[10px] {{ 'font-semibold' if mob == 'profile' else 'font-medium' }}" data-i18n="side.profile">Hồ sơ</span>
+  </a>
+</nav>

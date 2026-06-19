@@ -167,40 +167,8 @@ tailwind.config = {
   </div>
 </nav>
 
-<!-- ═══ MOBILE NAV OVERLAY + DRAWER ═══ -->
-<div id="mobileNavOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileNav()"></div>
-<div id="mobileNavDrawer" class="fixed top-16 left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
-  <div class="flex flex-col p-3 gap-0.5">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span> Workspace
-    </a>
-    <a href="{{ url_for('my_voices') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> Giọng của tôi
-    </a>
-    <a href="{{ url_for('audio_library') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">library_music</span> Thư viện Audio
-    </a>
-    <a href="{{ url_for('history') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">history</span> Lịch sử
-    </a>
-    <a href="{{ url_for('pricing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">bolt</span> Bảng giá
-    </a>
-    <a href="{{ url_for('contact') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary bg-primary/10 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">contact_support</span> Liên hệ
-    </a>
-    {% if session.user_role == 'admin' %}
-    <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-tertiary hover:text-white hover:bg-white/5 no-underline">
-      <span class="material-symbols-outlined" style="font-size:20px">admin_panel_settings</span> Admin
-    </a>
-    {% endif %}
-    <div class="border-t border-white/10 mt-1 pt-1">
-      <a href="{{ url_for('logout') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 no-underline">
-        <span class="material-symbols-outlined" style="font-size:20px">logout</span> Đăng xuất
-      </a>
-    </div>
-  </div>
-</div>
+{% set mob_nav_active = 'contact' %}
+{% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
 <div class="flex flex-1 pt-16 min-h-screen w-full overflow-hidden">
@@ -453,28 +421,7 @@ tailwind.config = {
 </div>
 
 <!-- ═══ MOBILE BOTTOM NAV ═══ -->
-<nav class="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#07111f]/95 backdrop-blur-xl border-t border-white/10 flex justify-around items-center px-2 py-1 safe-area-pb">
-  <a href="{{ url_for('index') }}" class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-colors no-underline">
-    <span class="material-symbols-outlined" style="font-size:22px">add_circle</span>
-    <span class="text-[10px]" data-i18n="bottom.create_new">Tạo mới</span>
-  </a>
-  <a href="{{ url_for('audio_library') }}" class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-colors no-underline">
-    <span class="material-symbols-outlined" style="font-size:22px">library_music</span>
-    <span class="text-[10px]" data-i18n="bottom.library">Thư viện</span>
-  </a>
-  <a href="{{ url_for('my_voices') }}" class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-colors no-underline">
-    <span class="material-symbols-outlined" style="font-size:22px">record_voice_over</span>
-    <span class="text-[10px]" data-i18n="bottom.voices">Voices</span>
-  </a>
-  <a href="{{ url_for('history') }}" class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white transition-colors no-underline">
-    <span class="material-symbols-outlined" style="font-size:22px">history</span>
-    <span class="text-[10px]" data-i18n="bottom.history">Lịch sử</span>
-  </a>
-  <a href="{{ url_for('contact') }}" class="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-primary no-underline">
-    <span class="material-symbols-outlined" style="font-size:22px;font-variation-settings:'FILL' 1">contact_support</span>
-    <span class="text-[10px] font-semibold" data-i18n="bottom.contact">Liên hệ</span>
-  </a>
-</nav>
+{% include 'partials/mobile_bottom_nav.html' %}
 
 <!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}

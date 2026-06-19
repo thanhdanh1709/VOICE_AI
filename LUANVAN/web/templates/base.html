@@ -598,22 +598,23 @@
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeBaseNav()"></div>
     <div class="mobile-nav-drawer" id="mobileNavDrawer">
         {% if session.user_id %}
-        <a href="{{ url_for('index') }}" data-i18n="mob.home">🏠 Trang chủ</a>
-        <a href="{{ url_for('audio_library') }}" data-i18n="mob.library">🎵 Thư viện Audio</a>
-        <a href="{{ url_for('history') }}" data-i18n="mob.history">📋 Lịch sử chuyển đổi</a>
-        <a href="{{ url_for('my_voices') }}" data-i18n="mob.voices">🎙️ Giọng của tôi</a>
-        <a href="{{ url_for('pricing') }}" data-i18n="mob.pricing">⚡ Bảng giá</a>
-        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">💬 Liên hệ</a>
+        <a href="{{ url_for('index') }}" data-i18n="mob.home">Trang chủ</a>
+        <a href="{{ url_for('audio_library') }}" data-i18n="mob.library">Thư viện Audio</a>
+        <a href="{{ url_for('history') }}" data-i18n="mob.history">Lịch sử chuyển đổi</a>
+        <a href="{{ url_for('my_voices') }}" data-i18n="mob.voices">Giọng của tôi</a>
+        <a href="{{ url_for('pricing') }}" data-i18n="mob.pricing">Bảng giá</a>
+        <a href="{{ url_for('profile') }}" data-i18n="side.profile">Hồ sơ</a>
+        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">Liên hệ</a>
         {% if session.user_role == 'admin' %}
-        <a href="{{ url_for('admin') }}" data-i18n="mob.admin">🛡️ Quản trị</a>
+        <a href="{{ url_for('admin') }}" data-i18n="mob.admin">Quản trị</a>
         {% endif %}
         <hr class="mobile-nav-divider">
-        <a href="{{ url_for('logout') }}" class="mobile-logout">🚪 <span data-i18n="nav.logout">Đăng xuất</span> ({{ session.full_name or session.username }})</a>
+        <a href="{{ url_for('logout') }}" class="mobile-logout"><span data-i18n="nav.logout">Đăng xuất</span> ({{ session.full_name or session.username }})</a>
         {% else %}
-        <a href="{{ url_for('landing') }}" data-i18n="mob.features">✨ Tính năng</a>
-        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">💬 Liên hệ</a>
-        <a href="{{ url_for('login') }}" data-i18n="mob.login">🔑 Đăng nhập</a>
-        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700" data-i18n="mob.register">✦ Bắt đầu miễn phí</a>
+        <a href="{{ url_for('landing') }}" data-i18n="mob.features">Tính năng</a>
+        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">Liên hệ</a>
+        <a href="{{ url_for('login') }}" data-i18n="mob.login">Đăng nhập</a>
+        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700" data-i18n="mob.register">Bắt đầu miễn phí</a>
         {% endif %}
         <hr class="mobile-nav-divider">
         <button class="vv-lang-toggle" style="margin:8px 0 4px 0;width:auto;" onclick="VVi18n.toggle()" aria-label="Switch language">
