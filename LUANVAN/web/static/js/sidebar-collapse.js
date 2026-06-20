@@ -18,26 +18,6 @@
     return collapsed ? 64 : 240;
   }
 
-  function updateSidebarForFooter() {
-    const sidebar = document.getElementById('mainSidebar');
-    const footer = document.querySelector('.zf-site-footer');
-    if (!sidebar) return;
-
-    if (window.innerWidth < 768 || !footer) {
-      sidebar.style.bottom = '0px';
-      return;
-    }
-
-    const footerTop = footer.getBoundingClientRect().top;
-    const viewportH = window.innerHeight;
-
-    if (footerTop < viewportH) {
-      sidebar.style.bottom = Math.max(0, viewportH - footerTop) + 'px';
-    } else {
-      sidebar.style.bottom = '0px';
-    }
-  }
-
   function applyState(collapsed, animate) {
     const sidebar = document.getElementById('mainSidebar');
     const content = getMainContent();
@@ -51,7 +31,6 @@
         content.style.marginLeft = '0';
         content.style.maxWidth   = '100%';
       }
-      sidebar.style.bottom = '0px';
       return;
     }
 
@@ -59,7 +38,7 @@
       sidebar.style.transition = 'none';
       if (content) content.style.transition = 'none';
     } else {
-      sidebar.style.transition  = 'width 0.22s ease, bottom 0.15s ease';
+      sidebar.style.transition  = 'width 0.22s ease';
       if (content) content.style.transition = 'margin-left 0.22s ease';
     }
 
@@ -83,12 +62,10 @@
       if (btn) btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>';
     }
 
-    updateSidebarForFooter();
-
     if (!animate) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (sidebar) sidebar.style.transition = 'width 0.22s ease, bottom 0.15s ease';
+          if (sidebar) sidebar.style.transition = 'width 0.22s ease';
           if (content) content.style.transition = 'margin-left 0.22s ease';
         });
       });
@@ -107,7 +84,6 @@
     const btn = document.getElementById('sidebarCollapseBtn');
     if (btn) btn.addEventListener('click', toggle);
 
-    window.addEventListener('scroll', updateSidebarForFooter, { passive: true });
     window.addEventListener('resize', function () {
       applyState(isCollapsed(), false);
     });

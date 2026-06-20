@@ -1,4 +1,4 @@
-/* Sidebar cố định khi scroll; footer full-width, sidebar dừng trước footer */
+/* Sidebar cố định toàn chiều cao khi scroll */
 .vv-app-shell {
     width: 100%;
     padding-top: 4rem;
@@ -9,8 +9,10 @@
     left: 0;
     top: 4rem;
     bottom: 0;
+    height: calc(100vh - 4rem);
     z-index: 10;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 #sidebarMainContent,
