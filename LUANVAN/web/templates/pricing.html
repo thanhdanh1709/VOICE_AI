@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="dark" lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8"/>
@@ -217,7 +217,7 @@ tailwind.config = {
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
         <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
-        <span class="sb-label">Hồ sơ</span>
+        <span class="sb-label" data-i18n="side.profile">Hồ sơ</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
         <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
@@ -239,6 +239,7 @@ tailwind.config = {
 
   <!-- ═══ MAIN CONTENT ═══ -->
   <main id="content" data-spa-page="pricing" class="flex-1 flex flex-col min-w-0 flex-grow py-6 md:py-10 px-4 md:px-6 lg:px-10 max-w-[1300px] mx-auto w-full pb-[76px] md:pb-10 overflow-hidden">
+    <script id="pricingPackagesJson" type="application/json">{{ pricing_packages|tojson }}</script>
     {% include 'partials/content/pricing.html' %}
   </main>
 </div>
@@ -360,7 +361,7 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' ký tự';
+      if (el) el.textContent = fmt + ' ' + ((window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.chars') : 'ký tự');
     }
   } catch(e) {}
 }
@@ -404,6 +405,19 @@ function copyToClipboard(element) {
   const text = element.textContent.trim();
   navigator.clipboard.writeText(text).then(() => {
     const orig = element.textContent;
-    element.textContent = 'Đã copy!';
+    const copied = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copied') : 'Đã copy!';
+    element.textContent = copied;
     element.style.color = '#2fd9f4';
-{% include 'partials/content/pricing_modals.html' %}
+    setTimeout(() => { element.textContent = orig; element.style.color = ''; }, 2000);
+  }).catch(() => {
+    const msg = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copy_fail') : 'Không thể copy';
+    alert(msg + ': ' + text);
+  });
+}
+</script>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% set _title_key = admin_header_title_key|default(ac_header_title_key|default('')) %}
+{% set _title_default = admin_header_title_default|default(ac_header_title_default|default('')) %}
+{% set _subtitle_key = admin_header_subtitle_key|default(ac_header_subtitle_key|default('')) %}
+{% set _subtitle_default = admin_header_subtitle_default|default(ac_header_subtitle_default|default('')) %}
+
+<header class="admin-unified-header" id="adminUnifiedHeader">
+  <div class="admin-unified-header-inner">
+    <button type="button" class="admin-unified-menu-btn" id="adminMobileMenuBtn" onclick="toggleAdminMobileNav()" aria-label="Menu">
+      <span class="material-symbols-outlined" id="adminMobileMenuIcon">menu</span>
+    </button>
+
+    <div class="admin-unified-title-wrap">
+      {% if _title_key %}
+      <h1 class="admin-unified-title" data-i18n="{{ _title_key }}">{{ _title_default }}</h1>
+      {% if _subtitle_key %}
+      <p class="admin-unified-subtitle admin-unified-subtitle-desktop" data-i18n="{{ _subtitle_key }}">{{ _subtitle_default }}</p>
+      {% elif admin_header_subtitle_block or ac_header_subtitle_block %}
+      <div class="admin-unified-subtitle admin-unified-subtitle-desktop">{{ admin_header_subtitle_block|default(ac_header_subtitle_block) }}</div>
+      {% endif %}
+      {% else %}
+      <div class="admin-unified-title admin-unified-title-mobile-only">VietVoice Admin</div>
+      {% endif %}
+    </div>
+
+    <div class="admin-unified-spacer" aria-hidden="true"></div>
+
+    <div class="admin-unified-actions">
+      <button type="button" class="vv-lang-toggle admin-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
+        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+      </button>
+      <div class="admin-unified-user">
+        {% include 'partials/_nav_avatar.html' %}
+        <a href="{{ url_for('logout') }}" class="admin-unified-logout" aria-label="Đăng xuất" title="Đăng xuất">
+          <span class="material-symbols-outlined">logout</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>

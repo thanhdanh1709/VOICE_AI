@@ -72,7 +72,7 @@
             <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">payments</span>
             <span data-i18n="price.payment.title">Thanh toán dễ dàng</span>
           </h3>
-          <p class="text-sm text-on-surface-variant mb-5 max-w-xl">Chúng tôi hỗ trợ nhiều hình thức thanh toán để đảm bảo quá trình nâng cấp dịch vụ của bạn diễn ra nhanh chóng và thuận tiện nhất.</p>
+          <p class="text-sm text-on-surface-variant mb-5 max-w-xl" data-i18n="price.payment.desc">Chúng tôi hỗ trợ nhiều hình thức thanh toán để đảm bảo quá trình nâng cấp dịch vụ của bạn diễn ra nhanh chóng và thuận tiện nhất.</p>
           <div class="flex flex-wrap gap-3">
             <div class="flex items-center gap-2 bg-surface-container py-2 px-4 rounded-lg border border-white/5">
               <span class="material-symbols-outlined text-primary" style="font-size:18px">qr_code</span>
@@ -86,15 +86,15 @@
           <div class="mt-5 text-xs text-on-surface-variant space-y-1.5">
             <div class="flex items-start gap-2">
               <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              Thanh toán qua QR Code chuyển khoản ngân hàng nhanh chóng
+              <span data-i18n="price.payment.bullet1">Thanh toán qua QR Code chuyển khoản ngân hàng nhanh chóng</span>
             </div>
             <div class="flex items-start gap-2">
               <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              Gói sẽ được kích hoạt sau khi admin xác nhận thanh toán (trong 24h)
+              <span data-i18n="price.payment.bullet2">Gói sẽ được kích hoạt sau khi admin xác nhận thanh toán (trong 24h)</span>
             </div>
             <div class="flex items-start gap-2">
               <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              Liên hệ <a href="{{ url_for('contact') }}" class="text-primary hover:underline no-underline">support@vietvoice.ai</a> nếu cần hỗ trợ
+              <span><span data-i18n="price.payment.bullet3_prefix">Liên hệ</span> <a href="{{ url_for('contact') }}" class="text-primary hover:underline no-underline">{{ support_email_addr() }}</a> <span data-i18n="price.payment.bullet3_suffix">nếu cần hỗ trợ</span></span>
             </div>
           </div>
         </div>
@@ -113,19 +113,19 @@
       <section class="mt-8 md:mt-12 animate-in" style="animation-delay:0.15s">
         <div class="flex items-center gap-3 mb-5">
           <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">receipt_long</span>
-          <h2 class="text-xl font-bold text-on-surface">Lịch sử thanh toán</h2>
+          <h2 class="text-xl font-bold text-on-surface" data-i18n="price.history.title">Lịch sử thanh toán</h2>
         </div>
 
         <!-- Loading -->
         <div id="paymentHistoryLoading" class="flex items-center gap-3 py-8 text-on-surface-variant text-sm">
           <div style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>
-          Đang tải lịch sử thanh toán...
+          <span data-i18n="price.history.loading">Đang tải lịch sử thanh toán...</span>
         </div>
 
         <!-- Empty -->
         <div id="paymentHistoryEmpty" style="display:none" class="py-10 text-center text-on-surface-variant text-sm">
           <span class="material-symbols-outlined" style="font-size:40px;opacity:0.3">receipt_long</span>
-          <p class="mt-2">Chưa có giao dịch nào.</p>
+          <p class="mt-2" data-i18n="price.history.empty">Chưa có giao dịch nào.</p>
         </div>
 
         <!-- Table -->
@@ -134,12 +134,12 @@
             <table class="w-full text-left text-sm">
               <thead class="bg-surface-container/80 border-b border-outline-variant/50">
                 <tr>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Mã GD</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden sm:table-cell">Gói</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Số tiền</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden md:table-cell">Ngày thanh toán</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Trạng thái</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant text-right">Hóa đơn</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.id">Mã GD</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden sm:table-cell" data-i18n="price.history.col.plan">Gói</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.amount">Số tiền</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden md:table-cell" data-i18n="price.history.col.date">Ngày thanh toán</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.status">Trạng thái</th>
+                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant text-right" data-i18n="price.history.col.invoice">Hóa đơn</th>
                 </tr>
               </thead>
               <tbody id="paymentHistoryBody" class="divide-y divide-outline-variant/20"></tbody>

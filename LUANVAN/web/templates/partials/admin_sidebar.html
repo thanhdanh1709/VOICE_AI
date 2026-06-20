@@ -1,0 +1,27 @@
+{% from 'partials/admin_nav_items.html' import admin_nav_item with context %}
+{% set nav_active = nav_active|default('') %}
+<nav class="admin-sidebar" id="adminSidebar">
+  <div class="admin-sidebar-brand">
+    <a href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined admin-sidebar-logo">graphic_eq</span>
+      <span class="admin-sidebar-title">VietVoice</span>
+    </a>
+    <p class="admin-sidebar-sub" data-i18n="admin.title">Admin Dashboard</p>
+  </div>
+  <div class="admin-sidebar-nav">
+    {% include 'partials/admin_nav_items.html' %}
+    <div class="admin-sidebar-divider"></div>
+    <a class="admin-nav-link" href="{{ url_for('index') }}">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span data-i18n="admin.nav.back">Về trang chính</span>
+    </a>
+  </div>
+  {% if show_admin_sidebar_footer %}
+  <div class="admin-sidebar-footer">
+    <button type="button" id="generateSamplesBtn" class="admin-sidebar-action-btn">
+      <span class="material-symbols-outlined">music_note</span>
+      <span data-i18n="admin.gen_samples">Tạo mẫu giọng đọc</span>
+    </button>
+  </div>
+  {% endif %}
+</nav>

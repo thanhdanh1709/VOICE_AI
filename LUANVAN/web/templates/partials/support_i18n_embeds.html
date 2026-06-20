@@ -1,0 +1,8 @@
+<template id="support-body-vi" hidden aria-hidden="true">
+{% include 'partials/support_dynamic_body.html' %}
+</template>
+<template id="support-body-en" hidden aria-hidden="true">
+{% with support=support_en %}
+{% include 'partials/support_dynamic_body.html' %}
+{% endwith %}
+</template>

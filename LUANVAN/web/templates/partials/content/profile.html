@@ -220,4 +220,32 @@
         </div>
       </div>
 
+      <!-- ── Card 5: Yêu cầu xóa tài khoản ── -->
+      <div class="card lg:col-span-2" id="accountDeletionCard">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="material-symbols-outlined text-red-400" style="font-variation-settings:'FILL' 1">person_off</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.delete.card">Yêu cầu xóa tài khoản</h2>
+        </div>
+
+        <div id="deletePendingBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm text-amber-200">
+          <span class="material-symbols-outlined align-middle mr-1" style="font-size:18px">hourglass_top</span>
+          <span data-i18n="prof.delete.pending">Bạn đã gửi yêu cầu xóa tài khoản. Vui lòng chờ admin xử lý.</span>
+          <span id="deletePendingAt" class="block text-xs mt-1 text-amber-200/80"></span>
+        </div>
+
+        <div id="deleteRejectedBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-200">
+          <p data-i18n="prof.delete.rejected">Yêu cầu xóa tài khoản trước đó đã bị từ chối.</p>
+          <p id="deleteRejectedNote" class="text-xs mt-1 text-red-200/80"></p>
+        </div>
+
+        <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.delete.desc">
+          Nếu bạn không còn nhu cầu sử dụng dịch vụ, bạn có thể gửi yêu cầu xóa tài khoản. Admin sẽ xem xét và xác nhận trước khi tài khoản bị vô hiệu hóa.
+        </p>
+
+        <button id="btnRequestDeleteAccount" type="button" class="btn-secondary text-red-400 border-red-500/30 hover:bg-red-500/10" onclick="openDeleteAccountModal()">
+          <span class="material-symbols-outlined" style="font-size:17px">delete_forever</span>
+          <span data-i18n="prof.delete.btn">Yêu cầu xóa tài khoản</span>
+        </button>
+      </div>
+
     </div><!-- /grid -->

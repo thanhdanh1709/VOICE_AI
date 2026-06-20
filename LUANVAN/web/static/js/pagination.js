@@ -40,7 +40,23 @@
         if (total > 0) {
           const start = (page - 1) * perPage + 1;
           const end = Math.min(page * perPage, total);
-          infoEl.textContent = `Hiển thị ${start}–${end} của ${total} ${itemLabel}`;
+          const t = (key, fb, vars) => {
+            let s = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : fb;
+            if (vars && s) {
+              Object.keys(vars).forEach((k) => {
+                s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+              });
+            }
+            return s;
+          };
+          const showingKey = itemLabel === 'giao dịch' || itemLabel === 'transactions'
+            ? 'price.history.showing'
+            : null;
+          if (showingKey && window.VVi18n) {
+            infoEl.textContent = t(showingKey, `Hiển thị ${start}–${end} của ${total} ${itemLabel}`, { start, end, total });
+          } else {
+            infoEl.textContent = `Hiển thị ${start}–${end} của ${total} ${itemLabel}`;
+          }
         } else {
           infoEl.textContent = '';
         }

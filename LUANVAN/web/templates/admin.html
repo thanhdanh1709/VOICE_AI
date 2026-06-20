@@ -11,6 +11,7 @@
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-console.css') }}">
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -245,114 +246,19 @@ tailwind.config = {
 <body class="min-h-screen flex flex-col md:flex-row bg-background text-on-surface overflow-x-hidden w-full max-w-[100vw]">
 
 <!-- ═══ SIDEBAR ═══ -->
-<nav class="h-screen w-64 fixed left-0 top-0 bg-[#0F172A] hidden md:flex flex-col z-40">
-  <div class="px-6 pt-6 pb-4">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
-      <span class="material-symbols-outlined text-primary" style="font-size:22px">graphic_eq</span>
-      <span class="text-xl font-black tracking-tighter text-white">VietVoice</span>
-    </a>
-    <p class="text-xs text-on-surface-variant mt-1 font-medium" data-i18n="admin.title">Admin Dashboard</p>
-  </div>
+{% set nav_active = 'dashboard' %}
+{% set show_admin_sidebar_footer = true %}
+{% include 'partials/admin_sidebar.html' %}
 
-  <div class="flex flex-col gap-1 p-4 flex-1">
-    <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin') }}">
-      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
-      <span data-i18n="admin.nav.dashboard">Bảng điều khiển</span>
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-users">
-      <span class="material-symbols-outlined" style="font-size:18px">group</span>
-      <span data-i18n="admin.nav.users">Quản lý người dùng</span>
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-voices">
-      <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-      <span data-i18n="admin.nav.voices">Quản lý giọng đọc</span>
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="#section-payments">
-      <span class="material-symbols-outlined" style="font-size:18px">payments</span>
-      <span data-i18n="admin.nav.payments">Quản lý thanh toán</span>
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin_landing') }}">
-      <span class="material-symbols-outlined" style="font-size:18px">palette</span>
-      <span data-i18n="admin.nav.landing">Landing Page</span>
-    </a>
-    <div class="my-2"></div>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-      <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-      <span data-i18n="admin.nav.back">Về trang chính</span>
-    </a>
-  </div>
-
-  <div class="p-4">
-    <button id="generateSamplesBtn"
-      class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-semibold hover:shadow-[0_0_15px_rgba(160,120,255,0.4)] transition-all">
-      <span class="material-symbols-outlined" style="font-size:16px">music_note</span>
-      <span data-i18n="admin.gen_samples">Tạo mẫu giọng đọc</span>
-    </button>
-  </div>
-</nav>
+{% include 'partials/admin_mobile_shell.html' %}
 
 <!-- ═══ MAIN WRAPPER ═══ -->
-<div class="admin-shell flex-1 w-full min-w-0 md:ml-64 flex flex-col min-h-screen max-w-full overflow-x-hidden">
+<div class="admin-main-shell">
 
-  <!-- ═══ TOP NAVBAR ═══ -->
-  <header class="fixed top-0 left-0 right-0 md:left-64 z-50 bg-[#0F172A]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.3)] max-w-full">
-    <div class="admin-header-bar px-3 sm:px-6 h-14 md:h-16 flex items-center gap-2 md:gap-4 max-w-full">
-      <button id="adminMobileMenuBtn" class="md:hidden shrink-0 text-slate-400 hover:text-white hover:bg-white/5 p-1.5 rounded-full transition-all" onclick="toggleAdminMobileNav()" aria-label="Menu">
-        <span class="material-symbols-outlined" id="adminMobileMenuIcon">menu</span>
-      </button>
-      <div class="md:hidden min-w-0 flex-1">
-        <div class="text-sm font-bold text-white truncate">VietVoice Admin</div>
-      </div>
-      <div class="hidden md:flex items-center gap-1 flex-1 min-w-0">
-        <a href="{{ url_for('admin') }}" class="text-violet-400 border-b-2 border-violet-500 pb-0.5 px-3 py-2 text-sm font-semibold no-underline whitespace-nowrap">Bảng điều khiển</a>
-        <a href="#section-users" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all whitespace-nowrap">Người dùng</a>
-        <a href="#section-voices" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all whitespace-nowrap">Giọng đọc</a>
-        <a href="#section-payments" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all whitespace-nowrap">Thanh toán</a>
-        <a href="{{ url_for('admin_landing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 px-3 py-2 rounded text-sm font-medium no-underline transition-all whitespace-nowrap">Landing Page</a>
-      </div>
-      <div class="admin-header-actions flex items-center gap-1 sm:gap-2 shrink-0 ml-auto md:ml-0">
-        <button class="vv-lang-toggle admin-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
-          <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
-        </button>
-        <div class="flex items-center gap-1">
-          {% include 'partials/_nav_avatar.html' %}
-          <a href="{{ url_for('logout') }}" class="flex items-center justify-center w-8 h-8 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline" aria-label="Đăng xuất">
-            <span class="material-symbols-outlined" style="font-size:17px">logout</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- ═══ ADMIN MOBILE NAV DRAWER ═══ -->
-  <div id="adminMobileOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeAdminMobileNav()"></div>
-  <div id="adminMobileDrawer" class="fixed top-14 left-0 right-0 z-40 bg-[#0F172A] border-b border-white/10 shadow-2xl hidden md:hidden max-h-[calc(100vh-3.5rem)] overflow-y-auto">
-    <div class="flex flex-col p-3 gap-0.5">
-      <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-violet-400 bg-violet-500/10 no-underline">
-        <span class="material-symbols-outlined" style="font-size:20px">dashboard</span> Bảng điều khiển
-      </a>
-      <a href="#section-users" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline" onclick="closeAdminMobileNav()">
-        <span class="material-symbols-outlined" style="font-size:20px">group</span> Người dùng
-      </a>
-      <a href="#section-voices" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline" onclick="closeAdminMobileNav()">
-        <span class="material-symbols-outlined" style="font-size:20px">record_voice_over</span> Giọng đọc
-      </a>
-      <a href="#section-payments" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline" onclick="closeAdminMobileNav()">
-        <span class="material-symbols-outlined" style="font-size:20px">payments</span> Thanh toán
-      </a>
-      <a href="{{ url_for('admin_landing') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 no-underline">
-        <span class="material-symbols-outlined" style="font-size:20px">palette</span> Landing Page
-      </a>
-      <div class="border-t border-white/10 mt-1 pt-1">
-        <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-tertiary hover:bg-white/5 no-underline">
-          <span class="material-symbols-outlined" style="font-size:20px">arrow_back</span> Về trang chính
-        </a>
-      </div>
-    </div>
-  </div>
+  {% include 'partials/admin_unified_header.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main class="admin-main flex-1 min-w-0 w-full p-3 sm:p-4 md:p-6 pt-[72px] md:pt-[88px] max-w-full mx-auto overflow-x-hidden box-border">
+  <main class="admin-main flex-1 min-w-0 w-full p-3 sm:p-4 md:p-6 admin-main-with-header max-w-full mx-auto overflow-x-hidden box-border">
 
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-7 gap-3 md:gap-4 max-w-full">
@@ -407,7 +313,7 @@ tailwind.config = {
         </div>
         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.voices">Số giọng đọc</p>
         <h3 class="text-2xl sm:text-3xl font-extrabold text-on-surface admin-stat-value" id="totalVoices">—</h3>
-        <p class="text-xs text-on-surface-variant mt-1">Active</p>
+        <p class="text-xs text-on-surface-variant mt-1" data-i18n="admin.stat.active">Hoạt động</p>
       </div>
 
       <div class="glass-panel rounded-xl p-5 admin-stat-panel relative overflow-hidden hover:border-primary/40 transition-colors">
@@ -425,42 +331,42 @@ tailwind.config = {
       <div class="glass-panel rounded-xl p-5 admin-period-card">
         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <span class="material-symbols-outlined text-tertiary" style="font-size:14px">today</span>
-          Hôm nay
+          <span data-i18n="admin.stat.today">Hôm nay</span>
         </p>
         <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
           <strong class="text-on-surface" id="todayConversions">—</strong>
         </div>
         <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant">Ký tự:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
           <strong class="text-primary" id="todayCharacters">—</strong>
         </div>
       </div>
       <div class="glass-panel rounded-xl p-5 admin-period-card">
         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <span class="material-symbols-outlined text-primary" style="font-size:14px">date_range</span>
-          Tuần này
+          <span data-i18n="admin.stat.week">Tuần này</span>
         </p>
         <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
           <strong class="text-on-surface" id="weekConversions">—</strong>
         </div>
         <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant">Ký tự:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
           <strong class="text-primary" id="weekCharacters">—</strong>
         </div>
       </div>
       <div class="glass-panel rounded-xl p-5 admin-period-card">
         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
           <span class="material-symbols-outlined text-tertiary" style="font-size:14px">calendar_month</span>
-          Tháng này
+          <span data-i18n="admin.stat.month">Tháng này</span>
         </p>
         <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant">Chuyển đổi:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
           <strong class="text-on-surface" id="monthConversions">—</strong>
         </div>
         <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant">Ký tự:</span>
+          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
           <strong class="text-primary" id="monthCharacters">—</strong>
         </div>
       </div>
@@ -471,11 +377,11 @@ tailwind.config = {
       <!-- Trend Chart -->
       <div class="glass-panel rounded-xl p-4 sm:p-6 lg:col-span-2 chart-panel">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 mb-4">
-          <h3 class="text-sm sm:text-base font-bold text-on-surface">Xu hướng 7 ngày qua</h3>
+          <h3 class="text-sm sm:text-base font-bold text-on-surface" data-i18n="admin.chart.trend">Xu hướng 7 ngày qua</h3>
           <div class="hidden sm:flex gap-1.5 shrink-0">
-            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold">Tuần</button>
-            <button type="button" class="px-2.5 py-1 rounded-md bg-primary/20 text-primary text-xs font-semibold border border-primary/25">Tháng</button>
-            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold">Năm</button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold" data-i18n="admin.filter.week">Tuần</button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-primary/20 text-primary text-xs font-semibold border border-primary/25" data-i18n="admin.filter.month">Tháng</button>
+            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold" data-i18n="admin.filter.year">Năm</button>
           </div>
         </div>
         <div class="chart-box chart-box--line">
@@ -485,7 +391,7 @@ tailwind.config = {
 
       <!-- Voice Distribution Chart -->
       <div class="glass-panel rounded-xl p-4 sm:p-6 chart-panel">
-        <h3 class="text-sm sm:text-base font-bold text-on-surface mb-4">Phân bổ giọng đọc</h3>
+        <h3 class="text-sm sm:text-base font-bold text-on-surface mb-4" data-i18n="admin.chart.voice_dist">Phân bổ giọng đọc</h3>
         <div class="chart-box chart-box--donut">
           <canvas id="voiceDistributionChart"></canvas>
         </div>
@@ -498,29 +404,98 @@ tailwind.config = {
       <!-- Top Users -->
       <div class="glass-panel rounded-xl p-6 admin-rank-card">
         <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
-          Top 5 Người dùng
+          <span data-i18n="admin.top_users">Top 5 Người dùng</span>
           <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
             <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
-            Làm mới
+            <span data-i18n="admin.refresh">Làm mới</span>
           </button>
         </h3>
         <div id="topUsersList">
-          <p class="loading-text">Đang tải...</p>
+          <p class="loading-text" data-i18n="admin.loading">Đang tải...</p>
         </div>
       </div>
 
       <!-- Top Voices -->
       <div class="glass-panel rounded-xl p-6 admin-rank-card">
         <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
-          Top 5 Giọng đọc
+          <span data-i18n="admin.top_voices">Top 5 Giọng đọc</span>
           <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
             <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
-            Làm mới
+            <span data-i18n="admin.refresh">Làm mới</span>
           </button>
         </h3>
         <div id="topVoicesList">
-          <p class="loading-text">Đang tải...</p>
+          <p class="loading-text" data-i18n="admin.loading">Đang tải...</p>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ ACCOUNT DELETION REQUESTS ═══ -->
+    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.11s" id="section-account-deletions">
+      <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-red-400" style="font-size:18px">person_off</span>
+          <span data-i18n="admin.section.deletions">Yêu cầu xóa tài khoản</span>
+        </h3>
+        <button id="refreshDeletionsBtn"
+          class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
+          <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
+          <span data-i18n="admin.refresh">Làm mới</span>
+        </button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
+              <th data-i18n="admin.col.fullname">Họ tên</th>
+              <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
+              <th class="hide-mobile" data-i18n="admin.del.reason">Lý do</th>
+              <th class="hide-mobile" data-i18n="admin.del.requested_at">Thời gian gửi</th>
+              <th data-i18n="admin.col.status">Trạng thái</th>
+              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="deletionsTableBody">
+            <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ GRACE PERIOD ACCOUNTS (30 days) ═══ -->
+    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.115s" id="section-grace-accounts">
+      <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-400" style="font-size:18px">hourglass_top</span>
+          <span data-i18n="admin.section.grace">Tài khoản vô hiệu hóa (30 ngày)</span>
+        </h3>
+        <button id="refreshGraceBtn"
+          class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
+          <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
+          <span data-i18n="admin.refresh">Làm mới</span>
+        </button>
+      </div>
+      <p class="px-5 pb-3 text-xs text-on-surface-variant" data-i18n="admin.grace.hint">
+        Tài khoản đã được admin duyệt xóa, vô hiệu hóa trong 30 ngày. Có thể khôi phục khi có yêu cầu.
+      </p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
+              <th data-i18n="admin.col.fullname">Họ tên</th>
+              <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
+              <th class="hide-mobile" data-i18n="admin.grace.deactivated_at">Vô hiệu từ</th>
+              <th class="hide-mobile" data-i18n="admin.grace.until">Hạn khôi phục</th>
+              <th data-i18n="admin.grace.restore_req">Yêu cầu KP</th>
+              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="graceAccountsTableBody">
+            <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -529,11 +504,11 @@ tailwind.config = {
       <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
           <span class="material-symbols-outlined text-primary" style="font-size:18px">group</span>
-          Quản lý người dùng
+          <span data-i18n="admin.section.users">Quản lý người dùng</span>
         </h3>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:16px">search</span>
-          <input type="text" placeholder="Tìm kiếm người dùng..."
+          <input type="text" data-i18n-placeholder="admin.search_users" placeholder="Tìm kiếm người dùng..."
             class="bg-surface-container-highest border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full sm:w-56 max-w-full placeholder-on-surface-variant/50"
             oninput="filterUsersTable(this.value)"/>
         </div>
@@ -542,18 +517,18 @@ tailwind.config = {
         <table class="admin-table">
           <thead>
             <tr>
-              <th class="hide-mobile">ID</th>
-              <th>Tên đăng nhập</th>
-              <th class="hide-mobile">Email</th>
-              <th class="hide-mobile">Họ tên</th>
-              <th>Vai trò</th>
-              <th class="hide-mobile">Trạng thái</th>
-              <th class="hide-mobile">Chuyển đổi</th>
-              <th class="text-right">Thao tác</th>
+              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
+              <th data-i18n="admin.col.username">Tên đăng nhập</th>
+              <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
+              <th class="hide-mobile" data-i18n="admin.col.fullname">Họ tên</th>
+              <th data-i18n="admin.col.role">Vai trò</th>
+              <th class="hide-mobile" data-i18n="admin.col.status">Trạng thái</th>
+              <th class="hide-mobile" data-i18n="admin.col.conversions">Chuyển đổi</th>
+              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
-            <tr><td colspan="8" class="loading-text">Đang tải...</td></tr>
+            <tr><td colspan="8" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -564,19 +539,19 @@ tailwind.config = {
       <div class="admin-section-head p-5 flex flex-col gap-3">
         <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
           <span class="material-symbols-outlined text-tertiary" style="font-size:18px">payments</span>
-          Quản lý thanh toán
+          <span data-i18n="admin.section.payments">Quản lý thanh toán</span>
         </h3>
         <div class="flex flex-wrap items-center gap-2">
           <button id="refreshPaymentsBtn"
             class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
             <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
-            <span>Làm mới</span>
+            <span data-i18n="admin.refresh">Làm mới</span>
           </button>
           <button id="autoApproveBtn"
             class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors">
             <span class="material-symbols-outlined" style="font-size:15px">bolt</span>
-            <span class="hidden sm:inline">Duyệt tự động (≥5 phút)</span>
-            <span class="sm:hidden">Auto duyệt</span>
+            <span class="hidden sm:inline" data-i18n="admin.auto_approve">Duyệt tự động (≥5 phút)</span>
+            <span class="sm:hidden" data-i18n="admin.auto_approve_short">Auto duyệt</span>
           </button>
           <span id="paymentsCount" class="text-xs text-on-surface-variant w-full sm:w-auto"></span>
         </div>
@@ -585,19 +560,19 @@ tailwind.config = {
         <table class="admin-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th class="hide-mobile">Người dùng</th>
-              <th class="hide-mobile">Gói</th>
-              <th>Số tiền</th>
-              <th class="hide-mobile">Phương thức</th>
-              <th>TT</th>
-              <th class="hide-mobile">Mã GD</th>
-              <th class="hide-mobile">Thời gian</th>
-              <th class="text-right">Duyệt</th>
+              <th data-i18n="admin.col.id">ID</th>
+              <th class="hide-mobile" data-i18n="admin.pay.user">Người dùng</th>
+              <th class="hide-mobile" data-i18n="admin.col.package">Gói</th>
+              <th data-i18n="admin.col.amount">Số tiền</th>
+              <th class="hide-mobile" data-i18n="admin.pay.method">Phương thức</th>
+              <th data-i18n="admin.col.status">TT</th>
+              <th class="hide-mobile" data-i18n="admin.pay.tx_short">Mã GD</th>
+              <th class="hide-mobile" data-i18n="admin.pay.time">Thời gian</th>
+              <th class="text-right" data-i18n="admin.pay.approve_col">Duyệt</th>
             </tr>
           </thead>
           <tbody id="paymentsTableBody">
-            <tr><td colspan="9" class="loading-text">Đang tải...</td></tr>
+            <tr><td colspan="9" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -617,10 +592,38 @@ tailwind.config = {
         <a href="{{ url_for('privacy') }}" class="hover:text-primary transition-colors no-underline">Privacy Policy</a>
         <a href="{{ url_for('terms') }}" class="hover:text-primary transition-colors no-underline">Terms of Service</a>
         <a href="{{ url_for('data_deletion') }}" class="hover:text-primary transition-colors no-underline">Data Deletion</a>
+        <a href="{{ url_for('payment_terms') }}" class="hover:text-primary transition-colors no-underline">Payment Terms</a>
         <a href="{{ url_for('support') }}" class="hover:text-primary transition-colors no-underline">Support</a>
       </div>
     </div>
   </footer>
+</div>
+
+<!-- Modal: Admin duyệt xóa tài khoản -->
+<div id="adminApproveDeletionModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.65);backdrop-filter:blur(4px)">
+  <div class="bg-surface-container border border-outline-variant/40 rounded-2xl w-full max-w-md shadow-2xl p-6">
+    <h3 class="text-lg font-bold text-on-surface mb-3" data-i18n="admin.del.approve.title">Xác nhận xóa tài khoản</h3>
+    <p class="text-sm text-on-surface-variant mb-5" data-i18n="admin.del.approve.confirm">
+      Bạn có chắc chắn muốn vô hiệu hóa tài khoản này không? Tài khoản sẽ bị vô hiệu hóa trong 30 ngày và có thể khôi phục nếu có yêu cầu. Sau 30 ngày sẽ bị xóa vĩnh viễn.
+    </p>
+    <div class="flex justify-end gap-3">
+      <button type="button" class="admin-btn-compact px-4 py-2 rounded-lg border border-outline-variant text-on-surface-variant" onclick="closeAdminApproveDeletionModal()" data-i18n="admin.del.cancel">Hủy</button>
+      <button type="button" id="btnAdminConfirmApproveDeletion" class="admin-btn-compact px-4 py-2 rounded-lg bg-red-600 text-white font-semibold" onclick="confirmAdminApproveDeletion()" data-i18n="admin.del.approve.btn">Xác nhận xóa</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Admin từ chối yêu cầu xóa -->
+<div id="adminRejectDeletionModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.65);backdrop-filter:blur(4px)">
+  <div class="bg-surface-container border border-outline-variant/40 rounded-2xl w-full max-w-md shadow-2xl p-6">
+    <h3 class="text-lg font-bold text-on-surface mb-3" data-i18n="admin.del.reject.title">Từ chối yêu cầu xóa</h3>
+    <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="admin.del.reject.note">Ghi chú (không bắt buộc)</label>
+    <textarea id="adminRejectDeletionNote" rows="3" class="w-full rounded-lg border border-outline-variant/40 bg-surface-container-highest text-on-surface text-sm p-3 mb-5" placeholder="Lý do từ chối..."></textarea>
+    <div class="flex justify-end gap-3">
+      <button type="button" class="admin-btn-compact px-4 py-2 rounded-lg border border-outline-variant text-on-surface-variant" onclick="closeAdminRejectDeletionModal()" data-i18n="admin.del.cancel">Hủy</button>
+      <button type="button" id="btnAdminConfirmRejectDeletion" class="admin-btn-compact px-4 py-2 rounded-lg bg-primary text-on-primary font-semibold" onclick="confirmAdminRejectDeletion()" data-i18n="admin.del.reject.btn">Từ chối</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ SCRIPTS ═══ -->
@@ -636,23 +639,9 @@ function filterUsersTable(query) {
     row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 }
-// Admin mobile nav
-function toggleAdminMobileNav() {
-  const drawer = document.getElementById('adminMobileDrawer');
-  const overlay = document.getElementById('adminMobileOverlay');
-  const icon = document.getElementById('adminMobileMenuIcon');
-  const isOpen = !drawer.classList.contains('hidden');
-  if (isOpen) { drawer.classList.add('hidden'); overlay.classList.add('hidden'); icon.textContent = 'menu'; }
-  else { drawer.classList.remove('hidden'); overlay.classList.remove('hidden'); icon.textContent = 'close'; }
-}
-function closeAdminMobileNav() {
-  document.getElementById('adminMobileDrawer').classList.add('hidden');
-  document.getElementById('adminMobileOverlay').classList.add('hidden');
-  document.getElementById('adminMobileMenuIcon').textContent = 'menu';
-}
-window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeAdminMobileNav(); });
 </script>
 
+<script src="{{ url_for('static', filename='js/admin_mobile_nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>

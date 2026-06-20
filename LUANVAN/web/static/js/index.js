@@ -11,6 +11,29 @@ function _msg(text) {
     return (window.__msg ? window.__msg(text) : text);
 }
 
+function hasVietnameseChars(text) {
+    return /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/u.test(text);
+}
+
+function isLikelyNonVietnameseInput(text) {
+    const t = (text || '').trim();
+    if (t.length < 8) return false;
+    const latin = (t.match(/[a-zA-Z]/g) || []).length;
+    if (latin < 5) return false;
+    if (hasVietnameseChars(t)) return false;
+    return latin / t.length > 0.3;
+}
+
+function updateVietnameseInputWarning(text) {
+    const el = document.getElementById('wsLangWarning');
+    if (!el) return;
+    if (isLikelyNonVietnameseInput(text)) {
+        el.classList.remove('hidden');
+    } else {
+        el.classList.add('hidden');
+    }
+}
+
 function setCurrentAudio(filename) {
     currentAudioFilename = filename || null;
     syncExportBitrateVisibility();
@@ -74,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         textInput.addEventListener('input', () => {
             const count = textInput.value.length;
             charCount.textContent = count.toLocaleString();
+            updateVietnameseInputWarning(textInput.value);
         });
     }
     

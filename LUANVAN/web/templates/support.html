@@ -83,8 +83,10 @@
     }
     .contact-card-link {
         font-size: 0.8rem;
-        color: #34d399;
+        color: #34d399 !important;
         font-weight: 500;
+        display: block;
+        word-break: break-all;
     }
 
     /* FAQ */
@@ -194,183 +196,10 @@
     <p data-i18n="legal.support.hero">Chúng tôi luôn sẵn sàng giúp bạn. Hãy chọn cách liên hệ phù hợp.</p>
 </div>
 
-<div class="support-container">
-
-    <!-- Kênh liên hệ -->
-    <div class="contact-grid">
-        <a href="mailto:support@vietvoice.app" class="contact-card">
-            <div class="contact-card-icon">📧</div>
-            <div class="contact-card-title">Email hỗ trợ</div>
-            <div class="contact-card-desc">Phản hồi trong vòng 24–48 giờ làm việc</div>
-            <div class="contact-card-link">support@vietvoice.app</div>
-        </a>
-        <a href="{{ url_for('contact') }}" class="contact-card">
-            <div class="contact-card-icon">💬</div>
-            <div class="contact-card-title">Form liên hệ</div>
-            <div class="contact-card-desc">Gửi câu hỏi trực tiếp qua trang liên hệ</div>
-            <div class="contact-card-link">Mở trang liên hệ →</div>
-        </a>
-        <a href="mailto:support@vietvoice.app?subject=Báo lỗi ứng dụng" class="contact-card">
-            <div class="contact-card-icon">🐛</div>
-            <div class="contact-card-title">Báo lỗi</div>
-            <div class="contact-card-desc">Gặp sự cố kỹ thuật? Báo cho chúng tôi biết</div>
-            <div class="contact-card-link">Gửi báo cáo lỗi →</div>
-        </a>
-    </div>
-
-    <!-- Hướng dẫn sử dụng -->
-    <div class="section-title">📖 Hướng dẫn sử dụng</div>
-
-    <div class="guide-card">
-        <h3>🎤 Chuyển văn bản thành giọng nói</h3>
-        <div class="guide-steps">
-            <div class="guide-step">
-                <span class="guide-step-num">1</span>
-                <div class="guide-step-text"><strong>Đăng nhập</strong> vào tài khoản VietVoice của bạn.</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">2</span>
-                <div class="guide-step-text"><strong>Nhập văn bản</strong> cần chuyển đổi vào ô nhập liệu (tối đa theo gói dịch vụ).</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">3</span>
-                <div class="guide-step-text"><strong>Chọn giọng đọc</strong> từ thư viện giọng nội tạo hoặc giọng cá nhân của bạn.</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">4</span>
-                <div class="guide-step-text"><strong>Chọn cảm xúc</strong> nếu muốn: Trung lập, Vui, Bình tĩnh, Phấn khích, Buồn.</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">5</span>
-                <div class="guide-step-text"><strong>Nhấn "Chuyển đổi"</strong> và chờ hệ thống xử lý. Tải file WAV về máy.</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="guide-card">
-        <h3>🎙️ Clone giọng cá nhân</h3>
-        <div class="guide-steps">
-            <div class="guide-step">
-                <span class="guide-step-num">1</span>
-                <div class="guide-step-text"><strong>Vào "Giọng của tôi"</strong> trong menu điều hướng.</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">2</span>
-                <div class="guide-step-text"><strong>Tải lên file âm thanh</strong> giọng mẫu (WAV/MP3, tối thiểu 10 giây, chất lượng rõ ràng).</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">3</span>
-                <div class="guide-step-text"><strong>Hệ thống xử lý</strong> và tạo giọng clone của bạn trong vài phút.</div>
-            </div>
-            <div class="guide-step">
-                <span class="guide-step-num">4</span>
-                <div class="guide-step-text"><strong>Sử dụng giọng clone</strong> khi chuyển văn bản thành giọng nói.</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- FAQ -->
-    <div class="section-title">❓ Câu hỏi thường gặp</div>
-
-    <div class="faq-list">
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Tôi có thể sử dụng bao nhiêu ký tự mỗi tháng?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Gói miễn phí cho phép sử dụng một số lượng ký tự nhất định mỗi tháng.
-                Các gói trả phí có hạn ngạch cao hơn. Xem chi tiết tại <a href="{{ url_for('pricing') if session.user_id else url_for('register') }}">Bảng giá</a>.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Tôi có thể sử dụng âm thanh tạo ra cho mục đích thương mại không?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Với gói trả phí, bạn được phép sử dụng âm thanh cho mục đích cá nhân và thương mại.
-                Tuy nhiên, không được dùng để tạo nội dung deepfake hay lừa đảo.
-                Xem thêm tại <a href="{{ url_for('terms') }}">Điều khoản sử dụng</a>.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                File giọng nói tôi tải lên có được bảo mật không?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Có. File giọng nói của bạn chỉ được dùng để tạo model giọng clone cá nhân,
-                không được chia sẻ với bên thứ ba và không được dùng để huấn luyện AI của chúng tôi
-                mà không có sự đồng ý của bạn.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Tôi quên mật khẩu, phải làm sao?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Hiện tại hãy liên hệ <a href="mailto:support@vietvoice.app">support@vietvoice.app</a> với
-                email tài khoản của bạn để được đặt lại mật khẩu thủ công. Tính năng tự đặt lại mật khẩu
-                sẽ được bổ sung sớm.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Tôi muốn xóa tài khoản và toàn bộ dữ liệu?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Gửi email đến <a href="mailto:support@vietvoice.app?subject=Yêu cầu xóa dữ liệu">support@vietvoice.app</a>
-                với tiêu đề "Yêu cầu xóa dữ liệu". Chúng tôi sẽ xử lý trong vòng 30 ngày.
-                Xem thêm tại <a href="{{ url_for('data_deletion') }}">Chính sách xóa dữ liệu</a>.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Tại sao chất lượng âm thanh đôi khi không ổn định?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                VietVoice đang trong giai đoạn Beta. Chất lượng giọng nói phụ thuộc vào model AI và
-                văn bản đầu vào. Các từ kỹ thuật, tên riêng, hoặc câu quá dài có thể ảnh hưởng đến
-                chất lượng. Hãy <a href="{{ url_for('contact') }}">báo lỗi</a> để chúng tôi cải thiện.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-q" onclick="toggleFaq(this)">
-                Thanh toán thất bại nhưng tiền đã bị trừ?
-                <span class="faq-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                </span>
-            </div>
-            <div class="faq-a">
-                Vui lòng liên hệ ngay <a href="mailto:support@vietvoice.app?subject=Vấn đề thanh toán">support@vietvoice.app</a>
-                kèm ảnh chụp màn hình giao dịch. Chúng tôi sẽ xác minh và xử lý trong vòng 24 giờ.
-            </div>
-        </div>
-    </div>
-
+<div class="support-container" id="support-dynamic-body">
+    {% include 'partials/support_dynamic_body.html' %}
 </div>
+{% include 'partials/support_i18n_embeds.html' %}
 {% endblock %}
 
 {% block extra_js %}

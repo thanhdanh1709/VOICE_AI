@@ -1,0 +1,48 @@
+{% set on_landing = request.endpoint == 'landing' %}
+{% set lp_root = url_for('landing') %}
+{% set href_features = '#features' if on_landing else lp_root + '#features' %}
+{% set href_pricing = '#pricing' if on_landing else lp_root + '#pricing' %}
+{% set href_about = '#about' if on_landing else lp_root + '#about' %}
+
+<header class="lp-nav-shell" id="lpPublicNav">
+  <div class="lp-nav-inner">
+    <a href="{{ lp_root }}" class="lp-nav-brand" aria-label="VietVoice AI">
+      <span class="material-symbols-outlined lp-nav-brand-icon">graphic_eq</span>
+      <span class="lp-nav-brand-text">VietVoice AI</span>
+    </a>
+
+    <ul class="lp-nav-links">
+      <li><a href="{{ href_features }}" data-i18n="nav.features">Tính năng</a></li>
+      <li><a href="{{ href_pricing }}" data-i18n="nav.pricing">Bảng giá</a></li>
+      <li><a href="{{ href_about }}" data-i18n="nav.about">Về chúng tôi</a></li>
+      <li><a href="{{ url_for('contact') }}" data-i18n="ft.support">Hỗ trợ</a></li>
+    </ul>
+
+    <div class="lp-nav-actions">
+      <button type="button" class="vv-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
+        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+      </button>
+      <a href="{{ url_for('login') }}" class="lp-nav-cta">
+        <span data-i18n="nav.register">Bắt đầu ngay</span>
+      </a>
+      <button type="button" class="lp-nav-menu-btn" id="mobile-menu-btn" aria-label="Menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="lp-mobile-menu" id="mobile-menu">
+  <div class="lp-mobile-overlay" id="mobile-menu-overlay"></div>
+  <div class="lp-mobile-panel">
+    <a href="{{ href_features }}" onclick="closeMobileMenu()" data-i18n="nav.features">Tính năng</a>
+    <a href="{{ href_pricing }}" onclick="closeMobileMenu()" data-i18n="nav.pricing">Bảng giá</a>
+    <a href="{{ href_about }}" onclick="closeMobileMenu()" data-i18n="nav.about">Về chúng tôi</a>
+    <a href="{{ url_for('contact') }}" onclick="closeMobileMenu()" data-i18n="ft.support">Hỗ trợ</a>
+    <hr class="lp-mobile-divider">
+    <div class="lp-mobile-actions">
+      <a href="{{ url_for('login') }}" class="lp-mobile-login" data-i18n="nav.login">Đăng nhập</a>
+      <a href="{{ url_for('register') }}" class="lp-mobile-register" data-i18n="mob.register">Đăng ký</a>
+    </div>
+  </div>
+</div>

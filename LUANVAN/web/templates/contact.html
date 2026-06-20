@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="dark" lang="vi" data-theme="dark">
 <head>
 <meta charset="utf-8"/>
@@ -116,6 +116,58 @@ tailwind.config = {
 
   @keyframes fadeInUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
   .animate-in { animation: fadeInUp 0.4s ease-out both; }
+
+  .contact-map-wrap {
+    position: relative;
+    height: 220px;
+    margin-top: 0.25rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1c2b3c;
+  }
+  @media (min-width: 768px) {
+    .contact-map-wrap { height: 280px; }
+  }
+  .contact-map-iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+  .contact-map-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(to top, rgba(5, 14, 24, 0.92), rgba(5, 14, 24, 0.55));
+    pointer-events: none;
+  }
+  .contact-map-footer span {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+  .contact-map-open {
+    pointer-events: auto;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #d0bcff;
+    text-decoration: none;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(208, 188, 255, 0.35);
+    background: rgba(109, 59, 215, 0.2);
+    white-space: nowrap;
+  }
+  .contact-map-open:hover {
+    color: #fff;
+    background: rgba(109, 59, 215, 0.45);
+  }
 </style>
 </head>
 
@@ -182,7 +234,7 @@ tailwind.config = {
         </div>
         <div>
           <div class="text-sm font-bold text-white">VietVoice Pro</div>
-          <div class="text-xs text-primary">AI Synthesis Active</div>
+          <div class="text-xs text-primary" data-i18n="prof.vvpro.label">AI Synthesis Active</div>
         </div>
       </div>
     </div>
@@ -190,34 +242,34 @@ tailwind.config = {
     <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
         <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-        Tạo Audio mới
+        <span data-i18n="side.create_audio">Tạo Audio mới</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
         <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
-        Thư viện Audio
+        <span data-i18n="side.audio_library">Thư viện Audio</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
         <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-        Giọng của tôi
+        <span data-i18n="side.my_voices">Giọng của tôi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
         <span class="material-symbols-outlined" style="font-size:18px">history</span>
-        Lịch sử chuyển đổi
+        <span data-i18n="side.history">Lịch sử chuyển đổi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
         <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
-        Bảng giá
+        <span data-i18n="side.pricing">Bảng giá</span>
       </a>
       <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('contact') }}">
         <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
-        Liên hệ
+        <span data-i18n="side.contact">Liên hệ</span>
       </a>
     </nav>
 
     <div class="p-4 mt-auto">
       <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
         <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        Nâng cấp gói
+        <span data-i18n="side.upgrade">Nâng cấp gói</span>
       </a>
     </div>
   </aside>
@@ -249,7 +301,7 @@ tailwind.config = {
             </div>
             <div>
               <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.email_title">Email Hỗ Trợ</h3>
-              <a href="mailto:danhvt388@gmail.com" class="text-sm text-slate-400 hover:text-primary transition-colors no-underline">danhvt388@gmail.com</a>
+              <a href="mailto:{{ contact_email_addr() }}" class="text-sm text-slate-400 hover:text-primary transition-colors no-underline">{{ contact_email_addr() }}</a>
             </div>
           </div>
           <div class="glass-card p-5 rounded-xl flex items-start gap-4">
@@ -371,18 +423,22 @@ tailwind.config = {
           <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a4">Website được tối ưu responsive hoàn hảo. Ứng dụng VietVoice mobile đang trong giai đoạn phát triển và sẽ sớm ra mắt trên iOS &amp; Android.</p>
         </div>
 
-        <!-- Map area -->
-        <div class="rounded-xl overflow-hidden h-44 border border-white/10 relative mt-1">
-          <div class="w-full h-full bg-surface-container-high flex items-center justify-center">
-            <div class="text-center text-on-surface-variant">
-              <span class="material-symbols-outlined" style="font-size:40px;opacity:0.4">map</span>
-              <p class="text-xs mt-1 opacity-50" data-i18n="contact.map.location">Bình Thủy, Cần Thơ</p>
-            </div>
-          </div>
-          <div class="absolute inset-0 flex items-center justify-center">
-            <a href="https://maps.google.com/?q=Bình+Thủy,Cần+Thơ" target="_blank"
-               class="bg-surface-container-high/85 backdrop-blur text-white text-sm font-semibold px-4 py-2 rounded-full border border-white/20 hover:bg-surface-container-highest transition-colors flex items-center gap-2 no-underline">
-              <span class="material-symbols-outlined" style="font-size:16px;font-variation-settings:'FILL' 1">map</span>
+        <!-- Map -->
+        <div class="contact-map-wrap animate-in" style="animation-delay:0.18s">
+          <iframe
+            class="contact-map-iframe"
+            title="VietVoice — 146/MO Long Tuyền, Bình Thủy, Cần Thơ"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+            src="https://www.google.com/maps?q=146+MO+Long+Tuy%E1%BB%81n,+B%C3%ACnh+Th%E1%BB%A7y,+C%E1%BA%A7n+Th%C6%A1,+Vi%E1%BB%87t+Nam&hl=vi&z=16&output=embed">
+          </iframe>
+          <div class="contact-map-footer">
+            <span data-i18n="contact.map.location">Bình Thủy, Cần Thơ</span>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=146+MO+Long+Tuy%E1%BB%81n,+B%C3%ACnh+Th%E1%BB%A7y,+C%E1%BA%A7n+Th%C6%A1"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="contact-map-open">
               <span data-i18n="contact.map.view">Xem trên bản đồ</span>
             </a>
           </div>

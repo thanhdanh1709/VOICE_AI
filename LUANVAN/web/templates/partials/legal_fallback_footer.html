@@ -1,0 +1,5 @@
+{% if legal and legal.updated %}
+Cập nhật: {{ legal.updated }}
+{% else %}
+<span data-i18n="legal.fallback_updated">Có hiệu lực từ 01/06/2026 · Cập nhật lần cuối: Tháng 6 năm 2026</span>
+{% endif %}

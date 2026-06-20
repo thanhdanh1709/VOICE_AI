@@ -241,7 +241,7 @@ tailwind.config = {
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
         <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
-        <span class="sb-label">Hồ sơ</span>
+        <span class="sb-label" data-i18n="side.profile">Hồ sơ</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
         <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
@@ -330,6 +330,7 @@ function closeMobileNav() {
 }
 window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileNav(); });
 </script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/history.js') }}"></script>
 </body>
 </html>

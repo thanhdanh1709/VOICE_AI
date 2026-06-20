@@ -9,6 +9,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-console.css') }}">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
 tailwind.config = {
@@ -161,59 +162,12 @@ tailwind.config = {
 </style>
 </head>
 
-<body class="min-h-screen flex bg-background text-on-surface">
+<body class="ac-layout ac-body">
 
-<!-- ═══ SIDEBAR ═══ -->
-<nav class="h-screen w-64 fixed left-0 top-0 bg-[#0F172A] hidden md:flex flex-col z-40">
-  <div class="px-6 pt-6 pb-4">
-    <a href="{{ url_for('index') }}" class="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
-      <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">graphic_eq</span>
-      <span class="text-xl font-black tracking-tighter text-white">VietVoice</span>
-    </a>
-    <p class="text-xs text-on-surface-variant mt-1 font-medium">Admin Dashboard</p>
-  </div>
+{% set nav_active = 'landing' %}
+{% include 'partials/admin_sidebar.html' %}
 
-  <div class="flex flex-col gap-1 p-4 flex-1">
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}">
-      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
-      Bảng điều khiển
-    </a>
-    <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin_landing') }}">
-      <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">palette</span>
-      Landing Page
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-users">
-      <span class="material-symbols-outlined" style="font-size:18px">group</span>
-      Quản lý người dùng
-    </a>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-payments">
-      <span class="material-symbols-outlined" style="font-size:18px">payments</span>
-      Quản lý thanh toán
-    </a>
-    <div class="my-2"></div>
-    <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-      <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-      Về trang chính
-    </a>
-  </div>
-
-  <div class="p-4 flex items-center gap-3">
-    {% if session.avatar_url %}
-    <img src="{{ session.avatar_url }}" alt="" class="w-9 h-9 rounded-full object-cover shrink-0"/>
-    {% else %}
-    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-inverse-primary flex items-center justify-center text-sm font-bold text-on-primary shrink-0">
-      {{ (session.full_name or session.username or 'A')[0] | upper }}
-    </div>
-    {% endif %}
-    <div class="min-w-0">
-      <div class="text-sm font-semibold text-white truncate">{{ session.full_name or session.username }}</div>
-      <div class="text-xs text-slate-400">Administrator</div>
-    </div>
-  </div>
-</nav>
-
-<!-- ═══ MAIN WRAPPER ═══ -->
-<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<div class="ac-page flex flex-col min-h-screen">
 
   <!-- ═══ TOP NAVBAR ═══ -->
   <header class="fixed top-0 left-0 right-0 md:left-64 z-50 bg-[#0F172A]/90 backdrop-blur-xl shadow-[0_2px_16px_rgba(0,0,0,0.3)]">
@@ -224,24 +178,25 @@ tailwind.config = {
         </button>
         <span class="material-symbols-outlined text-violet-400" style="font-size:20px;font-variation-settings:'FILL' 1">palette</span>
         <div>
-          <h1 class="text-sm font-bold text-white">Chỉnh sửa Landing Page</h1>
-          <p class="text-xs text-slate-400 hidden sm:block">Nội dung được lưu và hiển thị ngay lập tức</p>
+          <h1 class="text-sm font-bold text-white" data-i18n="admin.lp.title">Chỉnh sửa Landing Page</h1>
+          <p class="text-xs text-slate-400 hidden sm:block" data-i18n="admin.lp.subtitle">Nội dung được lưu và hiển thị ngay lập tức</p>
         </div>
       </div>
       <div class="flex items-center gap-1.5 md:gap-3">
+        {% include 'partials/admin_lang_toggle.html' %}
         <a href="{{ url_for('landing') }}" target="_blank"
            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tertiary/10 border border-tertiary/25 text-tertiary text-xs font-semibold hover:bg-tertiary/20 transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>
-          Xem Landing
+          <span data-i18n="admin.lp.view_landing">Xem Landing</span>
         </a>
         <a href="{{ url_for('admin') }}"
            class="flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold hover:bg-surface-container-high transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>
-          <span class="hidden sm:inline">Quay lại Admin</span>
+          <span class="hidden sm:inline" data-i18n="admin.lp.back_admin">Quay lại Admin</span>
         </a>
         <a href="{{ url_for('logout') }}" class="text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium">
           <span class="material-symbols-outlined md:hidden" style="font-size:16px">logout</span>
-          <span class="hidden md:inline">Logout</span>
+          <span class="hidden md:inline" data-i18n="nav.logout">Logout</span>
         </a>
       </div>
     </div>
@@ -249,34 +204,12 @@ tailwind.config = {
 
   <!-- Mobile nav drawer for admin_landing -->
   <div id="adminLpNavOverlay" class="fixed inset-0 bg-black/60 z-[45] hidden md:hidden" onclick="closeAdminLpNav()"></div>
-  <div id="adminLpNavDrawer" class="fixed top-16 left-0 w-64 bottom-0 z-[45] bg-[#0F172A] border-r border-white/10 shadow-2xl hidden md:hidden flex-col">
-    <div class="flex flex-col gap-1 p-4 flex-1">
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}">
-        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">dashboard</span>
-        Bảng điều khiển
-      </a>
-      <a class="flex items-center gap-3 bg-violet-500/10 text-violet-400 rounded-lg px-4 py-2.5 border-l-4 border-violet-500 no-underline text-sm font-semibold" href="{{ url_for('admin_landing') }}">
-        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">palette</span>
-        Landing Page
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-users">
-        <span class="material-symbols-outlined" style="font-size:18px">group</span>
-        Quản lý người dùng
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('admin') }}#section-payments">
-        <span class="material-symbols-outlined" style="font-size:18px">payments</span>
-        Quản lý thanh toán
-      </a>
-      <a href="{{ url_for('landing') }}" target="_blank" class="flex items-center gap-3 text-tertiary px-4 py-2.5 hover:bg-white/5 transition-all rounded-lg no-underline text-sm font-medium">
-        <span class="material-symbols-outlined" style="font-size:18px">open_in_new</span>
-        Xem Landing Page
-      </a>
-      <div class="my-2 border-t border-white/10"></div>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
-        Về trang chính
-      </a>
-    </div>
+  <div id="adminLpNavDrawer" class="fixed top-16 left-0 w-64 bottom-0 z-[45] bg-[#0F172A] border-r border-white/10 shadow-2xl hidden md:hidden flex-col overflow-y-auto">
+    {% include 'partials/admin_mobile_nav.html' %}
+    <a href="{{ url_for('landing') }}" target="_blank" class="admin-nav-link admin-mobile-nav-link mx-3 mb-3" style="color:#2fd9f4">
+      <span class="material-symbols-outlined">open_in_new</span>
+      <span data-i18n="admin.lp.mobile_view">Xem Landing Page</span>
+    </a>
   </div>
 
   <!-- ═══ CONTENT ═══ -->
@@ -284,34 +217,34 @@ tailwind.config = {
 
     <!-- ── HERO ── -->
     <div class="alp-section mt-6">
-      <div class="alp-section-title">Hero Section</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.hero">Hero Section</div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Tag nhỏ phía trên tiêu đề</label>
+          <label data-i18n="admin.lp.label.tag">Tag nhỏ phía trên tiêu đề</label>
           <input type="text" id="hero_tag" value="{{ content.get('hero', {}).get('tag', '') }}"/>
         </div>
         <div class="alp-field">
-          <label>Nút CTA chính (Bắt đầu ngay)</label>
+          <label data-i18n="admin.lp.label.cta_primary">Nút CTA chính (Bắt đầu ngay)</label>
           <input type="text" id="hero_btn_primary" value="{{ content.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}"/>
         </div>
       </div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Dòng tiêu đề 1</label>
+          <label data-i18n="admin.lp.label.title_line1">Dòng tiêu đề 1</label>
           <input type="text" id="hero_title_line1" value="{{ content.get('hero', {}).get('title_line1', '') }}"/>
         </div>
         <div class="alp-field">
-          <label>Dòng gradient (màu tím-xanh)</label>
+          <label data-i18n="admin.lp.label.title_grad">Dòng gradient (màu tím-xanh)</label>
           <input type="text" id="hero_title_grad" value="{{ content.get('hero', {}).get('title_grad', '') }}"/>
         </div>
       </div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Dòng tiêu đề 3</label>
+          <label data-i18n="admin.lp.label.title_line3">Dòng tiêu đề 3</label>
           <input type="text" id="hero_title_line2" value="{{ content.get('hero', {}).get('title_line2', '') }}"/>
         </div>
         <div class="alp-field">
-          <label>Ghi chú miễn phí dưới nút</label>
+          <label data-i18n="admin.lp.label.free_note">Ghi chú miễn phí dưới nút</label>
           <input type="text" id="hero_free_note" value="{{ content.get('hero', {}).get('free_note', '') }}"/>
         </div>
       </div>
@@ -319,36 +252,36 @@ tailwind.config = {
 
     <!-- ── THÔNG TIN CÔNG TY ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Thông tin Công ty (Hero Card)</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.company">Thông tin Công ty (Hero Card)</div>
       <div class="alp-field">
-        <label>Tên công ty</label>
+        <label data-i18n="admin.lp.label.company_name">Tên công ty</label>
         <input type="text" id="company_name" value="{{ content.get('company', {}).get('name', '') }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả công ty</label>
+        <label data-i18n="admin.lp.label.company_desc">Mô tả công ty</label>
         <textarea id="company_desc">{{ content.get('company', {}).get('desc', '') }}</textarea>
       </div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Mã số thuế (MST)</label>
+          <label data-i18n="admin.lp.label.mst">Mã số thuế (MST)</label>
           <input type="text" id="company_mst" value="{{ content.get('company', {}).get('mst', '') }}"/>
         </div>
         <div class="alp-field">
-          <label>Người đại diện</label>
+          <label data-i18n="admin.lp.label.representative">Người đại diện</label>
           <input type="text" id="company_representative" value="{{ content.get('company', {}).get('representative', '') }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Địa chỉ</label>
+        <label data-i18n="admin.lp.label.address">Địa chỉ</label>
         <input type="text" id="company_address" value="{{ content.get('company', {}).get('address', '') }}"/>
       </div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Hotline</label>
+          <label data-i18n="admin.lp.label.hotline">Hotline</label>
           <input type="text" id="company_phone" value="{{ content.get('company', {}).get('phone', '') }}"/>
         </div>
         <div class="alp-field">
-          <label>Hoạt động từ</label>
+          <label data-i18n="admin.lp.label.since">Hoạt động từ</label>
           <input type="text" id="company_since" value="{{ content.get('company', {}).get('since', '') }}"/>
         </div>
       </div>
@@ -356,13 +289,13 @@ tailwind.config = {
 
     <!-- ── VỀ VIETVOICE (SECTION MỚI) ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Section "Về VietVoice AI"</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.about_new">Section "Về VietVoice AI"</div>
       <div class="alp-field">
-        <label>Tiêu đề section</label>
+        <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
         <input type="text" id="about_new_title" value="{{ content.get('about_new', {}).get('title', 'Về VietVoice AI') }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả section</label>
+        <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
         <textarea id="about_new_desc">{{ content.get('about_new', {}).get('desc', '') }}</textarea>
       </div>
       {% set default_cards = [{"icon":"visibility","title":"Tầm Nhìn","desc":""},{"icon":"flag","title":"Sứ Mệnh","desc":""},{"icon":"handshake","title":"Cam Kết","desc":""}] %}
@@ -372,16 +305,16 @@ tailwind.config = {
         <div class="alp-repeat-label">Card {{ loop.index }}: {{ card.title }}</div>
         <div class="alp-row">
           <div class="alp-field">
-            <label>Icon (Material Symbol name)</label>
+            <label data-i18n="admin.lp.label.icon_material">Icon (Material Symbol name)</label>
             <input type="text" id="about_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
           </div>
           <div class="alp-field">
-            <label>Tiêu đề</label>
+            <label data-i18n="admin.lp.label.title">Tiêu đề</label>
             <input type="text" id="about_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
           </div>
         </div>
         <div class="alp-field">
-          <label>Mô tả</label>
+          <label data-i18n="admin.lp.label.desc">Mô tả</label>
           <textarea id="about_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
         </div>
       </div>
@@ -390,74 +323,74 @@ tailwind.config = {
 
     <!-- ── FOOTER ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Footer</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.footer">Footer</div>
 
       <div class="alp-field">
-        <label>Mô tả thương hiệu (cột trái)</label>
+        <label data-i18n="admin.lp.label.brand_desc">Mô tả thương hiệu (cột trái)</label>
         <textarea id="footer_brand_desc" style="min-height:70px">{{ content.get('footer', {}).get('brand_desc', '') }}</textarea>
       </div>
 
       <div class="alp-row">
         <div class="alp-field">
-          <label>Tiêu đề cột 1</label>
+          <label data-i18n="admin.lp.label.footer_col1">Tiêu đề cột 1</label>
           <input type="text" id="footer_col1_title" value="{{ content.get('footer', {}).get('col1_title', 'TÍNH NĂNG') }}"/>
         </div>
         <div class="alp-field">
-          <label>Tiêu đề cột 2</label>
+          <label data-i18n="admin.lp.label.footer_col2">Tiêu đề cột 2</label>
           <input type="text" id="footer_col2_title" value="{{ content.get('footer', {}).get('col2_title', 'HỖ TRỢ') }}"/>
         </div>
         <div class="alp-field">
-          <label>Tiêu đề cột 3</label>
+          <label data-i18n="admin.lp.label.footer_col3">Tiêu đề cột 3</label>
           <input type="text" id="footer_col3_title" value="{{ content.get('footer', {}).get('col3_title', 'TÀI KHOẢN') }}"/>
         </div>
       </div>
 
       <div class="alp-field">
-        <label>Links cột 1 – Tính năng (mỗi dòng: Nhãn|/url)</label>
+        <label data-i18n="admin.lp.label.col1_links">Links cột 1 – Tính năng (mỗi dòng: Nhãn|/url)</label>
         <textarea id="footer_col1_links" style="min-height:110px">{% for lnk in content.get('footer', {}).get('col1_links', []) %}{{ lnk.label }}|{{ lnk.href }}
 {% endfor %}</textarea>
       </div>
 
       <div class="alp-field">
-        <label>Links cột 2 – Hỗ trợ (mỗi dòng: Nhãn|/url)</label>
+        <label data-i18n="admin.lp.label.col2_links">Links cột 2 – Hỗ trợ (mỗi dòng: Nhãn|/url)</label>
         <textarea id="footer_col2_links" style="min-height:90px">{% for lnk in content.get('footer', {}).get('col2_links', []) %}{{ lnk.label }}|{{ lnk.href }}
 {% endfor %}</textarea>
       </div>
 
       <div class="alp-field">
-        <label>Copyright text</label>
+        <label data-i18n="admin.lp.label.copyright">Copyright text</label>
         <input type="text" id="footer_copyright" value="{{ content.get('footer', {}).get('copyright', '') }}"/>
       </div>
     </div>
 
     <!-- ── TRUSTED ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Dải "Được tin dùng bởi"</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.trusted">Dải "Được tin dùng bởi"</div>
       <div class="alp-field">
-        <label>Label</label>
+        <label data-i18n="admin.lp.label.trusted_label">Label</label>
         <input type="text" id="trusted_label" value="{{ content.trusted.label }}"/>
       </div>
       <div class="alp-field">
-        <label>Các nhóm (mỗi dòng một nhóm)</label>
+        <label data-i18n="admin.lp.label.trusted_items">Các nhóm (mỗi dòng một nhóm)</label>
         <textarea id="trusted_items" style="min-height:90px">{{ content.trusted['items'] | join('\n') }}</textarea>
       </div>
     </div>
 
     <!-- ── FEATURES ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Tính năng nổi bật</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.features">Tính năng nổi bật</div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Label nhỏ</label>
+          <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
           <input type="text" id="feat_label" value="{{ content.features.label }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Tiêu đề section</label>
+        <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
         <input type="text" id="feat_title" value="{{ content.features.title }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả section</label>
+        <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
         <textarea id="feat_subtitle">{{ content.features.subtitle }}</textarea>
       </div>
       {% for card in content.features.cards %}
@@ -465,16 +398,16 @@ tailwind.config = {
         <div class="alp-repeat-label">Card {{ loop.index }}</div>
         <div class="alp-row">
           <div class="alp-field">
-            <label>Icon (emoji)</label>
+            <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
             <input type="text" id="feat_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
           </div>
           <div class="alp-field">
-            <label>Tiêu đề card</label>
+            <label data-i18n="admin.lp.label.card_title">Tiêu đề card</label>
             <input type="text" id="feat_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
           </div>
         </div>
         <div class="alp-field">
-          <label>Mô tả</label>
+          <label data-i18n="admin.lp.label.desc">Mô tả</label>
           <textarea id="feat_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
         </div>
       </div>
@@ -483,19 +416,19 @@ tailwind.config = {
 
     <!-- ── STEPS ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Hướng dẫn 3 bước</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.steps">Hướng dẫn 3 bước</div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Label nhỏ</label>
+          <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
           <input type="text" id="steps_label" value="{{ content.steps.label }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Tiêu đề section</label>
+        <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
         <input type="text" id="steps_title" value="{{ content.steps.title }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả section</label>
+        <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
         <textarea id="steps_subtitle">{{ content.steps.subtitle }}</textarea>
       </div>
       {% for step in content.steps['items'] %}
@@ -503,16 +436,16 @@ tailwind.config = {
         <div class="alp-repeat-label">Bước {{ loop.index }}</div>
         <div class="alp-row">
           <div class="alp-field">
-            <label>Icon (emoji)</label>
+            <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
             <input type="text" id="step_{{ loop.index0 }}_icon" value="{{ step.icon }}"/>
           </div>
           <div class="alp-field">
-            <label>Tiêu đề bước</label>
+            <label data-i18n="admin.lp.label.step_title">Tiêu đề bước</label>
             <input type="text" id="step_{{ loop.index0 }}_title" value="{{ step.title }}"/>
           </div>
         </div>
         <div class="alp-field">
-          <label>Mô tả</label>
+          <label data-i18n="admin.lp.label.desc">Mô tả</label>
           <textarea id="step_{{ loop.index0 }}_desc">{{ step.desc }}</textarea>
         </div>
       </div>
@@ -521,93 +454,93 @@ tailwind.config = {
 
     <!-- ── SHOWCASE ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Showcase Section</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.showcase">Showcase Section</div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Icon (emoji)</label>
+          <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
           <input type="text" id="showcase_icon" value="{{ content.showcase.icon }}"/>
         </div>
         <div class="alp-field">
-          <label>Nút CTA</label>
+          <label data-i18n="admin.lp.label.cta_btn">Nút CTA</label>
           <input type="text" id="showcase_btn" value="{{ content.showcase.btn }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Tiêu đề</label>
+        <label data-i18n="admin.lp.label.title">Tiêu đề</label>
         <input type="text" id="showcase_title" value="{{ content.showcase.title }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả</label>
+        <label data-i18n="admin.lp.label.desc">Mô tả</label>
         <textarea id="showcase_desc">{{ content.showcase.desc }}</textarea>
       </div>
       <div class="alp-field">
-        <label>Các badge (mỗi dòng một badge)</label>
+        <label data-i18n="admin.lp.label.badges">Các badge (mỗi dòng một badge)</label>
         <textarea id="showcase_badges" style="min-height:100px">{{ content.showcase.badges | join('\n') }}</textarea>
       </div>
     </div>
 
     <!-- ── FINAL CTA ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Final CTA</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.final_cta">Final CTA</div>
       <div class="alp-field">
-        <label>Tiêu đề</label>
+        <label data-i18n="admin.lp.label.title">Tiêu đề</label>
         <input type="text" id="fcta_title" value="{{ content.final_cta.title }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả</label>
+        <label data-i18n="admin.lp.label.desc">Mô tả</label>
         <input type="text" id="fcta_subtitle" value="{{ content.final_cta.subtitle }}"/>
       </div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Nút chính</label>
+          <label data-i18n="admin.lp.label.btn_primary">Nút chính</label>
           <input type="text" id="fcta_btn_primary" value="{{ content.final_cta.btn_primary }}"/>
         </div>
         <div class="alp-field">
-          <label>Nút phụ</label>
+          <label data-i18n="admin.lp.label.btn_secondary">Nút phụ</label>
           <input type="text" id="fcta_btn_secondary" value="{{ content.final_cta.btn_secondary }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Ghi chú nhỏ dưới nút</label>
+        <label data-i18n="admin.lp.label.small_note">Ghi chú nhỏ dưới nút</label>
         <input type="text" id="fcta_note" value="{{ content.final_cta.note }}"/>
       </div>
     </div>
 
     <!-- ── ABOUT ── -->
     <div class="alp-section">
-      <div class="alp-section-title">Về chúng tôi</div>
+      <div class="alp-section-title" data-i18n="admin.lp.section.about">Về chúng tôi</div>
       <div class="alp-row">
         <div class="alp-field">
-          <label>Label nhỏ</label>
+          <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
           <input type="text" id="about_label" value="{{ content.about.label }}"/>
         </div>
         <div class="alp-field">
-          <label>Nút CTA</label>
+          <label data-i18n="admin.lp.label.cta_btn">Nút CTA</label>
           <input type="text" id="about_btn" value="{{ content.about.btn }}"/>
         </div>
       </div>
       <div class="alp-field">
-        <label>Tiêu đề</label>
+        <label data-i18n="admin.lp.label.title">Tiêu đề</label>
         <input type="text" id="about_title" value="{{ content.about.title }}"/>
       </div>
       <div class="alp-field">
-        <label>Mô tả công ty</label>
+        <label data-i18n="admin.lp.label.company_desc">Mô tả công ty</label>
         <textarea id="about_company_desc">{{ content.about.company_desc }}</textarea>
       </div>
       <div class="alp-field">
-        <label>Thông tin dòng 1 (MST · Người đại diện)</label>
+        <label data-i18n="admin.lp.label.info_row1">Thông tin dòng 1 (MST · Người đại diện)</label>
         <input type="text" id="about_info1" value="{{ content.about.info_row1 }}"/>
       </div>
       <div class="alp-field">
-        <label>Thông tin dòng 2 (Địa chỉ)</label>
+        <label data-i18n="admin.lp.label.info_row2">Thông tin dòng 2 (Địa chỉ)</label>
         <input type="text" id="about_info2" value="{{ content.about.info_row2 }}"/>
       </div>
       <div class="alp-field">
-        <label>Thông tin dòng 3 (SĐT · Ngày)</label>
+        <label data-i18n="admin.lp.label.info_row3">Thông tin dòng 3 (SĐT · Ngày)</label>
         <input type="text" id="about_info3" value="{{ content.about.info_row3 }}"/>
       </div>
       <div class="alp-field">
-        <label>Ghi chú nhỏ</label>
+        <label data-i18n="admin.lp.label.small_note">Ghi chú nhỏ</label>
         <input type="text" id="about_note" value="{{ content.about.note }}"/>
       </div>
     </div>
@@ -620,14 +553,19 @@ tailwind.config = {
     <button id="saveBtn" onclick="saveContent()"
       class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold hover:opacity-90 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
       <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">save</span>
-      Lưu thay đổi
+      <span data-i18n="admin.lp.save">Lưu thay đổi</span>
     </button>
   </div>
 
 </div>
 
 <!-- ═══ SCRIPTS ═══ -->
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script>
+function _tLp(key, fb) {
+  return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fb || key);
+}
+
 function g(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
@@ -637,7 +575,7 @@ function saveContent() {
   const btn    = document.getElementById('saveBtn');
   const status = document.getElementById('saveStatus');
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 0.8s linear infinite">progress_activity</span> Đang lưu...';
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 0.8s linear infinite">progress_activity</span> ' + _tLp('admin.lp.saving', 'Đang lưu...');
 
   const data = {
     hero: {
@@ -744,12 +682,12 @@ function saveContent() {
   })
   .catch(() => {
     status.className = 'alp-status error';
-    status.innerHTML = '❌ Lỗi kết nối máy chủ';
+    status.innerHTML = '❌ ' + _tLp('admin.lp.conn_error', 'Lỗi kết nối máy chủ');
     status.style.display = 'flex';
   })
   .finally(() => {
     btn.disabled = false;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:\'FILL\' 1">save</span> Lưu thay đổi';
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:\'FILL\' 1">save</span> ' + _tLp('admin.lp.save', 'Lưu thay đổi');
   });
 }
 </script>
@@ -778,6 +716,9 @@ function closeAdminLpNav() {
   document.getElementById('adminLpNavOverlay').classList.add('hidden');
   document.getElementById('adminLpMenuIcon').textContent = 'menu';
 }
+document.querySelectorAll('#adminLpNavDrawer .admin-nav-link').forEach((link) => {
+  link.addEventListener('click', () => closeAdminLpNav());
+});
 </script>
 </body>
 </html>

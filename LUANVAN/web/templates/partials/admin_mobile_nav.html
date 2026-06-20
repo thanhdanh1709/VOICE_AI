@@ -1,0 +1,10 @@
+{% set nav_active = nav_active|default('') %}
+<div class="admin-mobile-nav flex flex-col p-3 gap-0.5">
+  {% include 'partials/admin_nav_items.html' %}
+  <div class="border-t border-white/10 mt-1 pt-1">
+    <a href="{{ url_for('index') }}" class="admin-nav-link admin-mobile-nav-link">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span data-i18n="admin.nav.back">Về trang chính</span>
+    </a>
+  </div>
+</div>

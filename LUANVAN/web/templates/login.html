@@ -55,7 +55,27 @@
 <div class="auth-v2-msg error" data-i18n="auth.login.google_err_cfg">Google OAuth chưa được cấu hình.</div>
 {% elif request.args.get('error') == 'google_auth_failed' %}
 <div class="auth-v2-msg error" data-i18n="auth.login.google_err">Đăng nhập Google thất bại.</div>
+{% elif request.args.get('error') == 'account_deleted' %}
+<div class="auth-v2-msg error" data-i18n="auth.login.account_deleted">Tài khoản của bạn đã bị xóa hoặc vô hiệu hóa.</div>
+{% elif request.args.get('error') == 'account_deactivated_grace' %}
+<div class="auth-v2-msg error" data-i18n="auth.login.account_grace">Tài khoản đã bị vô hiệu hóa tạm thời (30 ngày). Bạn có thể yêu cầu khôi phục bên dưới.</div>
 {% endif %}
+
+<div class="auth-form-foot" style="margin-top:12px">
+    <a href="#" id="restoreAccountToggle" class="text-sm" data-i18n="auth.restore.toggle">Khôi phục tài khoản đã vô hiệu hóa?</a>
+</div>
+<div id="restoreAccountPanel" style="display:none;margin-top:12px">
+    <div class="auth-field">
+        <label for="restoreEmail" data-i18n="auth.restore.email">Email tài khoản</label>
+        <div class="auth-input-wrap">
+            <span class="material-symbols-outlined">alternate_email</span>
+            <input id="restoreEmail" type="email" data-i18n-placeholder="auth.ph.email" placeholder="yourname@domain.com">
+        </div>
+    </div>
+    <button type="button" id="btnRestoreAccount" class="auth-btn-primary" style="margin-top:8px">
+        <span data-i18n="auth.restore.btn">Gửi yêu cầu khôi phục</span>
+    </button>
+</div>
 
 <div class="auth-form-foot">
     <span data-i18n="auth.login.new_user">Bạn mới sử dụng VietVoice?</span>
@@ -71,6 +91,40 @@ function handleGoogleLogin() {
         window.location.href = '{{ url_for("google_login") }}';
     }
 }
+document.getElementById('restoreAccountToggle')?.addEventListener('click', function (e) {
+    e.preventDefault();
+    const panel = document.getElementById('restoreAccountPanel');
+    if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('btnRestoreAccount')?.addEventListener('click', async function () {
+    const email = (document.getElementById('restoreEmail')?.value || '').trim();
+    const msgEl = document.getElementById('message');
+    if (!email) {
+        if (msgEl) { msgEl.className = 'auth-v2-msg error'; msgEl.textContent = 'Vui lòng nhập email'; }
+        return;
+    }
+    try {
+        const r = await fetch('/api/public/request-account-restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const d = await r.json();
+        if (msgEl) {
+            msgEl.className = d.success ? 'auth-v2-msg success' : 'auth-v2-msg error';
+            msgEl.textContent = (window.VVi18n && window.VVi18n.resolveApiMessage)
+                ? window.VVi18n.resolveApiMessage(d)
+                : (d.message || '');
+        }
+    } catch (err) {
+        if (msgEl) {
+            msgEl.className = 'auth-v2-msg error';
+            msgEl.textContent = (window.VVi18n && window.VVi18n.t)
+                ? window.VVi18n.t('err.connection')
+                : 'Lỗi kết nối';
+        }
+    }
+});
 </script>
 {% endblock %}
 

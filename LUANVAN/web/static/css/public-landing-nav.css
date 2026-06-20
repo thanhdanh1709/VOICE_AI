@@ -1,0 +1,249 @@
+/* Public top nav — shared between landing + auth pages */
+.lp-nav-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: rgba(5, 20, 36, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-nav-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  height: 5rem;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+.lp-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.lp-nav-brand:hover {
+  opacity: 0.9;
+}
+
+.lp-nav-brand-icon {
+  font-size: 1.75rem;
+  color: #d0bcff;
+  font-variation-settings: 'FILL' 1;
+}
+
+.lp-nav-brand-text {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #8b5cf6, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lp-nav-links {
+  display: none;
+  align-items: center;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lp-nav-links a {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.lp-nav-links a:hover {
+  color: #22d3ee;
+}
+
+.lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.lp-nav-cta {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding: 0 1.5rem;
+  border-radius: 9999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(135deg, #a078ff 0%, #6d3bd7 100%);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-nav-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #d0bcff 0%, #a078ff 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.lp-nav-cta span {
+  position: relative;
+  z-index: 1;
+}
+
+.lp-nav-cta:hover {
+  box-shadow: 0 0 15px rgba(160, 120, 255, 0.4);
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+.lp-nav-cta:hover::before {
+  opacity: 1;
+}
+
+.lp-nav-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #d4e4fa;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.lp-nav-menu-btn .material-symbols-outlined {
+  font-size: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .lp-nav-links { display: flex; }
+  .lp-nav-cta { display: inline-flex; }
+  .lp-nav-menu-btn { display: none; }
+}
+
+/* Mobile drawer */
+.lp-mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: none;
+}
+
+.lp-mobile-menu.is-open {
+  display: block;
+}
+
+.lp-mobile-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.lp-mobile-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18rem;
+  max-width: 88vw;
+  height: 100%;
+  padding: 6rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: rgba(18, 33, 49, 0.95);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.lp-mobile-panel a {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #d4e4fa;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.lp-mobile-panel a:hover {
+  color: #d0bcff;
+}
+
+.lp-mobile-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0;
+}
+
+.lp-mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lp-mobile-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem;
+  padding: 0 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 33, 49, 0.6);
+  color: #d4e4fa;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.lp-mobile-login:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lp-mobile-register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 3rem;
+  padding: 0 1.5rem;
+  border-radius: 9999px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  background: linear-gradient(135deg, #a078ff 0%, #6d3bd7 100%);
+}
+
+body.public-landing-nav-page .bg-orbs {
+  display: none !important;
+}
+
+body.public-landing-nav-page .main-content.auth-page-main {
+  padding-top: 5rem !important;
+}
+
+body.public-landing-nav-page .auth-v2-wrap {
+  min-height: calc(100vh - 5rem);
+}

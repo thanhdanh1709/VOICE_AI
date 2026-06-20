@@ -1,0 +1,13 @@
+<div id="adminMobileOverlay" class="ac-mobile-overlay hidden" onclick="closeAdminMobileNav()"></div>
+<aside id="adminMobileDrawer" class="ac-mobile-drawer hidden" aria-label="Admin navigation">
+  <div class="ac-mobile-drawer-head">
+    <div class="ac-mobile-drawer-brand">
+      <span class="material-symbols-outlined ac-mobile-drawer-logo">graphic_eq</span>
+      <span>VietVoice Admin</span>
+    </div>
+    <button type="button" class="ac-mobile-drawer-close" onclick="closeAdminMobileNav()" aria-label="Close menu">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  {% include 'partials/admin_mobile_nav.html' %}
+</aside>

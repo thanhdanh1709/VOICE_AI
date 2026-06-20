@@ -6,10 +6,20 @@
  *        add data-i18n-html="key" for innerHTML (use cautiously)
  */
 if (!window.VVi18n) {
-    const STORAGE_KEY = 'vv-lang';
+    const STORAGE_KEY = 'language';
+    const LEGACY_KEY = 'vv-lang';
     const DEFAULT_LANG = 'vi';
-    let currentLang = localStorage.getItem(STORAGE_KEY) || DEFAULT_LANG;
-    let translations = {};
+    const TRANSLATE_CACHE_KEY = 'vv-translate-cache';
+    const I18N_JSON_BASE = '/static/i18n';
+
+    let currentLang = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY) || DEFAULT_LANG;
+    if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(LEGACY_KEY)) {
+        localStorage.setItem(STORAGE_KEY, currentLang);
+    }
+    let translateGeneration = 0;
+    let dictionariesReady = false;
+    let translateLoadingDepth = 0;
+    let legalReloadToken = 0;
 
     // ── English translations dictionary ──────────────────────────────
     const EN = {
@@ -26,6 +36,57 @@ if (!window.VVi18n) {
         'nav.register':     'Get Started Free',
         'nav.features':     'Features',
         'nav.theme':        'Toggle light/dark',
+        'nav.about':        'About Us',
+
+        // ── Landing page (static UI) ──
+        'lp.page.title':        'VietVoice AI — Full AI Technology Toolkit',
+        'lp.hero.subtitle':     'Create vivid audio experiences with top-tier Neural Synthesis. Instant processing, studio-quality output in seconds.',
+        'lp.btn.view_features': 'View Features',
+        'lp.demo.window_title': 'VietVoice AI — Text to Speech',
+        'lp.demo.voice':        'Southern Male Voice',
+        'lp.demo.sample_text':  'Hello! This is <span class="text-primary font-semibold">VietVoice AI</span>, Vietnam\'s most natural text-to-speech platform.',
+        'lp.demo.convert':      'Convert',
+        'lp.demo.hint':         'Press "Convert" to preview',
+        'lp.demo.processing':   'Processing...',
+        'lp.demo.synthesizing': 'Synthesizing voice...',
+        'lp.demo.ready':        '✓ Synthesis complete — ready to play',
+        'lp.stats.accuracy':    'Accuracy',
+        'lp.stats.generated':   'Voices created',
+        'lp.stats.users':       'Users',
+        'lp.badge.latency':     'Latency',
+        'lp.badge.latency_val': '< 200ms',
+        'lp.badge.voices':      'Voices',
+        'lp.badge.voices_val':  '50+ voices',
+        'lp.pricing.badge':     'Transparent pricing, no hidden fees',
+        'lp.pricing.title':     'Flexible pricing',
+        'lp.pricing.subtitle':  'Choose a plan that fits your needs. Upgrade or cancel anytime.',
+        'lp.pricing.free_note': '<span class="material-symbols-outlined text-green-400 text-base align-middle mr-1">check_circle</span> Start free with <strong class="text-on-surface">100,000 characters</strong> — no credit card required.',
+        'lp.about.trust_title': 'Trusted solution',
+        'lp.about.trust_desc':  'Trusted by over 200 major businesses in Vietnam.',
+        'lp.legal.title':       'Legal information',
+        'lp.legal.company_name':'Company name',
+        'lp.legal.mst':         'Tax ID',
+        'lp.legal.representative':'Representative',
+        'lp.legal.since':       'License date',
+        'lp.legal.address':     'Head office',
+        'lp.legal.hotline':     'Hotline',
+        'lp.legal.email':       'Email',
+        'lp.price.free':        'Free',
+        'lp.price.currency':    '₫',
+        'lp.duration.1m':       '1 month',
+        'lp.duration.3m':       '3 months',
+        'lp.duration.6m':       '6 months',
+        'lp.duration.1y':       '1 year',
+        'lp.duration.days':     '{n} days',
+        'lp.pkg.chars':         '<strong>{n}</strong> characters / period',
+        'lp.pkg.valid':         'Valid for <strong>{d}</strong>',
+        'lp.pkg.voices':        'All available voices',
+        'lp.pkg.download':      'Download MP3 / WAV',
+        'lp.pkg.support':       'Email support',
+        'lp.btn.start_free':    'Start free',
+        'lp.btn.register':      'Register now',
+        'lp.popular':           '⭐ Most popular',
+        'lp.fallback.basic':    'Basic',
 
         // ── Mobile drawer ──
         'mob.home':         'Home',
@@ -66,6 +127,7 @@ if (!window.VVi18n) {
         'ft.privacy':       'Privacy Policy',
         'ft.terms':         'Terms of Service',
         'ft.deletion':      'Data Deletion',
+        'ft.payment':       'Payment Terms',
         'ft.copy':          '© 2026 VietVoice · AI Technology ·',
         'ft.terms-link':    'Terms of Service',
         'ft.privacy-link':  'Privacy Policy',
@@ -111,6 +173,8 @@ if (!window.VVi18n) {
         'em.voice.note':    'Only supports viXTTS Clone voices.',
         'em.voice.add':     'Add new voice',
         'em.joy':           'Joy',
+        'em.banner.title':  'Emotional TTS — AI reads with natural emotion!',
+        'em.banner.sub':    'Your voice + emotion automatically adapts to the text content',
         'em.excited':       'Excited',
         'em.calm':          'Calm',
         'em.sad':           'Sad',
@@ -221,6 +285,7 @@ if (!window.VVi18n) {
         'legal.privacy':    'Privacy Policy',
         'legal.terms':      'Terms of Service',
         'legal.deletion':   'Data Deletion Policy',
+        'legal.payment':    'Payment Terms',
         'legal.support':    'Support & FAQ',
         'legal.user-guide': 'User Guide',
         'legal.install':    'Installation Guide',
@@ -562,7 +627,9 @@ if (!window.VVi18n) {
         'auth.register.login_link':'Sign in →',
         'auth.register.terms_prefix': 'I agree to the',
         'auth.register.terms_link':   'Terms of Service',
-        'auth.register.terms_suffix': 'of VietVoice',
+        'auth.register.terms_and':    ' and ',
+        'auth.register.privacy_link': 'Privacy Policy',
+        'auth.register.terms_suffix': ' of VietVoice',
         'auth.ph.username':       'Enter username',
         'auth.ph.login_identifier':'Enter username or email',
         'auth.ph.email_login':    'yourname@domain.com',
@@ -619,7 +686,10 @@ if (!window.VVi18n) {
 
         // ── Legal (shared + privacy) ──
         'legal.badge':            'Legal',
+        'legal.guide.badge':      'Guide',
+        'legal.install.badge':    'Setup',
         'legal.updated':          'Last updated: June 2026',
+        'legal.updated_prefix':   'Updated:',
         'legal.privacy.intro':    'VietVoice ("we") is committed to protecting your privacy. This policy describes how we collect, use and protect personal information when you use VietVoice — the AI text-to-speech platform.',
         'legal.privacy.agree':    'By using VietVoice, you agree to the terms of this policy.',
         'legal.privacy.s1':       'Introduction',
@@ -665,6 +735,8 @@ if (!window.VVi18n) {
         'err.unauthorized':       'Unauthorized',
         'err.connection':         'Connection error',
         'err.login_failed':       'Sign in failed',
+        'err.account_deleted':    'Your account has been deleted or deactivated.',
+        'err.account_deactivated_grace': 'Your account has been deactivated. You can request restoration within 30 days (until {until}). Please use "Restore a deactivated account?" on the login page.',
         'err.register_failed':    'Registration failed',
         'err.password_mismatch':  'Passwords do not match',
         'err.terms_required':     'Please agree to the Terms of Service to register',
@@ -683,6 +755,8 @@ if (!window.VVi18n) {
         'err.pw_mismatch':        'Confirm password does not match',
         'err.update_success':     'Updated successfully!',
         'err.pw_change_success':  'Password changed successfully!',
+        'i18n.translating':       'Translating...',
+        'ws.lang_warning':      'This system is optimized for Vietnamese text. Results with other languages may be less accurate.',
     };
 
     // ── Vietnamese translations (default — same keys) ─────────────────
@@ -699,6 +773,57 @@ if (!window.VVi18n) {
         'nav.register':     'Bắt đầu miễn phí',
         'nav.features':     'Tính năng',
         'nav.theme':        'Chuyển sáng/tối',
+        'nav.about':        'Về chúng tôi',
+
+        // ── Landing page (static UI) ──
+        'lp.page.title':        'VietVoice AI - Bộ công cụ công nghệ AI toàn diện',
+        'lp.hero.subtitle':     'Kiến tạo trải nghiệm âm thanh sống động với công nghệ Neural Synthesis đỉnh cao. Tốc độ xử lý tức thì, chất lượng chuẩn phòng thu chỉ trong vài giây.',
+        'lp.btn.view_features': 'Xem tính năng',
+        'lp.demo.window_title': 'VietVoice AI — Chuyển văn bản thành giọng nói',
+        'lp.demo.voice':        'Giọng Nam Miền Nam',
+        'lp.demo.sample_text':  'Xin chào! Đây là <span class="text-primary font-semibold">VietVoice AI</span>, nền tảng chuyển đổi văn bản thành giọng nói tự nhiên nhất Việt Nam.',
+        'lp.demo.convert':      'Chuyển đổi',
+        'lp.demo.hint':         'Nhấn "Chuyển đổi" để nghe thử',
+        'lp.demo.processing':   'Đang xử lý...',
+        'lp.demo.synthesizing': 'Đang tổng hợp giọng nói...',
+        'lp.demo.ready':        '✓ Đã tổng hợp xong — sẵn sàng phát',
+        'lp.stats.accuracy':    'Độ chính xác',
+        'lp.stats.generated':   'Giọng đã tạo',
+        'lp.stats.users':       'Người dùng',
+        'lp.badge.latency':     'Độ trễ',
+        'lp.badge.latency_val': '< 200ms',
+        'lp.badge.voices':      'Giọng nói',
+        'lp.badge.voices_val':  '50+ giọng',
+        'lp.pricing.badge':     'Minh bạch, không ẩn phí',
+        'lp.pricing.title':     'Bảng giá linh hoạt',
+        'lp.pricing.subtitle':  'Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp hoặc hủy bất kỳ lúc nào.',
+        'lp.pricing.free_note': '<span class="material-symbols-outlined text-green-400 text-base align-middle mr-1">check_circle</span> Bắt đầu miễn phí với <strong class="text-on-surface">100.000 ký tự</strong> — không cần thẻ tín dụng.',
+        'lp.about.trust_title': 'Giải pháp tin cậy',
+        'lp.about.trust_desc':  'Được tin dùng bởi hơn 200 doanh nghiệp lớn tại Việt Nam.',
+        'lp.legal.title':       'Thông tin pháp lý',
+        'lp.legal.company_name':'Tên công ty',
+        'lp.legal.mst':         'Mã số thuế',
+        'lp.legal.representative':'Người đại diện',
+        'lp.legal.since':       'Ngày cấp phép',
+        'lp.legal.address':     'Trụ sở chính',
+        'lp.legal.hotline':     'Hotline',
+        'lp.legal.email':       'Email',
+        'lp.price.free':        'Miễn phí',
+        'lp.price.currency':    'đ',
+        'lp.duration.1m':       '1 tháng',
+        'lp.duration.3m':       '3 tháng',
+        'lp.duration.6m':       '6 tháng',
+        'lp.duration.1y':       '1 năm',
+        'lp.duration.days':     '{n} ngày',
+        'lp.pkg.chars':         '<strong>{n}</strong> ký tự / kỳ',
+        'lp.pkg.valid':         'Hiệu lực <strong>{d}</strong>',
+        'lp.pkg.voices':        'Toàn bộ giọng nói có sẵn',
+        'lp.pkg.download':      'Tải file MP3 / WAV',
+        'lp.pkg.support':       'Hỗ trợ qua email',
+        'lp.btn.start_free':    'Bắt đầu miễn phí',
+        'lp.btn.register':      'Đăng ký ngay',
+        'lp.popular':           '⭐ Phổ biến nhất',
+        'lp.fallback.basic':    'Cơ bản',
         'mob.home':         'Trang chủ',
         'mob.library':      'Thư viện Audio',
         'mob.history':      'Lịch sử chuyển đổi',
@@ -735,6 +860,7 @@ if (!window.VVi18n) {
         'ft.privacy':       'Chính sách quyền riêng tư',
         'ft.terms':         'Điều khoản sử dụng',
         'ft.deletion':      'Chính sách xóa dữ liệu',
+        'ft.payment':       'Điều khoản thanh toán',
         'ft.copy':          '© 2026 VietVoice · Công nghệ AI ·',
         'ft.terms-link':    'Điều khoản dịch vụ',
         'ft.privacy-link':  'Chính sách bảo mật',
@@ -775,6 +901,8 @@ if (!window.VVi18n) {
         'em.voice.note':    'Chỉ hỗ trợ giọng viXTTS Clone.',
         'em.voice.add':     'Thêm giọng mới',
         'em.joy':           'Vui',
+        'em.banner.title':  'Emotional TTS — AI đọc với cảm xúc tự nhiên!',
+        'em.banner.sub':    'Giọng của bạn + cảm xúc tự động thay đổi theo nội dung văn bản',
         'em.excited':       'Hứng khởi',
         'em.calm':          'Bình tĩnh',
         'em.sad':           'Buồn',
@@ -863,6 +991,7 @@ if (!window.VVi18n) {
         'legal.privacy':    'Chính sách quyền riêng tư',
         'legal.terms':      'Điều khoản sử dụng',
         'legal.deletion':   'Chính sách xóa dữ liệu',
+        'legal.payment':    'Điều khoản thanh toán',
         'legal.support':    'Hỗ trợ & FAQ',
         'legal.user-guide': 'Hướng dẫn sử dụng',
         'legal.install':    'Hướng dẫn cài đặt',
@@ -1189,7 +1318,9 @@ if (!window.VVi18n) {
         'auth.register.login_link':'Đăng nhập →',
         'auth.register.terms_prefix': 'Tôi đồng ý với',
         'auth.register.terms_link':   'Điều khoản sử dụng',
-        'auth.register.terms_suffix': 'của VietVoice',
+        'auth.register.terms_and':    ' và ',
+        'auth.register.privacy_link': 'Chính sách quyền riêng tư',
+        'auth.register.terms_suffix': ' của VietVoice',
         'auth.ph.username':       'Nhập tên đăng nhập',
         'auth.ph.login_identifier':'Nhập tên đăng nhập hoặc email',
         'auth.ph.email_login':    'yourname@domain.com',
@@ -1244,7 +1375,10 @@ if (!window.VVi18n) {
         'admin.no_data':          'Không có dữ liệu',
 
         'legal.badge':            'Pháp lý',
+        'legal.guide.badge':      'Hướng dẫn',
+        'legal.install.badge':    'Cài đặt',
         'legal.updated':          'Cập nhật lần cuối: Tháng 6 năm 2026',
+        'legal.updated_prefix':   'Cập nhật:',
         'legal.privacy.intro':    'VietVoice ("chúng tôi") cam kết bảo vệ quyền riêng tư của bạn. Chính sách này mô tả cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân khi bạn sử dụng VietVoice — nền tảng chuyển văn bản thành giọng nói AI.',
         'legal.privacy.agree':    'Bằng cách sử dụng VietVoice, bạn đồng ý với các điều khoản của chính sách này.',
         'legal.privacy.s1':       'Giới thiệu',
@@ -1288,6 +1422,8 @@ if (!window.VVi18n) {
         'err.unauthorized':       'Không có quyền truy cập',
         'err.connection':         'Lỗi kết nối',
         'err.login_failed':       'Đăng nhập thất bại',
+        'err.account_deleted':    'Tài khoản của bạn đã bị xóa hoặc vô hiệu hóa.',
+        'err.account_deactivated_grace': 'Tài khoản của bạn đã bị vô hiệu hóa. Bạn có thể yêu cầu khôi phục trong vòng 30 ngày (đến {until}). Vui lòng dùng chức năng "Khôi phục tài khoản" trên trang đăng nhập.',
         'err.register_failed':    'Đăng ký thất bại',
         'err.password_mismatch':  'Mật khẩu xác nhận không khớp',
         'err.terms_required':     'Vui lòng đồng ý với điều khoản sử dụng để đăng ký',
@@ -1306,6 +1442,8 @@ if (!window.VVi18n) {
         'err.pw_mismatch':        'Mật khẩu xác nhận không khớp',
         'err.update_success':     'Cập nhật thành công!',
         'err.pw_change_success':  'Đổi mật khẩu thành công!',
+        'i18n.translating':       'Đang dịch...',
+        'ws.lang_warning':        'Hệ thống được tối ưu cho văn bản tiếng Việt. Kết quả với ngôn ngữ khác có thể không chính xác.',
     };
 
     // ── Vietnamese → error key map (for server messages) ─────────────
@@ -1335,38 +1473,383 @@ if (!window.VVi18n) {
         return dict[key] || key;
     }
 
-    function applyTranslations() {
+    function getTranslateCache() {
+        try {
+            return JSON.parse(localStorage.getItem(TRANSLATE_CACHE_KEY) || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function setTranslateCacheEntry(cacheKey, value) {
+        const cache = getTranslateCache();
+        cache[cacheKey] = value;
+        const keys = Object.keys(cache);
+        if (keys.length > 500) {
+            keys.slice(0, keys.length - 400).forEach((k) => delete cache[k]);
+        }
+        try {
+            localStorage.setItem(TRANSLATE_CACHE_KEY, JSON.stringify(cache));
+        } catch (e) { /* quota */ }
+    }
+
+    function makeTranslateCacheKey(text, target) {
+        return target + '::' + text;
+    }
+
+    async function loadDictionaries() {
+        try {
+            const [enRes, viRes] = await Promise.all([
+                fetch(I18N_JSON_BASE + '/en.json', { cache: 'no-cache' }),
+                fetch(I18N_JSON_BASE + '/vi.json', { cache: 'no-cache' }),
+            ]);
+            if (enRes.ok) Object.assign(EN, await enRes.json());
+            if (viRes.ok) Object.assign(VI, await viRes.json());
+        } catch (e) {
+            console.warn('[i18n] JSON load failed, using embedded dictionary', e);
+        }
+        dictionariesReady = true;
+    }
+
+    function ensureLoadingOverlay() {
+        let el = document.getElementById('vv-i18n-loading');
+        if (el) return el;
+        el = document.createElement('div');
+        el.id = 'vv-i18n-loading';
+        el.className = 'vv-i18n-loading';
+        el.innerHTML = '<div class="vv-i18n-loading-box"><span class="vv-i18n-loading-spinner"></span><span class="vv-i18n-loading-text"></span></div>';
+        document.body.appendChild(el);
+        if (!document.getElementById('vv-i18n-loading-style')) {
+            const style = document.createElement('style');
+            style.id = 'vv-i18n-loading-style';
+            style.textContent = `
+                .vv-i18n-loading { position:fixed; inset:0; z-index:99999; display:none; align-items:center; justify-content:center;
+                    background:rgba(15,23,42,0.35); backdrop-filter:blur(2px); }
+                .vv-i18n-loading.is-active { display:flex; }
+                .vv-i18n-loading-box { display:flex; align-items:center; gap:10px; padding:12px 18px; border-radius:12px;
+                    background:rgba(30,41,59,0.95); border:1px solid rgba(255,255,255,0.1); color:#e2e8f0; font-size:14px; font-weight:600; }
+                .vv-i18n-loading-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,0.25); border-top-color:#a78bfa;
+                    border-radius:50%; animation:vv-i18n-spin .7s linear infinite; }
+                @keyframes vv-i18n-spin { to { transform: rotate(360deg); } }
+            `;
+            document.head.appendChild(style);
+        }
+        return el;
+    }
+
+    function showTranslateLoading() {
+        translateLoadingDepth += 1;
+        const el = ensureLoadingOverlay();
+        const textEl = el.querySelector('.vv-i18n-loading-text');
+        if (textEl) textEl.textContent = t('i18n.translating');
+        el.classList.add('is-active');
+    }
+
+    function hideTranslateLoading() {
+        translateLoadingDepth = Math.max(0, translateLoadingDepth - 1);
+        const el = document.getElementById('vv-i18n-loading');
+        if (el && translateLoadingDepth === 0) el.classList.remove('is-active');
+    }
+
+    function getEmbeddedTemplateHtml(templateId) {
+        const tpl = document.getElementById(templateId);
+        return tpl ? tpl.innerHTML : null;
+    }
+
+    function updateLegalUpdatedLine(lang) {
+        const page = document.querySelector('.legal-page[data-legal-page]');
+        const line = document.getElementById('legal-updated-line');
+        if (!page || !line) return;
+        const viDate = page.getAttribute('data-vi-updated') || '';
+        const enDate = page.getAttribute('data-en-updated') || '';
+        const date = lang === 'en' ? enDate : viDate;
+        if (!date) return;
+        const prefix = t('legal.updated_prefix');
+        line.innerHTML = '<span data-i18n="legal.updated_prefix">' + prefix + '</span> ' + date;
+    }
+
+    async function callTranslateAPI(text, target) {
+        const trimmed = (text || '').trim();
+        if (!trimmed) return text || '';
+
+        const ck = makeTranslateCacheKey(trimmed, target);
+        const cache = getTranslateCache();
+        if (cache[ck]) return cache[ck];
+
+        try {
+            const r = await fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: trimmed, target_language: target }),
+            });
+            const d = await r.json();
+            const translated = (d && d.translated_text) ? d.translated_text : trimmed;
+            if (d && d.success && translated) {
+                setTranslateCacheEntry(ck, translated);
+            }
+            return translated || trimmed;
+        } catch (e) {
+            console.warn('[i18n] translate failed, using source', e);
+            return trimmed;
+        }
+    }
+
+    function ensureDynamicSource(el, isHtml) {
+        const srcAttr = 'data-i18n-src';
+        if (!el.hasAttribute(srcAttr)) {
+            el.setAttribute(srcAttr, isHtml ? el.innerHTML : el.textContent);
+        }
+    }
+
+    function restoreDynamicElements() {
+        document.querySelectorAll('[data-i18n-src]').forEach((el) => {
+            const src = el.getAttribute('data-i18n-src');
+            if (!src) return;
+            if (el.hasAttribute('data-i18n-translate-html')) {
+                el.innerHTML = src;
+            } else {
+                el.textContent = src;
+            }
+        });
+    }
+
+    async function runPool(tasks, limit, gen) {
+        let i = 0;
+        async function worker() {
+            while (i < tasks.length) {
+                if (gen !== translateGeneration) return;
+                const idx = i++;
+                await tasks[idx]();
+            }
+        }
+        const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
+        await Promise.all(workers);
+    }
+
+    function prepareDynamicContentMarkers() {
+        if (detectLegalPageKey() || detectSupportPage()) return;
+        document.querySelectorAll('.faq-a').forEach((el) => {
+            if (!el.hasAttribute('data-i18n-translate-html')) {
+                el.setAttribute('data-i18n-translate-html', '');
+            }
+        });
+        document.querySelectorAll('.guide-card, .guide-step-text').forEach((el) => {
+            if (!el.hasAttribute('data-i18n-translate-html')) {
+                el.setAttribute('data-i18n-translate-html', '');
+            }
+        });
+        document.querySelectorAll('.contact-card-title, .contact-card-desc, .contact-card-link').forEach((el) => {
+            if (!el.hasAttribute('data-i18n-translate')) {
+                el.setAttribute('data-i18n-translate', '');
+            }
+        });
+        document.querySelectorAll('.faq-q').forEach((el) => {
+            const arrow = el.querySelector('.faq-arrow');
+            if (!arrow || el.hasAttribute('data-i18n-prepared')) return;
+            const clone = el.cloneNode(true);
+            const cloneArrow = clone.querySelector('.faq-arrow');
+            if (cloneArrow) cloneArrow.remove();
+            const text = (clone.textContent || '').trim();
+            if (!text) return;
+            const span = document.createElement('span');
+            span.className = 'faq-q-text';
+            span.setAttribute('data-i18n-translate', '');
+            span.textContent = text;
+            Array.from(el.childNodes).forEach((n) => {
+                if (n !== arrow) el.removeChild(n);
+            });
+            el.insertBefore(span, arrow);
+            el.setAttribute('data-i18n-prepared', '1');
+        });
+    }
+
+    async function translateElementContent(el, isHtml, gen) {
+        if (gen !== translateGeneration) return;
+        ensureDynamicSource(el, isHtml);
+        const src = el.getAttribute('data-i18n-src') || '';
+        if (!src.trim()) return;
+
+        if (!isHtml || src.length < 1800) {
+            const translated = await callTranslateAPI(src, 'en');
+            if (gen !== translateGeneration) return;
+            if (isHtml) el.innerHTML = translated;
+            else el.textContent = translated;
+            return;
+        }
+
+        const childSelector = ':scope > p, :scope > ul, :scope > ol, :scope > div, :scope > h3, :scope > h4, :scope > a.email-cta, :scope > li.step-item';
+        const children = el.querySelectorAll(childSelector);
+        if (children.length > 0) {
+            for (const child of children) {
+                if (gen !== translateGeneration) return;
+                if (!child.hasAttribute('data-i18n-src')) {
+                    child.setAttribute('data-i18n-src', child.outerHTML);
+                }
+                const chunk = child.getAttribute('data-i18n-src') || child.outerHTML;
+                const translated = await callTranslateAPI(chunk, 'en');
+                if (gen !== translateGeneration) return;
+                const tmp = document.createElement('div');
+                tmp.innerHTML = translated;
+                const replacement = tmp.firstElementChild;
+                if (replacement) child.replaceWith(replacement);
+            }
+            return;
+        }
+
+        const translated = await callTranslateAPI(src, 'en');
+        if (gen !== translateGeneration) return;
+        el.innerHTML = translated;
+    }
+
+    function detectLegalPageKey() {
+        const page = document.querySelector('[data-legal-page]');
+        if (page && page.dataset.legalPage) return page.dataset.legalPage;
+        const path = window.location.pathname || '';
+        if (path.includes('payment-terms')) return 'payment';
+        if (path.includes('installation-guide') || path.includes('installation_guide')) return 'installation_guide';
+        if (path.includes('user-guide') || path.includes('user_guide')) return 'user_guide';
+        if (path.includes('data-deletion')) return 'data_deletion';
+        if (path.includes('/privacy')) return 'privacy';
+        if (path.includes('/terms')) return 'terms';
+        return null;
+    }
+
+    function detectSupportPage() {
+        return document.getElementById('support-dynamic-body') != null;
+    }
+
+    async function reloadSupportContent(lang, gen) {
+        const container = document.getElementById('support-dynamic-body');
+        if (!container) return;
+
+        const embedded = getEmbeddedTemplateHtml(lang === 'en' ? 'support-body-en' : 'support-body-vi');
+        if (embedded) {
+            if (gen === translateGeneration) {
+                container.innerHTML = embedded;
+                applyStaticTranslations();
+            }
+            return;
+        }
+
+        let spinnerTimer = null;
+        if (lang === 'en') spinnerTimer = setTimeout(() => showTranslateLoading(), 400);
+        try {
+            const r = await fetch('/api/support/display?lang=' + encodeURIComponent(lang));
+            const d = await r.json();
+            if (d.success && gen === translateGeneration) {
+                container.innerHTML = d.html;
+                applyStaticTranslations();
+            }
+        } catch (e) {
+            console.warn('[i18n] support reload failed', e);
+        } finally {
+            if (spinnerTimer) clearTimeout(spinnerTimer);
+            hideTranslateLoading();
+        }
+    }
+
+    async function reloadLegalContent(lang, gen) {
+        const container = document.querySelector('.legal-container');
+        const pageKey = detectLegalPageKey();
+        if (!container || !pageKey) return;
+
+        const isLongGuide = pageKey === 'user_guide' || pageKey === 'installation_guide';
+        const embedded = (!isLongGuide || lang === 'vi')
+            ? getEmbeddedTemplateHtml(lang === 'en' ? 'legal-body-en' : 'legal-body-vi')
+            : null;
+        if (embedded) {
+            if (gen === translateGeneration) {
+                container.innerHTML = embedded;
+                applyStaticTranslations();
+                updateLegalUpdatedLine(lang);
+            }
+            return;
+        }
+
+        const token = ++legalReloadToken;
+        let spinnerTimer = null;
+        if (lang === 'en') spinnerTimer = setTimeout(() => showTranslateLoading(), 400);
+        try {
+            const r = await fetch('/api/legal/display/' + pageKey + '?lang=' + encodeURIComponent(lang));
+            const d = await r.json();
+            if (d.success && token === legalReloadToken && gen === translateGeneration) {
+                container.innerHTML = d.html;
+                applyStaticTranslations();
+                updateLegalUpdatedLine(lang);
+            }
+        } catch (e) {
+            console.warn('[i18n] legal reload failed', e);
+        } finally {
+            if (spinnerTimer) clearTimeout(spinnerTimer);
+            hideTranslateLoading();
+        }
+    }
+
+    async function translateDynamicElements(gen) {
+        const els = document.querySelectorAll('[data-i18n-translate], [data-i18n-translate-html]');
+        if (!els.length) return;
+
+        showTranslateLoading();
+        try {
+            const tasks = Array.from(els).map((el) => async () => {
+                if (gen !== translateGeneration) return;
+                const isHtml = el.hasAttribute('data-i18n-translate-html');
+                await translateElementContent(el, isHtml, gen);
+            });
+            await runPool(tasks, 3, gen);
+        } finally {
+            hideTranslateLoading();
+        }
+    }
+
+    function applyStaticTranslations() {
         const dict = currentLang === 'en' ? EN : VI;
 
-        // data-i18n → textContent
-        document.querySelectorAll('[data-i18n]').forEach(el => {
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
             const key = el.getAttribute('data-i18n');
             if (dict[key] !== undefined) el.textContent = dict[key];
         });
 
-        // data-i18n-html → innerHTML
-        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        document.querySelectorAll('[data-i18n-html]').forEach((el) => {
             const key = el.getAttribute('data-i18n-html');
             if (dict[key] !== undefined) el.innerHTML = dict[key];
         });
 
-        // data-i18n-placeholder → placeholder
-        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
             const key = el.getAttribute('data-i18n-placeholder');
             if (dict[key] !== undefined) el.placeholder = dict[key];
         });
 
-        // data-i18n-title → title
-        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => {
             const key = el.getAttribute('data-i18n-title');
             if (dict[key] !== undefined) el.title = dict[key];
         });
 
-        // Update html lang attribute
         document.documentElement.lang = currentLang;
-
-        // Update toggle button appearance
         updateToggleButtons();
+    }
+
+    async function applyTranslations(gen) {
+        const g = gen || translateGeneration;
+        applyStaticTranslations();
+        prepareDynamicContentMarkers();
+
+        const legalKey = detectLegalPageKey();
+        if (legalKey) {
+            await reloadLegalContent(currentLang, g);
+            return;
+        }
+
+        if (detectSupportPage()) {
+            await reloadSupportContent(currentLang, g);
+            return;
+        }
+
+        if (currentLang === 'en') {
+            await translateDynamicElements(g);
+        } else {
+            restoreDynamicElements();
+        }
     }
 
     function updateToggleButtons() {
@@ -1379,16 +1862,24 @@ if (!window.VVi18n) {
         });
     }
 
-    function setLanguage(lang) {
+    async function setLanguage(lang) {
+        if (lang !== 'vi' && lang !== 'en') lang = DEFAULT_LANG;
         currentLang = lang;
         localStorage.setItem(STORAGE_KEY, lang);
-        applyTranslations();
-        // Notify dynamic JS components (e.g. pricing.js) to re-render
+        const gen = ++translateGeneration;
+        await applyTranslations(gen);
         window.dispatchEvent(new CustomEvent('vv:langChanged', { detail: { lang } }));
+        if (document.body.hasAttribute('data-landing-page') && window.VVLanding && window.VVLanding.applyLandingLang) {
+            await window.VVLanding.applyLandingLang(lang);
+        }
     }
 
     function toggle() {
         setLanguage(currentLang === 'vi' ? 'en' : 'vi');
+    }
+
+    async function translateText(text, targetLanguage) {
+        return callTranslateAPI(text, targetLanguage || 'en');
     }
 
     function msg(text) {
@@ -1398,16 +1889,42 @@ if (!window.VVi18n) {
         return text;
     }
 
-    function getLang() { return currentLang; }
-
-    // ── Auto-init on DOM ready ─────────────────────────────────────────
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', applyTranslations);
-    } else {
-        applyTranslations();
+    function resolveApiMessage(data) {
+        if (!data) return '';
+        if (data.error_code) {
+            const key = 'err.' + data.error_code;
+            let s = t(key);
+            if (!s || s === key) s = data.message || '';
+            if (data.error_vars && s) {
+                Object.keys(data.error_vars).forEach((k) => {
+                    s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), data.error_vars[k]);
+                });
+            }
+            return s;
+        }
+        return msg(data.message);
     }
 
-    window.VVi18n = { t, msg, toggle, setLanguage, getLang, applyTranslations };
+    function getLang() { return currentLang; }
+
+    async function boot() {
+        await loadDictionaries();
+        const gen = translateGeneration;
+        await applyTranslations(gen);
+        if (document.body.hasAttribute('data-landing-page') && window.VVLanding && window.VVLanding.applyLandingLang) {
+            await window.VVLanding.applyLandingLang(currentLang);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => boot());
+    } else {
+        boot();
+    }
+
+    window.VVi18n = {
+        t, msg, resolveApiMessage, toggle, setLanguage, getLang, applyTranslations, translateText, callTranslateAPI,
+    };
     window.__ = window.VVi18n.t;
     window.__msg = window.VVi18n.msg;
 }

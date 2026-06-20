@@ -322,6 +322,22 @@ tailwind.config = {
 <!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}
 
+<!-- Modal: Yêu cầu xóa tài khoản -->
+<div id="deleteAccountModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.65);backdrop-filter:blur(4px)">
+  <div class="bg-surface-container border border-outline-variant/40 rounded-2xl w-full max-w-md shadow-2xl p-6" role="dialog" aria-modal="true">
+    <h3 class="text-lg font-bold text-on-surface mb-3" data-i18n="prof.delete.modal.title">Xác nhận yêu cầu xóa tài khoản</h3>
+    <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.delete.modal.confirm">
+      Bạn có chắc chắn muốn yêu cầu xóa tài khoản không? Sau khi admin xác nhận, tài khoản của bạn sẽ bị xóa hoặc vô hiệu hóa khỏi hệ thống.
+    </p>
+    <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.delete.reason.label">Lý do xóa tài khoản (không bắt buộc)</label>
+    <textarea id="deleteAccountReason" rows="3" class="form-input text-sm mb-5" placeholder="Tôi không còn nhu cầu sử dụng dịch vụ." data-i18n-placeholder="prof.delete.reason.ph"></textarea>
+    <div class="flex justify-end gap-3">
+      <button type="button" class="btn-secondary" onclick="closeDeleteAccountModal()" data-i18n="prof.delete.modal.cancel">Hủy</button>
+      <button type="button" id="btnConfirmDeleteRequest" class="btn-primary bg-red-600 hover:bg-red-700" onclick="submitDeleteAccountRequest()" data-i18n="prof.delete.modal.submit">Xác nhận yêu cầu xóa</button>
+    </div>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
@@ -602,7 +618,93 @@ async function loadTransactions(page = txPage) {
 
 VVPagination.register('profileTx', (p) => loadTransactions(p));
 
-document.addEventListener('DOMContentLoaded', () => loadTransactions(1));
+function _profT(key, fallback) {
+  return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+}
+
+function updateDeleteAccountUI(status) {
+  const pendingBanner = document.getElementById('deletePendingBanner');
+  const rejectedBanner = document.getElementById('deleteRejectedBanner');
+  const btn = document.getElementById('btnRequestDeleteAccount');
+  const pendingAt = document.getElementById('deletePendingAt');
+  const rejectedNote = document.getElementById('deleteRejectedNote');
+  if (!pendingBanner || !btn) return;
+
+  const ds = (status && status.delete_status) || '{{ user.delete_status or "none" }}';
+  pendingBanner.style.display = 'none';
+  rejectedBanner.style.display = 'none';
+  btn.style.display = '';
+
+  if (ds === 'pending') {
+    pendingBanner.style.display = 'block';
+    btn.style.display = 'none';
+    if (pendingAt && status && status.delete_requested_at) {
+      pendingAt.textContent = _profT('prof.delete.sent_at', 'Gửi lúc:') + ' ' + status.delete_requested_at;
+    }
+  } else if (ds === 'rejected') {
+    const note = (status && status.admin_delete_note) || '{{ user.admin_delete_note or "" }}';
+    if (note) {
+      rejectedBanner.style.display = 'block';
+      if (rejectedNote) rejectedNote.textContent = _profT('prof.delete.reject_note', 'Lý do:') + ' ' + note;
+    }
+  }
+}
+
+function openDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('deleteAccountReason').value = '';
+}
+
+function closeDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+async function loadDeleteAccountStatus() {
+  try {
+    const r = await fetch('/api/user/account-deletion-status');
+    const d = await r.json();
+    if (d.success) updateDeleteAccountUI(d);
+  } catch (e) {
+    console.error('loadDeleteAccountStatus', e);
+  }
+}
+
+async function submitDeleteAccountRequest() {
+  const btn = document.getElementById('btnConfirmDeleteRequest');
+  const reason = (document.getElementById('deleteAccountReason')?.value || '').trim();
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch('/api/user/request-account-deletion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delete_reason: reason }),
+    });
+    const d = await r.json();
+    if (d.success) {
+      closeDeleteAccountModal();
+      showToast(d.message || _profT('prof.delete.success', 'Yêu cầu đã được gửi'), 'success');
+      updateDeleteAccountUI({ delete_status: 'pending', delete_requested_at: new Date().toLocaleString('vi-VN') });
+    } else {
+      showToast(d.message || _profT('err.save_failed', 'Gửi yêu cầu thất bại'), 'error');
+    }
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadTransactions(1);
+  updateDeleteAccountUI(null);
+  loadDeleteAccountStatus();
+});
 
 // Force dark background on all inputs (override browser autofill)
 document.querySelectorAll('.form-input, input[type="text"], input[type="email"], input[type="password"]').forEach(function(el) {

@@ -12,34 +12,38 @@ body.auth-v2-page .bg-orbs {
 }
 
 body.auth-v2-page .navbar {
-    background: rgba(5, 20, 36, 0.8) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(5, 20, 36, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.auth-v2-page.public-landing-nav-page .navbar {
+  display: none !important;
 }
 
 body.auth-v2-page .navbar.scrolled {
-    background: rgba(5, 20, 36, 0.92) !important;
+  background: rgba(5, 20, 36, 0.92) !important;
 }
 
 .main-content.auth-page-main {
-    height: auto !important;
-    min-height: calc(100vh - 64px) !important;
-    padding: 64px 0 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: visible !important;
-    box-sizing: border-box;
+  height: auto !important;
+  min-height: calc(100vh - 5rem) !important;
+  padding: 5rem 0 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  box-sizing: border-box;
 }
 
 /* ── Background ── */
 .auth-v2-wrap {
-    position: relative;
-    flex: 1;
-    width: 100%;
-    min-height: calc(100vh - 64px);
-    display: flex;
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: calc(100vh - 5rem);
+  display: flex;
     align-items: stretch;
     justify-content: center;
     padding: 0.5rem 0.75rem 2.5rem;

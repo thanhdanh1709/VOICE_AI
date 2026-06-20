@@ -7,6 +7,13 @@ function _m(text) {
     return (window.__msg ? window.__msg(text) : text);
 }
 
+function resolveApiMessage(data) {
+    if (window.VVi18n && window.VVi18n.resolveApiMessage) {
+        return window.VVi18n.resolveApiMessage(data);
+    }
+    return _m(data && data.message);
+}
+
 // Login form handler
 const REMEMBER_KEY = 'vv_remember_username';
 
@@ -45,7 +52,7 @@ if (loginForm) {
                 }
                 window.location.href = '/';
             } else {
-                const errMsg = _m(data.message) || __('err.login_failed');
+                const errMsg = resolveApiMessage(data) || __('err.login_failed');
                 const messageEl = document.getElementById('message');
                 if (messageEl) {
                     messageEl.textContent = errMsg;

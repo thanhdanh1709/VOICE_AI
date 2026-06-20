@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -24,6 +24,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% if not session.user_id %}
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public-landing-nav.css') }}">
+    {% endif %}
 
     {% block extra_css %}{% endblock %}
 
@@ -534,7 +539,7 @@
         }
     </style>
 </head>
-<body{% if auth_page %} class="auth-v2-page dark"{% endif %}>
+<body class="{% if auth_page %}auth-v2-page {% endif %}{% if not session.user_id %}public-landing-nav-page {% endif %}dark">
     <!-- Background orbs -->
     <div class="bg-orbs" aria-hidden="true">
         <div class="bg-orb bg-orb-1"></div>
@@ -543,18 +548,14 @@
     </div>
 
     <!-- ══ NAVBAR ══ -->
+    {% if session.user_id %}
     <nav class="navbar" id="mainNavbar">
         <div class="container">
-            <a href="{{ url_for('index') if session.user_id else url_for('landing') }}" class="nav-brand-link">
+            <a href="{{ url_for('index') }}" class="nav-brand-link">
                 <span class="material-symbols-outlined nav-brand-icon" aria-hidden="true">graphic_eq</span>
-                {% if session.user_id %}
                 <span class="nav-brand-text">VietVoice</span>
-                {% else %}
-                <span class="nav-brand-text nav-brand-text-gradient">VietVoice AI</span>
-                {% endif %}
             </a>
             <ul class="nav-menu">
-                {% if session.user_id %}
                     <li><a href="{{ url_for('index') }}" data-i18n="nav.home">Trang chủ</a></li>
                     <li><a href="{{ url_for('audio_library') }}" data-i18n="nav.library">Thư viện</a></li>
                     <li><a href="{{ url_for('history') }}" data-i18n="nav.history">Lịch sử</a></li>
@@ -568,12 +569,6 @@
                         <span>{{ session.full_name or session.username }}</span>
                         <a href="{{ url_for('logout') }}" class="btn-logout" data-i18n="nav.logout">Đăng xuất</a>
                     </li>
-                {% else %}
-                    <li><a href="{{ url_for('landing') }}" data-i18n="nav.features">Tính năng</a></li>
-                    <li><a href="{{ url_for('contact') }}" data-i18n="nav.contact">Liên hệ</a></li>
-                    <li><a href="{{ url_for('login') }}" class="{% if request.endpoint == 'login' %}nav-active{% endif %}" data-i18n="nav.login">Đăng nhập</a></li>
-                    <li><a href="{{ url_for('register') }}" class="nav-cta{% if request.endpoint == 'register' %} nav-active{% endif %}" data-i18n="nav.register">Bắt đầu miễn phí</a></li>
-                {% endif %}
                 <li>
                     <button id="themeToggle" class="theme-toggle" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
                         <span class="theme-icon"></span>
@@ -594,10 +589,9 @@
         </div>
     </nav>
 
-    <!-- ══ MOBILE NAV OVERLAY + DRAWER ══ -->
+    <!-- ══ MOBILE NAV OVERLAY + DRAWER (logged-in) ══ -->
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeBaseNav()"></div>
     <div class="mobile-nav-drawer" id="mobileNavDrawer">
-        {% if session.user_id %}
         <a href="{{ url_for('index') }}" data-i18n="mob.home">Trang chủ</a>
         <a href="{{ url_for('audio_library') }}" data-i18n="mob.library">Thư viện Audio</a>
         <a href="{{ url_for('history') }}" data-i18n="mob.history">Lịch sử chuyển đổi</a>
@@ -610,17 +604,15 @@
         {% endif %}
         <hr class="mobile-nav-divider">
         <a href="{{ url_for('logout') }}" class="mobile-logout"><span data-i18n="nav.logout">Đăng xuất</span> ({{ session.full_name or session.username }})</a>
-        {% else %}
-        <a href="{{ url_for('landing') }}" data-i18n="mob.features">Tính năng</a>
-        <a href="{{ url_for('contact') }}" data-i18n="mob.contact">Liên hệ</a>
-        <a href="{{ url_for('login') }}" data-i18n="mob.login">Đăng nhập</a>
-        <a href="{{ url_for('register') }}" style="color:#a78bfa;font-weight:700" data-i18n="mob.register">Bắt đầu miễn phí</a>
-        {% endif %}
         <hr class="mobile-nav-divider">
         <button class="vv-lang-toggle" style="margin:8px 0 4px 0;width:auto;" onclick="VVi18n.toggle()" aria-label="Switch language">
             <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
         </button>
     </div>
+    {% else %}
+    {% include 'partials/public_landing_nav.html' %}
+    <script src="{{ url_for('static', filename='js/public-landing-nav.js') }}"></script>
+    {% endif %}
 
     <!-- ══ MAIN CONTENT ══ -->
     <main class="main-content{% if auth_page %} auth-page-main{% endif %}">
@@ -693,6 +685,7 @@
                         <li><a href="{{ url_for('privacy') }}" data-i18n="ft.privacy">Chính sách quyền riêng tư</a></li>
                         <li><a href="{{ url_for('terms') }}" data-i18n="ft.terms">Điều khoản sử dụng</a></li>
                         <li><a href="{{ url_for('data_deletion') }}" data-i18n="ft.deletion">Chính sách xóa dữ liệu</a></li>
+                        <li><a href="{{ url_for('payment_terms') }}" data-i18n="ft.payment">Điều khoản thanh toán</a></li>
                         <li><a href="{{ url_for('support') }}" data-i18n="ft.support">Hỗ trợ & FAQ</a></li>
                     </ul>
                 </div>

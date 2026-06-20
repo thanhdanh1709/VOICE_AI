@@ -64,7 +64,7 @@ def resolve_audio_path(path: str) -> str:
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
 from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
-from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, APP_BASE_URL, DEBUG, SMTP_USE_SSL
+from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, APP_BASE_URL, DEBUG, SMTP_USE_SSL, ADMIN_EMAIL
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -72,6 +72,9 @@ from audio_export import export_audio, ffmpeg_available, SUPPORTED_FORMATS, ALLO
 
 # Deep link scheme cho Flutter mobile OAuth callback (phải khớp AndroidManifest & config.dart)
 MOBILE_CALLBACK_SCHEME = 'petai'
+
+# Số ngày vô hiệu hóa trước khi xóa vĩnh viễn sau admin duyệt xóa tài khoản
+ACCOUNT_DELETION_GRACE_DAYS = 30
 
 ALLOWED_AVATAR_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
@@ -85,6 +88,8 @@ import requests
 import json
 import hashlib
 import hmac
+import re
+from html import unescape
 from datetime import datetime, timedelta
 
 # Import RVC wrapper for voice conversion
@@ -124,6 +129,39 @@ app = Flask(__name__,
             static_url_path='/static',
             template_folder='templates')
 app.secret_key = SECRET_KEY
+
+
+def _strip_html_text(html):
+    """Bỏ tag HTML, trả về text thuần (dùng kiểm tra nội dung rỗng)."""
+    if not html:
+        return ''
+    text = re.sub(r'<[^>]+>', '', unescape(str(html)))
+    return text.strip()
+
+
+def legal_section_has_content(section):
+    """Mục pháp lý có tiêu đề hoặc nội dung thực sự."""
+    if not section:
+        return False
+    if (section.get('title') or '').strip():
+        return True
+    return bool(_strip_html_text(section.get('content') or ''))
+
+
+def legal_page_has_custom_content(page):
+    """Trang pháp lý có nội dung tùy chỉnh (không phải placeholder rỗng)."""
+    if not page:
+        return False
+    body = (page.get('body_html') or '').strip()
+    if body and _strip_html_text(body):
+        return True
+    sections = page.get('sections') or []
+    return any(legal_section_has_content(s) for s in sections)
+
+
+@app.template_filter('legal_has_custom_content')
+def legal_has_custom_content_filter(page):
+    return legal_page_has_custom_content(page)
 
 # Hỗ trợ reverse proxy (ngrok, nginx...) - đọc X-Forwarded headers
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -233,6 +271,199 @@ def ensure_password_reset_table():
         return False
     finally:
         conn.close()
+
+def _format_datetime_vn(dt):
+    if not dt:
+        return '—'
+    if isinstance(dt, datetime):
+        return dt.strftime('%d/%m/%Y %H:%M')
+    return str(dt)
+
+def _is_account_deleted(user):
+    """Tài khoản đã xóa vĩnh viễn (hết thời gian chờ 30 ngày)."""
+    if not user:
+        return False
+    status = (user.get('status') or 'active').lower()
+    if status == 'deleted':
+        return True
+    effective = user.get('deletion_effective_at')
+    if effective and isinstance(effective, datetime) and effective <= datetime.now():
+        return True
+    return False
+
+def _is_in_deletion_grace(user):
+    """Tài khoản đang trong thời gian vô hiệu hóa 30 ngày (có thể khôi phục)."""
+    if not user:
+        return False
+    if _is_account_deleted(user):
+        return False
+    delete_status = (user.get('delete_status') or 'none').lower()
+    status = (user.get('status') or 'active').lower()
+    if delete_status != 'approved':
+        return False
+    if status not in ('deactivated', 'deleted'):
+        return False
+    effective = user.get('deletion_effective_at')
+    if effective and isinstance(effective, datetime):
+        return effective > datetime.now()
+    # deleted_at set nhưng chưa có deletion_effective_at — coi như còn trong grace
+    if user.get('deleted_at'):
+        return True
+    return False
+
+def _login_block_response(user):
+    """Phản hồi lỗi khi không cho đăng nhập (có error_code cho i18n frontend)."""
+    if _is_account_deleted(user):
+        return {
+            'error_code': 'account_deleted',
+            'message': 'Tài khoản của bạn đã bị xóa hoặc vô hiệu hóa.',
+        }
+    if _is_in_deletion_grace(user):
+        until = _format_datetime_vn(user.get('deletion_effective_at'))
+        return {
+            'error_code': 'account_deactivated_grace',
+            'message': (
+                f'Tài khoản của bạn đã bị vô hiệu hóa. Bạn có thể yêu cầu khôi phục trong vòng 30 ngày '
+                f'(đến {until}). Vui lòng dùng chức năng "Khôi phục tài khoản" trên trang đăng nhập.'
+            ),
+            'error_vars': {'until': until},
+        }
+    return None
+
+def _login_block_message(user):
+    """Thông báo khi không cho đăng nhập vì trạng thái tài khoản."""
+    block = _login_block_response(user)
+    return block['message'] if block else None
+
+def _finalize_expired_account_deletions(cursor):
+    """Chuyển tài khoản hết hạn grace period sang xóa vĩnh viễn."""
+    cursor.execute("""
+        UPDATE users SET status = 'deleted'
+        WHERE delete_status = 'approved'
+          AND status = 'deactivated'
+          AND deletion_effective_at IS NOT NULL
+          AND deletion_effective_at <= NOW()
+    """)
+
+def _maybe_finalize_user_deletion(conn, user_id):
+    """Finalize một user nếu đã hết grace period."""
+    try:
+        with conn.cursor() as cursor:
+            _finalize_expired_account_deletions(cursor)
+            conn.commit()
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            return cursor.fetchone()
+    except Exception as e:
+        print(f"[ERROR] _maybe_finalize_user_deletion: {e}")
+        conn.rollback()
+        return None
+
+def _get_admin_notification_email():
+    admin = (ADMIN_EMAIL or '').strip()
+    if admin:
+        return admin
+    return get_support_email()
+
+def _send_admin_delete_request_email(user):
+    full_name = user.get('full_name') or user.get('username') or '—'
+    requested_at = _format_datetime_vn(user.get('delete_requested_at'))
+    reason = (user.get('delete_reason') or '').strip() or '—'
+    subject = '[Yêu cầu xóa tài khoản] Người dùng yêu cầu xóa tài khoản'
+    text_body = (
+        'Xin chào Admin,\n\n'
+        'Hệ thống vừa nhận được một yêu cầu xóa tài khoản từ người dùng.\n\n'
+        'Thông tin tài khoản:\n'
+        f'- ID người dùng: {user.get("id")}\n'
+        f'- Họ tên: {full_name}\n'
+        f'- Email: {user.get("email") or "—"}\n'
+        f'- Ngày gửi yêu cầu: {requested_at}\n'
+        f'- Lý do xóa tài khoản: {reason}\n\n'
+        'Vui lòng đăng nhập vào trang quản trị để kiểm tra và xác nhận yêu cầu xóa tài khoản này.\n\n'
+        'Trạng thái hiện tại: Đang chờ duyệt\n\n'
+        'Trân trọng,\n'
+        'Hệ thống chuyển văn bản thành giọng nói tiếng Việt'
+    )
+    html_body = '<pre style="font-family:Manrope,sans-serif;white-space:pre-wrap;">' + text_body + '</pre>'
+    return send_email(_get_admin_notification_email(), subject, html_body, text_body)
+
+def _send_user_delete_approved_email(user, requested_at, deleted_at, effective_at):
+    to_email = (user.get('email') or '').strip()
+    if not to_email:
+        return False
+    full_name = user.get('full_name') or user.get('username') or 'Người dùng'
+    subject = '[Xác nhận xóa tài khoản] Tài khoản của bạn đã được vô hiệu hóa'
+    effective_str = _format_datetime_vn(effective_at)
+    text_body = (
+        f'Xin chào {full_name},\n\n'
+        'Yêu cầu xóa tài khoản của bạn đã được admin xác nhận.\n\n'
+        'Thông tin tài khoản:\n'
+        f'- Họ tên: {full_name}\n'
+        f'- Email: {to_email}\n'
+        f'- Thời gian gửi yêu cầu: {_format_datetime_vn(requested_at)}\n'
+        f'- Thời gian được xác nhận: {_format_datetime_vn(deleted_at)}\n\n'
+        f'Tài khoản của bạn hiện đã bị vô hiệu hóa trong vòng {ACCOUNT_DELETION_GRACE_DAYS} ngày '
+        f'(đến {effective_str}). Trong thời gian này bạn không thể đăng nhập.\n'
+        'Nếu muốn khôi phục, hãy gửi yêu cầu khôi phục trên trang đăng nhập hoặc liên hệ quản trị viên.\n\n'
+        f'Sau {effective_str}, tài khoản sẽ bị xóa vĩnh viễn và không thể khôi phục.\n\n'
+        'Trân trọng,\n'
+        'Hệ thống chuyển văn bản thành giọng nói tiếng Việt'
+    )
+    html_body = '<pre style="font-family:Manrope,sans-serif;white-space:pre-wrap;">' + text_body + '</pre>'
+    return send_email(to_email, subject, html_body, text_body)
+
+def _send_admin_restore_request_email(user):
+    full_name = user.get('full_name') or user.get('username') or '—'
+    requested_at = _format_datetime_vn(user.get('restore_requested_at'))
+    effective = _format_datetime_vn(user.get('deletion_effective_at'))
+    subject = '[Yêu cầu khôi phục tài khoản] Người dùng yêu cầu khôi phục'
+    text_body = (
+        'Xin chào Admin,\n\n'
+        'Hệ thống vừa nhận được yêu cầu khôi phục tài khoản.\n\n'
+        'Thông tin tài khoản:\n'
+        f'- ID người dùng: {user.get("id")}\n'
+        f'- Họ tên: {full_name}\n'
+        f'- Email: {user.get("email") or "—"}\n'
+        f'- Thời gian yêu cầu khôi phục: {requested_at}\n'
+        f'- Hạn khôi phục (trước khi xóa vĩnh viễn): {effective}\n\n'
+        'Vui lòng đăng nhập trang quản trị để xử lý yêu cầu khôi phục.\n\n'
+        'Trân trọng,\n'
+        'Hệ thống chuyển văn bản thành giọng nói tiếng Việt'
+    )
+    html_body = '<pre style="font-family:Manrope,sans-serif;white-space:pre-wrap;">' + text_body + '</pre>'
+    return send_email(_get_admin_notification_email(), subject, html_body, text_body)
+
+def _send_user_restored_email(user):
+    to_email = (user.get('email') or '').strip()
+    if not to_email:
+        return False
+    full_name = user.get('full_name') or user.get('username') or 'Người dùng'
+    subject = '[Khôi phục tài khoản] Tài khoản của bạn đã được khôi phục'
+    text_body = (
+        f'Xin chào {full_name},\n\n'
+        'Tài khoản của bạn đã được khôi phục thành công. Bạn có thể đăng nhập và sử dụng dịch vụ bình thường.\n\n'
+        'Trân trọng,\n'
+        'Hệ thống chuyển văn bản thành giọng nói tiếng Việt'
+    )
+    html_body = '<pre style="font-family:Manrope,sans-serif;white-space:pre-wrap;">' + text_body + '</pre>'
+    return send_email(to_email, subject, html_body, text_body)
+
+def _send_user_delete_rejected_email(user, note):
+    to_email = (user.get('email') or '').strip()
+    if not to_email:
+        return False
+    full_name = user.get('full_name') or user.get('username') or 'Người dùng'
+    reason = (note or '').strip() or '—'
+    subject = '[Yêu cầu xóa tài khoản] Yêu cầu chưa được chấp nhận'
+    text_body = (
+        f'Xin chào {full_name},\n\n'
+        'Yêu cầu xóa tài khoản của bạn chưa được chấp nhận.\n\n'
+        f'Lý do:\n{reason}\n\n'
+        'Nếu cần hỗ trợ thêm, vui lòng liên hệ quản trị viên.\n\n'
+        'Trân trọng,\n'
+        'Hệ thống chuyển văn bản thành giọng nói tiếng Việt'
+    )
+    html_body = '<pre style="font-family:Manrope,sans-serif;white-space:pre-wrap;">' + text_body + '</pre>'
+    return send_email(to_email, subject, html_body, text_body)
 
 def _get_app_base_url():
     if APP_BASE_URL:
@@ -670,14 +901,19 @@ def login():
         try:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    """SELECT * FROM users WHERE is_active = 1 AND (
-                        username = %s OR LOWER(TRIM(email)) = %s
-                    )""",
+                    """SELECT * FROM users WHERE username = %s OR LOWER(TRIM(email)) = %s""",
                     (username, username.lower()),
                 )
                 user = cursor.fetchone()
-                
+
                 if user and check_password_hash(user['password'], password):
+                    user = _maybe_finalize_user_deletion(conn, user['id']) or user
+                    block = _login_block_response(user)
+                    if block:
+                        return jsonify({'success': False, **block}), 403
+                    if not user.get('is_active'):
+                        return jsonify({'success': False, 'message': 'Tên đăng nhập hoặc mật khẩu không đúng'}), 401
+
                     session['user_id'] = user['id']
                     session['username'] = user['username']
                     session['user_role'] = user['role']
@@ -1021,6 +1257,19 @@ def google_callback():
                 cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
                 user = cursor.fetchone()
 
+        if not user:
+            if source == 'flutter':
+                return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error=user_not_found')
+            return redirect(url_for('login') + '?error=user_not_found')
+
+        user = _maybe_finalize_user_deletion(conn, user['id']) or user
+        block_msg = _login_block_message(user)
+        if block_msg:
+            err = 'account_deactivated_grace' if _is_in_deletion_grace(user) else 'account_deleted'
+            if source == 'flutter':
+                return _mobile_cct_response(f'{MOBILE_CALLBACK_SCHEME}://callback?error={err}')
+            return redirect(url_for('login') + f'?error={err}')
+
         if source == 'flutter':
             # Mobile: tạo one-time token, trả về HTML để CCT tự đóng
             mobile_token = _create_mobile_token(user['id'])
@@ -1070,10 +1319,19 @@ def mobile_auth_callback():
 
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE id = %s AND is_active = 1", (user_id,))
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
             user = cursor.fetchone()
 
         if not user:
+            return redirect(url_for('login') + '?error=user_not_found')
+
+        user = _maybe_finalize_user_deletion(conn, user_id) or user
+        block_msg = _login_block_message(user)
+        if block_msg:
+            err = 'account_deactivated_grace' if _is_in_deletion_grace(user) else 'account_deleted'
+            return redirect(url_for('login') + f'?error={err}')
+
+        if not user.get('is_active'):
             return redirect(url_for('login') + '?error=user_not_found')
 
         session['user_id']   = user['id']
@@ -1087,6 +1345,72 @@ def mobile_auth_callback():
         return redirect(url_for('index'))
     finally:
         conn.close()
+
+@app.route('/api/translate', methods=['POST'])
+def api_translate():
+    """Dịch nội dung UI qua LLM (không dịch văn bản TTS của người dùng)."""
+    data = request.get_json(silent=True) or {}
+    text = data.get('text') or ''
+    target = (data.get('target_language') or 'en').strip().lower()
+
+    if not isinstance(text, str):
+        return jsonify({'success': False, 'translated_text': '', 'message': 'Invalid text'}), 400
+
+    if not text.strip():
+        return jsonify({'success': True, 'translated_text': text})
+
+    try:
+        from translate_service import translate_text_safe
+        translated = translate_text_safe(text, target)
+        return jsonify({'success': True, 'translated_text': translated})
+    except Exception as e:
+        print(f'[ERROR] Translate API: {e}')
+        return jsonify({
+            'success': False,
+            'translated_text': text,
+            'message': 'Translation failed',
+        })
+
+LEGAL_DISPLAY_KEYS = {
+    'terms': 'terms',
+    'privacy': 'privacy',
+    'data_deletion': 'data_deletion',
+    'payment': 'payment',
+    'user_guide': 'user_guide',
+    'installation_guide': 'installation_guide',
+}
+
+LEGAL_CONTENT_PAGE_KEYS = tuple(LEGAL_DISPLAY_KEYS.values())
+# Hướng dẫn: luôn đọc/ghi từ USER_GUIDE.md / INSTALLATION_GUIDE.md (không dùng legal_content.json)
+GUIDE_MD_PAGE_KEYS = ('user_guide', 'installation_guide')
+
+
+@app.route('/api/legal/display/<page_key>')
+def api_legal_display(page_key):
+    """Trả HTML nội dung pháp lý theo ngôn ngữ UI (vi/en)."""
+    pk = LEGAL_DISPLAY_KEYS.get(page_key, page_key)
+    if pk not in LEGAL_DISPLAY_KEYS:
+        return jsonify({'success': False, 'message': 'Invalid page'}), 400
+    lang = (request.args.get('lang') or 'vi').strip().lower()
+    legal = get_legal_for_display(pk, lang=lang)
+    html = render_template('partials/legal_dynamic_body.html', legal=legal)
+    return jsonify({'success': True, 'html': html, 'lang': lang, 'page': pk})
+
+
+@app.route('/api/support/display')
+def api_support_display():
+    """Trả HTML nội dung hỗ trợ/FAQ theo ngôn ngữ (vi/en)."""
+    lang = (request.args.get('lang') or 'vi').strip().lower()
+    support = get_support_for_display(lang)
+    html = render_template('partials/support_dynamic_body.html', support=support)
+    return jsonify({'success': True, 'html': html, 'lang': lang})
+
+@app.route('/api/landing/display')
+def api_landing_display():
+    """Trả nội dung landing page theo ngôn ngữ (vi/en). EN dịch qua LLM, cache theo chuỗi."""
+    lang = (request.args.get('lang') or 'vi').strip().lower()
+    lp = get_landing_for_display(lang)
+    return jsonify({'success': True, 'lp': lp, 'lang': lang})
 
 @app.route('/api/voices')
 def get_voices():
@@ -2515,6 +2839,306 @@ def delete_user(user_id):
     finally:
         conn.close()
 
+@app.route('/api/admin/account-deletions', methods=['GET'])
+def admin_list_account_deletions():
+    """Danh sách yêu cầu xóa tài khoản đang chờ duyệt (chỉ admin)"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, username, email, full_name, delete_reason, delete_requested_at, delete_status
+                FROM users
+                WHERE delete_status = 'pending'
+                ORDER BY delete_requested_at ASC
+            """)
+            rows = cursor.fetchall()
+
+        requests = []
+        for row in rows:
+            requests.append({
+                'id': row['id'],
+                'username': row['username'],
+                'email': row.get('email') or '',
+                'full_name': row.get('full_name') or '',
+                'delete_reason': row.get('delete_reason') or '',
+                'delete_requested_at': _format_datetime_vn(row.get('delete_requested_at')),
+                'delete_status': row.get('delete_status') or 'pending',
+            })
+        return jsonify({'success': True, 'requests': requests})
+    except Exception as e:
+        print(f"[ERROR] admin_list_account_deletions: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/account-deletions/<int:user_id>/approve', methods=['POST'])
+def admin_approve_account_deletion(user_id):
+    """Admin duyệt xóa tài khoản — vô hiệu hóa, không xóa vật lý"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            if _is_account_deleted(user):
+                return jsonify({'success': False, 'message': 'Tài khoản đã bị xóa hoặc vô hiệu hóa'}), 400
+
+            if (user.get('delete_status') or 'none') != 'pending':
+                return jsonify({'success': False, 'message': 'Yêu cầu xóa không ở trạng thái chờ duyệt'}), 400
+
+            if user.get('role') == 'admin':
+                return jsonify({'success': False, 'message': 'Không thể xóa tài khoản admin'}), 400
+
+            requested_at = user.get('delete_requested_at')
+            now = datetime.now()
+            effective_at = now + timedelta(days=ACCOUNT_DELETION_GRACE_DAYS)
+            cursor.execute("""
+                UPDATE users SET
+                    is_active = 0,
+                    status = 'deactivated',
+                    delete_status = 'approved',
+                    deleted_at = %s,
+                    deletion_effective_at = %s,
+                    restore_requested = 0,
+                    restore_requested_at = NULL
+                WHERE id = %s
+            """, (now, effective_at, user_id))
+            conn.commit()
+
+            user['deleted_at'] = now
+            user['deletion_effective_at'] = effective_at
+            email_sent = _send_user_delete_approved_email(user, requested_at, now, effective_at)
+
+        msg = f'Đã vô hiệu hóa tài khoản trong {ACCOUNT_DELETION_GRACE_DAYS} ngày (có thể khôi phục)'
+        if not email_sent:
+            msg += ' (gửi email xác nhận thất bại — kiểm tra cấu hình SMTP)'
+        return jsonify({'success': True, 'message': msg, 'email_sent': email_sent})
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] admin_approve_account_deletion: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/account-deletions/<int:user_id>/reject', methods=['POST'])
+def admin_reject_account_deletion(user_id):
+    """Admin từ chối yêu cầu xóa tài khoản"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+
+    data = request.get_json() or {}
+    note = (data.get('note') or data.get('admin_delete_note') or '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            if (user.get('delete_status') or 'none') != 'pending':
+                return jsonify({'success': False, 'message': 'Yêu cầu xóa không ở trạng thái chờ duyệt'}), 400
+
+            cursor.execute("""
+                UPDATE users SET
+                    delete_requested = 0,
+                    delete_status = 'rejected',
+                    admin_delete_note = %s
+                WHERE id = %s
+            """, (note or None, user_id))
+            conn.commit()
+
+            email_sent = _send_user_delete_rejected_email(user, note)
+
+        msg = 'Đã từ chối yêu cầu xóa tài khoản'
+        if not email_sent and (user.get('email') or '').strip():
+            msg += ' (gửi email thông báo thất bại — kiểm tra cấu hình SMTP)'
+        return jsonify({'success': True, 'message': msg, 'email_sent': email_sent})
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] admin_reject_account_deletion: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/account-deletions/grace-period', methods=['GET'])
+def admin_list_grace_period_accounts():
+    """Danh sách tài khoản đang vô hiệu hóa (30 ngày, có thể khôi phục)"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            _finalize_expired_account_deletions(cursor)
+            conn.commit()
+            cursor.execute("""
+                SELECT id, username, email, full_name, deleted_at, deletion_effective_at,
+                       restore_requested, restore_requested_at, delete_reason
+                FROM users
+                WHERE delete_status = 'approved'
+                  AND status = 'deactivated'
+                  AND (deletion_effective_at IS NULL OR deletion_effective_at > NOW())
+                ORDER BY deletion_effective_at ASC
+            """)
+            rows = cursor.fetchall()
+
+        accounts = []
+        for row in rows:
+            accounts.append({
+                'id': row['id'],
+                'username': row['username'],
+                'email': row.get('email') or '',
+                'full_name': row.get('full_name') or '',
+                'deleted_at': _format_datetime_vn(row.get('deleted_at')),
+                'deletion_effective_at': _format_datetime_vn(row.get('deletion_effective_at')),
+                'restore_requested': bool(row.get('restore_requested')),
+                'restore_requested_at': _format_datetime_vn(row.get('restore_requested_at')),
+                'delete_reason': row.get('delete_reason') or '',
+            })
+        return jsonify({'success': True, 'accounts': accounts})
+    except Exception as e:
+        print(f"[ERROR] admin_list_grace_period_accounts: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/account-deletions/<int:user_id>/restore', methods=['POST'])
+def admin_restore_account(user_id):
+    """Admin khôi phục tài khoản trong thời gian grace period"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            if not _is_in_deletion_grace(user):
+                if _is_account_deleted(user):
+                    return jsonify({'success': False, 'message': 'Tài khoản đã bị xóa vĩnh viễn, không thể khôi phục'}), 400
+                return jsonify({'success': False, 'message': 'Tài khoản không ở trạng thái chờ xóa (grace period)'}), 400
+
+            cursor.execute("""
+                UPDATE users SET
+                    is_active = 1,
+                    status = 'active',
+                    delete_requested = 0,
+                    delete_status = 'none',
+                    delete_requested_at = NULL,
+                    delete_reason = NULL,
+                    deleted_at = NULL,
+                    deletion_effective_at = NULL,
+                    admin_delete_note = NULL,
+                    restore_requested = 0,
+                    restore_requested_at = NULL
+                WHERE id = %s
+            """, (user_id,))
+            conn.commit()
+
+            email_sent = _send_user_restored_email(user)
+
+        msg = 'Đã khôi phục tài khoản thành công'
+        if not email_sent and (user.get('email') or '').strip():
+            msg += ' (gửi email thông báo thất bại — kiểm tra cấu hình SMTP)'
+        return jsonify({'success': True, 'message': msg, 'email_sent': email_sent})
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] admin_restore_account: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/public/request-account-restore', methods=['POST'])
+def public_request_account_restore():
+    """User yêu cầu khôi phục tài khoản (không cần đăng nhập)"""
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'success': False, 'message': 'Vui lòng nhập email'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            _finalize_expired_account_deletions(cursor)
+            conn.commit()
+            cursor.execute(
+                "SELECT * FROM users WHERE LOWER(TRIM(email)) = %s",
+                (email,),
+            )
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Không tìm thấy tài khoản với email này'}), 404
+
+            if _is_account_deleted(user):
+                return jsonify({
+                    'success': False,
+                    'message': 'Tài khoản đã bị xóa vĩnh viễn và không thể khôi phục.'
+                }), 400
+
+            if not _is_in_deletion_grace(user):
+                return jsonify({
+                    'success': False,
+                    'message': 'Tài khoản không ở trạng thái vô hiệu hóa tạm thời (30 ngày).'
+                }), 400
+
+            if user.get('restore_requested'):
+                return jsonify({
+                    'success': False,
+                    'message': 'Bạn đã gửi yêu cầu khôi phục. Vui lòng chờ admin xử lý.'
+                }), 400
+
+            now = datetime.now()
+            cursor.execute("""
+                UPDATE users SET restore_requested = 1, restore_requested_at = %s
+                WHERE id = %s
+            """, (now, user['id']))
+            conn.commit()
+
+            user['restore_requested_at'] = now
+            email_sent = _send_admin_restore_request_email(user)
+
+        msg = 'Yêu cầu khôi phục đã được gửi. Admin sẽ xử lý trong thời gian sớm nhất.'
+        if not email_sent:
+            msg += ' (gửi email thông báo admin thất bại — kiểm tra cấu hình SMTP)'
+        return jsonify({'success': True, 'message': msg, 'email_sent': email_sent})
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] public_request_account_restore: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
 @app.route('/history')
 def history():
     """Trang lịch sử"""
@@ -2532,6 +3156,7 @@ def admin():
 
 # ── LANDING PAGE CONTENT ──────────────────────────────────────────
 LANDING_CONTENT_FILE = os.path.join(os.path.dirname(__file__), 'landing_content.json')
+LANDING_CONTENT_EN_FILE = os.path.join(os.path.dirname(__file__), 'landing_content_en.json')
 
 def load_landing_content():
     """Đọc nội dung landing page từ JSON"""
@@ -2545,6 +3170,1067 @@ def save_landing_content(data):
     """Lưu nội dung landing page vào JSON"""
     with open(LANDING_CONTENT_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        if os.path.exists(LANDING_CONTENT_EN_FILE):
+            os.remove(LANDING_CONTENT_EN_FILE)
+    except Exception:
+        pass
+
+
+def _landing_content_hash(data):
+    import hashlib
+    raw = json.dumps(data, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def _load_landing_en_cache():
+    try:
+        with open(LANDING_CONTENT_EN_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _save_landing_en_cache(vi_hash, en_lp):
+    with open(LANDING_CONTENT_EN_FILE, 'w', encoding='utf-8') as f:
+        json.dump({'vi_hash': vi_hash, 'lp': en_lp}, f, ensure_ascii=False, indent=2)
+
+
+_LANDING_SKIP_KEYS = frozenset({
+    'href', 'icon', 'mst', 'phone', 'since', 'representative', 'address', 'email',
+})
+
+
+def _translate_landing_dict(data):
+    """Dịch đệ quy nội dung landing (cache theo từng chuỗi trong translate_service)."""
+    from translate_service import translate_text_safe
+    if isinstance(data, list):
+        return [_translate_landing_dict(item) for item in data]
+    if isinstance(data, dict):
+        out = {}
+        for key, val in data.items():
+            if key in _LANDING_SKIP_KEYS:
+                out[key] = val
+            else:
+                out[key] = _translate_landing_dict(val)
+        return out
+    if isinstance(data, str) and data.strip():
+        return translate_text_safe(data, 'en')
+    return data
+
+
+def get_landing_for_display(lang='vi'):
+    """Nội dung landing theo ngôn ngữ UI."""
+    import copy
+    vi_lp = load_landing_content()
+    lang = (lang or 'vi').strip().lower()
+    if lang != 'en':
+        return vi_lp
+    vi_hash = _landing_content_hash(vi_lp)
+    cached = _load_landing_en_cache()
+    if cached and cached.get('vi_hash') == vi_hash and cached.get('lp'):
+        return cached['lp']
+    en_lp = _translate_landing_dict(copy.deepcopy(vi_lp))
+    _save_landing_en_cache(vi_hash, en_lp)
+    return en_lp
+
+# ── SITE SETTINGS & LEGAL CONTENT ─────────────────────────────────
+SITE_SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'site_settings.json')
+LEGAL_CONTENT_FILE = os.path.join(os.path.dirname(__file__), 'legal_content.json')
+LEGAL_CONTENT_EN_FILE = os.path.join(os.path.dirname(__file__), 'legal_content_en.json')
+SUPPORT_CONTENT_FILE = os.path.join(os.path.dirname(__file__), 'support_content.json')
+SUPPORT_CONTENT_EN_FILE = os.path.join(os.path.dirname(__file__), 'support_content_en.json')
+try:
+    from legal_defaults import get_legal_defaults
+except ImportError:
+    def get_legal_defaults():
+        return {}
+try:
+    from support_defaults import get_support_defaults
+except ImportError:
+    def get_support_defaults():
+        return {}
+try:
+    from support_defaults_en import get_support_defaults_en
+except ImportError:
+    def get_support_defaults_en():
+        return {}
+SITE_LOGO_DIR = os.path.join(os.path.dirname(__file__), 'static', 'img')
+ALLOWED_LOGO_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'svg'}
+MAX_LOGO_BYTES = 2 * 1024 * 1024
+
+DEFAULT_SITE_SETTINGS = {
+    'site_name': 'VietVoice',
+    'logo_url': '',
+    'support_email': 'support@vietvoice.app',
+    'contact_email': 'support@vietvoice.app',
+    'smtp_from_display': '',
+    'company_name': '',
+    'company_phone': '',
+}
+
+def load_site_settings():
+    """Đọc cấu hình site từ JSON"""
+    try:
+        with open(SITE_SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return {**DEFAULT_SITE_SETTINGS, **data}
+    except Exception:
+        return dict(DEFAULT_SITE_SETTINGS)
+
+def save_site_settings(data):
+    """Lưu cấu hình site vào JSON"""
+    current = load_site_settings()
+    for key in DEFAULT_SITE_SETTINGS:
+        if key in data and data[key] is not None:
+            current[key] = str(data[key]).strip()
+    with open(SITE_SETTINGS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(current, f, ensure_ascii=False, indent=2)
+
+def get_support_email():
+    """Email hỗ trợ (ưu tiên site_settings, fallback env/default)"""
+    email = load_site_settings().get('support_email', '').strip()
+    if email:
+        return email
+    return SMTP_FROM or 'support@vietvoice.app'
+
+
+def get_contact_email():
+    """Email liên hệ form (ưu tiên site_settings, fallback support)"""
+    email = load_site_settings().get('contact_email', '').strip()
+    if email:
+        return email
+    return get_support_email()
+
+
+@app.template_global('support_email_addr')
+def template_global_support_email():
+    """Luôn đọc email hỗ trợ mới nhất từ site_settings.json khi render template."""
+    return get_support_email()
+
+
+@app.template_global('contact_email_addr')
+def template_global_contact_email():
+    """Luôn đọc email liên hệ mới nhất từ site_settings.json khi render template."""
+    return get_contact_email()
+
+def clean_legal_html(html):
+    """Loại placeholder và markup rác từ Quill trước khi lưu."""
+    if not html:
+        return ''
+    text = str(html)
+    text = re.sub(
+        r'<p>\s*(Nội dung (cảnh báo|ghi chú)\.\.\.|'
+        r'⚠️ Thêm nội dung cảnh báo quan trọng tại đây\.|'
+        r'ℹ️ Thêm nội dung ghi chú hoặc lưu ý tại đây\.)\s*</p>',
+        '',
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r'<p>\s*dung cảnh báo\.\.\.\s*</p>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<p>\s*(<br\s*/?>)?\s*</p>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<div class="warning-box">\s*<br\s*/?></div>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<div class="warning-box">\s*</div>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<span class="ql-ui"[^>]*></span>', '', text)
+    return text.strip()
+
+
+def normalize_legal_page(page):
+    """Loại mục rỗng trước khi lưu / hiển thị."""
+    default = {'updated': '', 'sections': [], 'body_html': ''}
+    if not page:
+        return dict(default)
+    page = {**default, **page}
+    cleaned_sections = []
+    for section in (page.get('sections') or []):
+        sec = dict(section)
+        sec['title'] = (sec.get('title') or '').strip()
+        sec['content'] = clean_legal_html(sec.get('content') or '')
+        if legal_section_has_content(sec):
+            cleaned_sections.append(sec)
+    page['sections'] = cleaned_sections
+    body = clean_legal_html(page.get('body_html') or '')
+    page['body_html'] = body if _strip_html_text(body) else ''
+    return page
+
+
+def normalize_legal_content(data):
+    """Chuẩn hóa toàn bộ legal_content.json."""
+    normalized = {}
+    for key in LEGAL_CONTENT_PAGE_KEYS:
+        normalized[key] = normalize_legal_page(data.get(key))
+    return normalized
+
+
+def resolve_legal_placeholders(text):
+    """Thay placeholder trong nội dung pháp lý (email, URL động)."""
+    if not text:
+        return text
+    try:
+        pricing_url = url_for('pricing')
+        contact_url = url_for('contact')
+        support_url = url_for('support')
+    except RuntimeError:
+        pricing_url = '/pricing'
+        contact_url = '/contact'
+        support_url = '/support'
+    replacements = {
+        '__SUPPORT_EMAIL__': get_support_email(),
+        '__CONTACT_EMAIL__': get_contact_email(),
+        '__PRICING_URL__': pricing_url,
+        '__CONTACT_URL__': contact_url,
+        '__SUPPORT_URL__': support_url,
+    }
+    for key, value in replacements.items():
+        text = text.replace(key, value)
+    return text
+
+
+def resolve_legal_page(page):
+    """Áp placeholder cho một trang pháp lý trước khi hiển thị."""
+    if not page:
+        return page
+    page = dict(page)
+    page['sections'] = [
+        {
+            **section,
+            'title': resolve_legal_placeholders(section.get('title') or ''),
+            'content': resolve_legal_placeholders(section.get('content') or ''),
+        }
+        for section in (page.get('sections') or [])
+    ]
+    body = page.get('body_html') or ''
+    if body:
+        page['body_html'] = resolve_legal_placeholders(body)
+    return page
+
+
+def merge_legal_page_with_defaults(page, page_key):
+    """Gộp nội dung mặc định (form cũ) khi chưa có bản tùy chỉnh."""
+    if page_key in ('user_guide', 'installation_guide'):
+        from guide_content_loader import load_guide_from_markdown
+        md_page = load_guide_from_markdown(page_key)
+        if md_page and (md_page.get('sections') or md_page.get('body_html')):
+            return resolve_legal_page(md_page)
+    defaults = get_legal_defaults().get(page_key) or {}
+    base = page or {}
+    merged = {
+        'updated': base.get('updated') or defaults.get('updated') or '',
+        'sections': [dict(s) for s in defaults.get('sections', [])],
+        'body_html': defaults.get('body_html') or '',
+    }
+    return resolve_legal_page(merged)
+
+
+def get_legal_for_admin():
+    """Nội dung cho admin — luôn có form/sections mặc định nếu chưa lưu tùy chỉnh."""
+    content = load_legal_content()
+    result = {}
+    for key in LEGAL_CONTENT_PAGE_KEYS:
+        page = content.get(key) or {}
+        if key in GUIDE_MD_PAGE_KEYS:
+            result[key] = merge_legal_page_with_defaults(page, key)
+        elif legal_page_has_custom_content(page):
+            result[key] = resolve_legal_page(page)
+        else:
+            result[key] = merge_legal_page_with_defaults(page, key)
+    return result
+
+
+def merge_legal_page_with_defaults_en(page, page_key):
+    """English defaults for public legal pages."""
+    from legal_defaults_en import get_legal_defaults_en
+    defaults = get_legal_defaults_en().get(page_key) or {}
+    merged = {
+        'updated': defaults.get('updated') or '',
+        'sections': [dict(s) for s in defaults.get('sections', [])],
+        'body_html': defaults.get('body_html') or '',
+    }
+    return resolve_legal_page(merged)
+
+
+def _translate_legal_page_to_en(vi_page):
+    """Translate custom Vietnamese legal content to English via LLM (cached server-side)."""
+    from translate_service import translate_text_safe, translate_text_chunked_safe
+    sections = []
+    for section in vi_page.get('sections') or []:
+        title = section.get('title') or ''
+        content = section.get('content') or ''
+        sections.append({
+            'title': translate_text_safe(title, 'en'),
+            'content': translate_text_chunked_safe(content, 'en'),
+        })
+    updated = vi_page.get('updated') or ''
+    body = vi_page.get('body_html') or ''
+    return resolve_legal_page({
+        'updated': translate_text_safe(updated, 'en') if updated else '',
+        'sections': sections,
+        'body_html': translate_text_chunked_safe(body, 'en') if body else '',
+    })
+
+
+def _get_legal_en_for_template(page_key, vi_page):
+    """EN embed for Jinja — only use cache; never block page render on live translation."""
+    vi_hash = _legal_page_hash(vi_page)
+    cached = _load_legal_en_cache().get(page_key)
+    if cached and cached.get('vi_hash') == vi_hash and cached.get('page'):
+        return cached['page']
+    return vi_page
+
+
+def _legal_translation_applied(en_page, vi_page):
+    """Return True if EN page differs from VI (LLM translation likely succeeded)."""
+    vi_sections = vi_page.get('sections') or []
+    en_sections = en_page.get('sections') or []
+    if not vi_sections or len(vi_sections) != len(en_sections):
+        return False
+    for vi_sec, en_sec in zip(vi_sections, en_sections):
+        if (en_sec.get('title') or '').strip() != (vi_sec.get('title') or '').strip():
+            return True
+        vi_text = _strip_html_text(vi_sec.get('content') or '')
+        en_text = _strip_html_text(en_sec.get('content') or '')
+        if en_text and vi_text and en_text != vi_text:
+            return True
+    return False
+
+
+def _strip_guide_keys_from_legal_data(data):
+    """Xóa nội dung hướng dẫn khỏi JSON — file Markdown là nguồn duy nhất."""
+    for key in GUIDE_MD_PAGE_KEYS:
+        data[key] = {'updated': '', 'sections': [], 'body_html': ''}
+
+
+def get_legal_for_display(page_key, lang='vi'):
+    """Nội dung hiển thị trang công khai — luôn resolve placeholder, giữ layout legal-card."""
+    lang = (lang or 'vi').strip().lower()
+    stored = load_legal_content().get(page_key) or {}
+    is_guide_md = page_key in GUIDE_MD_PAGE_KEYS
+    if is_guide_md:
+        vi_page = merge_legal_page_with_defaults(stored, page_key)
+    elif legal_page_has_custom_content(stored):
+        vi_page = resolve_legal_page(stored)
+    else:
+        vi_page = merge_legal_page_with_defaults(stored, page_key)
+
+    if lang != 'en':
+        return vi_page
+
+    vi_hash = _legal_page_hash(vi_page)
+    cached = _load_legal_en_cache().get(page_key)
+    if cached and cached.get('vi_hash') == vi_hash and cached.get('page'):
+        return cached['page']
+
+    en_defaults = merge_legal_page_with_defaults_en(stored, page_key)
+    if is_guide_md:
+        translated = _translate_legal_page_to_en(vi_page)
+        if _legal_translation_applied(translated, vi_page):
+            _save_legal_en_cache(page_key, vi_hash, translated)
+            return translated
+        _save_legal_en_cache(page_key, vi_hash, en_defaults)
+        return en_defaults
+
+    if not legal_page_has_custom_content(stored):
+        _save_legal_en_cache(page_key, vi_hash, en_defaults)
+        return en_defaults
+
+    translated = _translate_legal_page_to_en(vi_page)
+    if _legal_translation_applied(translated, vi_page):
+        _save_legal_en_cache(page_key, vi_hash, translated)
+        return translated
+    _save_legal_en_cache(page_key, vi_hash, en_defaults)
+    return en_defaults
+
+
+def get_legal_for_public(page_key, lang='vi'):
+    """Alias — dùng get_legal_for_display để đồng bộ mặc định và nội dung đã sửa."""
+    return get_legal_for_display(page_key, lang=lang)
+
+def load_legal_content():
+    """Đọc nội dung trang pháp lý từ JSON"""
+    default = {key: {'updated': '', 'sections': [], 'body_html': ''} for key in LEGAL_CONTENT_PAGE_KEYS}
+    try:
+        with open(LEGAL_CONTENT_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for key in default:
+                if key not in data:
+                    data[key] = default[key]
+                else:
+                    data[key] = {**default[key], **data[key]}
+            return normalize_legal_content(data)
+    except Exception:
+        return default
+
+def save_legal_content(data):
+    """Lưu nội dung trang pháp lý"""
+    with open(LEGAL_CONTENT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(normalize_legal_content(data), f, ensure_ascii=False, indent=2)
+    try:
+        if os.path.exists(LEGAL_CONTENT_EN_FILE):
+            os.remove(LEGAL_CONTENT_EN_FILE)
+    except Exception:
+        pass
+
+
+def _legal_page_hash(page):
+    import hashlib
+    raw = json.dumps(page, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def _load_legal_en_cache():
+    try:
+        with open(LEGAL_CONTENT_EN_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_legal_en_cache(page_key, vi_hash, en_page):
+    cache = _load_legal_en_cache()
+    cache[page_key] = {'vi_hash': vi_hash, 'page': en_page}
+    with open(LEGAL_CONTENT_EN_FILE, 'w', encoding='utf-8') as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+def support_card_has_content(card):
+    if not card:
+        return False
+    if (card.get('title') or '').strip() or (card.get('desc') or '').strip():
+        return True
+    return bool((card.get('link_text') or '').strip())
+
+
+def support_guide_has_content(guide):
+    if not guide:
+        return False
+    if (guide.get('title') or '').strip():
+        return True
+    for step in guide.get('steps') or []:
+        if _strip_html_text(step.get('text') or ''):
+            return True
+    return False
+
+
+def support_faq_has_content(faq):
+    if not faq:
+        return False
+    if (faq.get('question') or '').strip():
+        return True
+    return bool(_strip_html_text(faq.get('answer_html') or ''))
+
+
+def support_has_custom_content(data):
+    """Nội dung hỗ trợ có bản tùy chỉnh (không phải file rỗng)."""
+    if not data:
+        return False
+    for card in data.get('contact_cards') or []:
+        if support_card_has_content(card):
+            return True
+    if (data.get('guides_title') or '').strip() or (data.get('faq_title') or '').strip():
+        return True
+    for guide in data.get('guides') or []:
+        if support_guide_has_content(guide):
+            return True
+    for faq in data.get('faqs') or []:
+        if support_faq_has_content(faq):
+            return True
+    return False
+
+
+def normalize_support_content(data):
+    """Chuẩn hóa support_content.json — loại mục rỗng (không gộp mặc định)."""
+    merged = data or {}
+    cards = []
+    for card in merged.get('contact_cards') or []:
+        c = {
+            'icon': (card.get('icon') or '').strip() or '📧',
+            'title': (card.get('title') or '').strip(),
+            'desc': (card.get('desc') or '').strip(),
+            'link_text': (card.get('link_text') or '').strip(),
+            'action': (card.get('action') or 'custom').strip(),
+            'mailto_subject': (card.get('mailto_subject') or '').strip(),
+        }
+        if support_card_has_content(c):
+            cards.append(c)
+    guides = []
+    for guide in merged.get('guides') or []:
+        steps = []
+        for step in guide.get('steps') or []:
+            text = clean_legal_html(step.get('text') or '')
+            if _strip_html_text(text):
+                steps.append({'text': text})
+        g = {
+            'title': (guide.get('title') or '').strip(),
+            'steps': steps,
+        }
+        if support_guide_has_content(g):
+            guides.append(g)
+    faqs = []
+    for faq in merged.get('faqs') or []:
+        f = {
+            'question': (faq.get('question') or '').strip(),
+            'answer_html': clean_legal_html(faq.get('answer_html') or ''),
+        }
+        if support_faq_has_content(f):
+            faqs.append(f)
+    return {
+        'contact_cards': cards,
+        'guides_title': (merged.get('guides_title') or '').strip(),
+        'guides': guides,
+        'faq_title': (merged.get('faq_title') or '').strip(),
+        'faqs': faqs,
+    }
+
+
+def get_pricing_or_register_url():
+    try:
+        if session.get('user_id'):
+            return url_for('pricing')
+        return url_for('register')
+    except RuntimeError:
+        return '/pricing'
+
+
+def resolve_support_placeholders(text):
+    """Thay placeholder trong nội dung hỗ trợ (email, URL động)."""
+    if not text:
+        return text
+    try:
+        terms_url = url_for('terms')
+        data_deletion_url = url_for('data_deletion')
+        pricing_or_register = get_pricing_or_register_url()
+    except RuntimeError:
+        terms_url = '/terms'
+        data_deletion_url = '/data-deletion'
+        pricing_or_register = '/pricing'
+    text = resolve_legal_placeholders(text)
+    replacements = {
+        '__TERMS_URL__': terms_url,
+        '__DATA_DELETION_URL__': data_deletion_url,
+        '__PRICING_OR_REGISTER_URL__': pricing_or_register,
+    }
+    for key, value in replacements.items():
+        text = text.replace(key, value)
+    return text
+
+
+def resolve_support_content(content):
+    """Áp placeholder cho toàn bộ nội dung hỗ trợ."""
+    if not content:
+        return content
+    resolved = dict(content)
+    resolved['contact_cards'] = [
+        {
+            **card,
+            'title': resolve_support_placeholders(card.get('title') or ''),
+            'desc': resolve_support_placeholders(card.get('desc') or ''),
+            'link_text': resolve_support_placeholders(card.get('link_text') or ''),
+            'mailto_subject': resolve_support_placeholders(card.get('mailto_subject') or ''),
+        }
+        for card in (content.get('contact_cards') or [])
+    ]
+    resolved['guides_title'] = resolve_support_placeholders(content.get('guides_title') or '')
+    resolved['faq_title'] = resolve_support_placeholders(content.get('faq_title') or '')
+    resolved['guides'] = [
+        {
+            'title': resolve_support_placeholders(guide.get('title') or ''),
+            'steps': [
+                {'text': resolve_support_placeholders(step.get('text') or '')}
+                for step in (guide.get('steps') or [])
+            ],
+        }
+        for guide in (content.get('guides') or [])
+    ]
+    resolved['faqs'] = [
+        {
+            'question': resolve_support_placeholders(faq.get('question') or ''),
+            'answer_html': resolve_support_placeholders(faq.get('answer_html') or ''),
+        }
+        for faq in (content.get('faqs') or [])
+    ]
+    return resolved
+
+
+def merge_support_with_defaults(stored):
+    """Gộp mặc định khi chưa có bản tùy chỉnh."""
+    if support_has_custom_content(stored):
+        return resolve_support_content(normalize_support_content(stored))
+    defaults = get_support_defaults()
+    merged = normalize_support_content(defaults)
+    return resolve_support_content(merged)
+
+
+def merge_support_with_defaults_en(stored):
+    """English defaults for support page."""
+    defaults = get_support_defaults_en()
+    merged = normalize_support_content(defaults)
+    return resolve_support_content(merged)
+
+
+def _translate_support_to_en(vi_content):
+    from translate_service import translate_text_safe
+    cards = []
+    for card in vi_content.get('contact_cards') or []:
+        cards.append({
+            'icon': card.get('icon') or '📧',
+            'title': translate_text_safe(card.get('title') or '', 'en'),
+            'desc': translate_text_safe(card.get('desc') or '', 'en'),
+            'link_text': card.get('link_text') or '',
+            'action': card.get('action') or 'custom',
+            'mailto_subject': translate_text_safe(card.get('mailto_subject') or '', 'en'),
+        })
+    guides = []
+    for guide in vi_content.get('guides') or []:
+        steps = []
+        for step in guide.get('steps') or []:
+            steps.append({'text': translate_text_safe(step.get('text') or '', 'en')})
+        guides.append({
+            'title': translate_text_safe(guide.get('title') or '', 'en'),
+            'steps': steps,
+        })
+    faqs = []
+    for faq in vi_content.get('faqs') or []:
+        faqs.append({
+            'question': translate_text_safe(faq.get('question') or '', 'en'),
+            'answer_html': translate_text_safe(faq.get('answer_html') or '', 'en'),
+        })
+    return resolve_support_content({
+        'contact_cards': cards,
+        'guides_title': translate_text_safe(vi_content.get('guides_title') or '', 'en'),
+        'guides': guides,
+        'faq_title': translate_text_safe(vi_content.get('faq_title') or '', 'en'),
+        'faqs': faqs,
+    })
+
+
+def _support_translation_applied(en_content, vi_content):
+    if (en_content.get('guides_title') or '').strip() != (vi_content.get('guides_title') or '').strip():
+        return True
+    if (en_content.get('faq_title') or '').strip() != (vi_content.get('faq_title') or '').strip():
+        return True
+    vi_cards = vi_content.get('contact_cards') or []
+    en_cards = en_content.get('contact_cards') or []
+    if len(vi_cards) == len(en_cards):
+        for vi_c, en_c in zip(vi_cards, en_cards):
+            if (en_c.get('title') or '').strip() != (vi_c.get('title') or '').strip():
+                return True
+    vi_faqs = vi_content.get('faqs') or []
+    en_faqs = en_content.get('faqs') or []
+    if len(vi_faqs) == len(en_faqs):
+        for vi_f, en_f in zip(vi_faqs, en_faqs):
+            if (en_f.get('question') or '').strip() != (vi_f.get('question') or '').strip():
+                return True
+    return False
+
+
+def _support_content_hash(content):
+    import hashlib
+    raw = json.dumps(content, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def _load_support_en_cache():
+    try:
+        with open(SUPPORT_CONTENT_EN_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_support_en_cache(vi_hash, en_content):
+    with open(SUPPORT_CONTENT_EN_FILE, 'w', encoding='utf-8') as f:
+        json.dump({'vi_hash': vi_hash, 'content': en_content}, f, ensure_ascii=False, indent=2)
+
+
+def load_support_content():
+    empty = {
+        'contact_cards': [],
+        'guides_title': '',
+        'guides': [],
+        'faq_title': '',
+        'faqs': [],
+    }
+    try:
+        with open(SUPPORT_CONTENT_FILE, 'r', encoding='utf-8') as f:
+            return normalize_support_content(json.load(f))
+    except Exception:
+        return empty
+
+
+def save_support_content(data):
+    with open(SUPPORT_CONTENT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(normalize_support_content(data), f, ensure_ascii=False, indent=2)
+    try:
+        if os.path.exists(SUPPORT_CONTENT_EN_FILE):
+            os.remove(SUPPORT_CONTENT_EN_FILE)
+    except Exception:
+        pass
+
+
+def get_support_for_admin():
+    stored = load_support_content()
+    if support_has_custom_content(stored):
+        return resolve_support_content(stored)
+    return merge_support_with_defaults(stored)
+
+
+def get_support_for_display(lang='vi'):
+    lang = (lang or 'vi').strip().lower()
+    stored = load_support_content()
+    if support_has_custom_content(stored):
+        vi_content = resolve_support_content(stored)
+    else:
+        vi_content = merge_support_with_defaults(stored)
+
+    if lang != 'en':
+        return vi_content
+
+    vi_hash = _support_content_hash(vi_content)
+    cached = _load_support_en_cache()
+    if cached.get('vi_hash') == vi_hash and cached.get('content'):
+        return cached['content']
+
+    en_defaults = merge_support_with_defaults_en(stored)
+    if not support_has_custom_content(stored):
+        _save_support_en_cache(vi_hash, en_defaults)
+        return en_defaults
+
+    translated = _translate_support_to_en(vi_content)
+    if _support_translation_applied(translated, vi_content):
+        _save_support_en_cache(vi_hash, translated)
+        return translated
+    _save_support_en_cache(vi_hash, en_defaults)
+    return en_defaults
+
+
+@app.template_global('support_card_href')
+def template_support_card_href(card):
+    action = (card.get('action') or 'custom').strip()
+    support = get_support_email()
+    if action == 'mailto_support':
+        return f'mailto:{support}'
+    if action == 'mailto_bug':
+        subject = (card.get('mailto_subject') or '').strip()
+        if subject:
+            from urllib.parse import quote
+            return f'mailto:{support}?subject={quote(subject)}'
+        return f'mailto:{support}'
+    if action == 'contact_page':
+        try:
+            return url_for('contact')
+        except RuntimeError:
+            return '/contact'
+    href = (card.get('href') or '#').strip()
+    return resolve_support_placeholders(href) or '#'
+
+
+@app.template_global('support_link_text')
+def template_support_link_text(card):
+    text = resolve_support_placeholders(card.get('link_text') or '')
+    if text == '__SUPPORT_EMAIL__':
+        return get_support_email()
+    return text
+
+
+@app.context_processor
+def inject_site_settings():
+    """Inject site settings into all templates."""
+    try:
+        settings = load_site_settings()
+    except Exception:
+        settings = dict(DEFAULT_SITE_SETTINGS)
+    support = get_support_email()
+    contact = get_contact_email()
+    return {
+        'site_settings': settings,
+        'support_email': support,
+        'contact_email': contact,
+        'legal_page_has_custom_content': legal_page_has_custom_content,
+    }
+
+@app.route('/admin/settings', methods=['GET'])
+def admin_settings():
+    """Trang cấu hình site (admin)"""
+    if not is_logged_in() or not is_admin():
+        return redirect(url_for('index'))
+    return render_template('admin_settings.html')
+
+@app.route('/admin/policies', methods=['GET'])
+def admin_policies():
+    """Trang cấu hình chính sách / pháp lý (lưu file JSON, không dùng database)"""
+    if not is_logged_in() or not is_admin():
+        return redirect(url_for('index'))
+    return render_template('admin_policies.html')
+
+@app.route('/api/admin/settings', methods=['GET'])
+def api_admin_get_settings():
+    """API: lấy cấu hình site"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    settings = load_site_settings()
+    settings['smtp_from_env'] = SMTP_FROM or ''
+    settings['smtp_host_env'] = SMTP_HOST or ''
+    return jsonify({'success': True, 'settings': settings})
+
+@app.route('/api/admin/settings', methods=['POST'])
+def api_admin_save_settings():
+    """API: lưu cấu hình site"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        data = request.get_json() or {}
+        save_site_settings(data)
+        return jsonify({'success': True, 'message': 'Đã lưu cấu hình site thành công!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/settings/logo', methods=['POST'])
+def api_admin_upload_logo():
+    """API: upload logo site"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    if 'logo' not in request.files:
+        return jsonify({'success': False, 'message': 'Không có file logo'}), 400
+    file = request.files['logo']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'File không hợp lệ'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_LOGO_EXTENSIONS:
+        return jsonify({'success': False, 'message': 'Định dạng logo không hỗ trợ (png, jpg, webp, svg)'}), 400
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_LOGO_BYTES:
+        return jsonify({'success': False, 'message': 'Logo quá lớn (tối đa 2MB)'}), 400
+    os.makedirs(SITE_LOGO_DIR, exist_ok=True)
+    filename = f'site_logo.{ext}'
+    filepath = os.path.join(SITE_LOGO_DIR, filename)
+    file.save(filepath)
+    logo_url = f'img/{filename}'
+    save_site_settings({'logo_url': logo_url})
+    return jsonify({
+        'success': True,
+        'message': 'Đã cập nhật logo!',
+        'logo_url': logo_url,
+        'logo_src': url_for('static', filename=logo_url),
+    })
+
+@app.route('/api/admin/legal', methods=['GET'])
+def api_admin_get_legal():
+    """API: lấy nội dung pháp lý"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    from guide_content_loader import load_all_guide_markdown_raw
+    return jsonify({
+        'success': True,
+        'legal': get_legal_for_admin(),
+        'guide_markdown': load_all_guide_markdown_raw(),
+    })
+
+@app.route('/api/admin/legal', methods=['POST'])
+def api_admin_save_legal():
+    """API: lưu nội dung pháp lý vào legal_content.json (file, không database)"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+        guide_md = data.pop('guide_markdown', None)
+        if guide_md:
+            from guide_content_loader import save_guide_markdown
+            for key in GUIDE_MD_PAGE_KEYS:
+                if key in guide_md and guide_md[key]:
+                    save_guide_markdown(key, guide_md[key])
+        _strip_guide_keys_from_legal_data(data)
+        save_legal_content(data)
+        from guide_content_loader import load_all_guide_markdown_raw
+        return jsonify({
+            'success': True,
+            'message': 'Đã lưu nội dung pháp lý!',
+            'legal': get_legal_for_admin(),
+            'guide_markdown': load_all_guide_markdown_raw(),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/support', methods=['GET'])
+def api_admin_get_support():
+    """API: lấy nội dung trang hỗ trợ"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    return jsonify({'success': True, 'support': get_support_for_admin()})
+
+
+@app.route('/api/admin/support', methods=['POST'])
+def api_admin_save_support():
+    """API: lưu nội dung hỗ trợ vào support_content.json"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+        save_support_content(data)
+        return jsonify({
+            'success': True,
+            'message': 'Đã lưu nội dung hỗ trợ & FAQ!',
+            'support': load_support_content(),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/admin/packages', methods=['GET'])
+def api_admin_get_packages():
+    """API: danh sách gói cước (admin, bao gồm inactive)"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, package_name, characters_limit, price_vnd, duration_days, is_active
+                FROM subscription_packages
+                ORDER BY characters_limit ASC
+            """)
+            rows = cursor.fetchall()
+            return jsonify({
+                'success': True,
+                'packages': [
+                    {
+                        'id': r['id'],
+                        'name': r['package_name'],
+                        'characters': r['characters_limit'],
+                        'price': r['price_vnd'],
+                        'duration_days': r['duration_days'],
+                        'is_active': bool(r['is_active']),
+                    }
+                    for r in rows
+                ],
+            })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/packages', methods=['POST'])
+def api_admin_create_package():
+    """API: tạo gói cước mới"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    characters = int(data.get('characters') or 0)
+    price = int(data.get('price') or 0)
+    duration_days = int(data.get('duration_days') or 30)
+    is_active = 1 if data.get('is_active', True) else 0
+    if not name or characters <= 0:
+        return jsonify({'success': False, 'message': 'Tên gói và số ký tự là bắt buộc'}), 400
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO subscription_packages (package_name, characters_limit, price_vnd, price, duration_days, is_active)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (name, characters, price, price, duration_days, is_active))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Đã tạo gói cước mới', 'id': cursor.lastrowid})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/packages/<int:package_id>', methods=['PUT'])
+def api_admin_update_package(package_id):
+    """API: cập nhật gói cước"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    data = request.get_json() or {}
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM subscription_packages WHERE id = %s", (package_id,))
+            if not cursor.fetchone():
+                return jsonify({'success': False, 'message': 'Gói không tồn tại'}), 404
+            fields = []
+            values = []
+            if 'name' in data:
+                fields.append('package_name = %s')
+                values.append(str(data['name']).strip())
+            if 'characters' in data:
+                fields.append('characters_limit = %s')
+                values.append(int(data['characters']))
+            if 'price' in data:
+                price_val = int(data['price'])
+                fields.append('price_vnd = %s')
+                values.append(price_val)
+                fields.append('price = %s')
+                values.append(price_val)
+            if 'duration_days' in data:
+                fields.append('duration_days = %s')
+                values.append(int(data['duration_days']))
+            if 'is_active' in data:
+                fields.append('is_active = %s')
+                values.append(1 if data['is_active'] else 0)
+            if not fields:
+                return jsonify({'success': False, 'message': 'Không có dữ liệu cập nhật'}), 400
+            values.append(package_id)
+            cursor.execute(
+                f"UPDATE subscription_packages SET {', '.join(fields)} WHERE id = %s",
+                tuple(values),
+            )
+            conn.commit()
+            cursor.execute("""
+                SELECT id, package_name, characters_limit, price_vnd, duration_days, is_active
+                FROM subscription_packages WHERE id = %s
+            """, (package_id,))
+            updated = cursor.fetchone()
+            return jsonify({
+                'success': True,
+                'message': 'Đã cập nhật gói cước',
+                'package': {
+                    'id': updated['id'],
+                    'name': updated['package_name'],
+                    'characters': updated['characters_limit'],
+                    'price': updated['price_vnd'],
+                    'duration_days': updated['duration_days'],
+                    'is_active': bool(updated['is_active']),
+                },
+            })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/admin/packages/<int:package_id>', methods=['DELETE'])
+def api_admin_delete_package(package_id):
+    """API: vô hiệu hóa gói cước"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE subscription_packages SET is_active = 0 WHERE id = %s",
+                (package_id,),
+            )
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Đã ẩn gói cước'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/admin/landing', methods=['GET'])
 def admin_landing():
@@ -2781,7 +4467,7 @@ def pricing():
     """Trang thanh toán"""
     if not is_logged_in():
         return redirect(url_for('login'))
-    return render_template('pricing.html')
+    return render_template('pricing.html', pricing_packages=fetch_active_packages())
 
 @app.route('/payment/confirm')
 def payment_confirm():
@@ -2851,7 +4537,9 @@ def profile():
         try:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT id, username, email, full_name, avatar_url, role, created_at FROM users WHERE id = %s",
+                    """SELECT id, username, email, full_name, avatar_url, role, created_at,
+                              delete_requested, delete_status, delete_requested_at, admin_delete_note
+                       FROM users WHERE id = %s""",
                     (session['user_id'],)
                 )
                 row = cursor.fetchone()
@@ -2864,6 +4552,10 @@ def profile():
                         'avatar_url': row.get('avatar_url') or '',
                         'role':       row['role'],
                         'created_at': row['created_at'].strftime('%d/%m/%Y') if row.get('created_at') else '',
+                        'delete_requested': bool(row.get('delete_requested')),
+                        'delete_status': row.get('delete_status') or 'none',
+                        'delete_requested_at': _format_datetime_vn(row.get('delete_requested_at')),
+                        'admin_delete_note': row.get('admin_delete_note') or '',
                     }
         except Exception as e:
             print(f'[ERROR] profile: {e}')
@@ -2872,6 +4564,98 @@ def profile():
     if user_data:
         session['avatar_url'] = user_data.get('avatar_url') or ''
     return render_template('profile.html', user=user_data)
+
+
+@app.route('/api/user/account-deletion-status', methods=['GET'])
+@login_required
+def user_account_deletion_status():
+    """Trạng thái yêu cầu xóa tài khoản của user hiện tại"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """SELECT delete_requested, delete_status, delete_requested_at, admin_delete_note, status
+                   FROM users WHERE id = %s""",
+                (session['user_id'],),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+        return jsonify({
+            'success': True,
+            'delete_requested': bool(row.get('delete_requested')),
+            'delete_status': row.get('delete_status') or 'none',
+            'delete_requested_at': _format_datetime_vn(row.get('delete_requested_at')),
+            'admin_delete_note': row.get('admin_delete_note') or '',
+            'account_deleted': _is_account_deleted(row),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/request-account-deletion', methods=['POST'])
+@login_required
+def user_request_account_deletion():
+    """User gửi yêu cầu xóa tài khoản"""
+    data = request.get_json() or {}
+    reason = (data.get('delete_reason') or data.get('reason') or '').strip()
+    if len(reason) > 2000:
+        return jsonify({'success': False, 'message': 'Lý do quá dài (tối đa 2000 ký tự)'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            if _is_account_deleted(user):
+                return jsonify({
+                    'success': False,
+                    'message': 'Tài khoản của bạn đã bị xóa hoặc vô hiệu hóa.'
+                }), 400
+
+            delete_status = (user.get('delete_status') or 'none').lower()
+            if delete_status == 'pending':
+                return jsonify({
+                    'success': False,
+                    'message': 'Bạn đã gửi yêu cầu xóa tài khoản. Vui lòng chờ admin xử lý.'
+                }), 400
+
+            now = datetime.now()
+            cursor.execute("""
+                UPDATE users SET
+                    delete_requested = 1,
+                    delete_status = 'pending',
+                    delete_requested_at = %s,
+                    delete_reason = %s,
+                    admin_delete_note = NULL
+                WHERE id = %s
+            """, (now, reason or None, session['user_id']))
+            conn.commit()
+
+            user['delete_reason'] = reason
+            user['delete_requested_at'] = now
+            email_sent = _send_admin_delete_request_email(user)
+
+        msg = 'Yêu cầu xóa tài khoản đã được gửi. Admin sẽ xử lý trong thời gian sớm nhất.'
+        if not email_sent:
+            msg += ' (gửi email thông báo admin thất bại — kiểm tra cấu hình SMTP)'
+        return jsonify({'success': True, 'message': msg, 'email_sent': email_sent})
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] user_request_account_deletion: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/api/user/update-profile', methods=['POST'])
@@ -3020,37 +4804,88 @@ def change_password():
 @app.route('/contact')
 def contact():
     """Trang liên hệ"""
-    return render_template('contact.html')
+    return render_template(
+        'contact.html',
+        support_email=get_support_email(),
+        contact_email=get_contact_email(),
+    )
 
 @app.route('/privacy')
 def privacy():
     """Chính sách quyền riêng tư"""
-    return render_template('privacy.html')
+    return render_template(
+        'privacy.html',
+        legal=get_legal_for_display('privacy'),
+        legal_en=get_legal_for_display('privacy', 'en'),
+    )
 
 @app.route('/terms')
 def terms():
     """Điều khoản sử dụng"""
-    return render_template('terms.html')
+    return render_template(
+        'terms.html',
+        legal=get_legal_for_display('terms'),
+        legal_en=get_legal_for_display('terms', 'en'),
+    )
 
 @app.route('/data-deletion')
 def data_deletion():
     """Chính sách xóa dữ liệu"""
-    return render_template('data_deletion.html')
+    return render_template(
+        'data_deletion.html',
+        legal=get_legal_for_display('data_deletion'),
+        legal_en=get_legal_for_display('data_deletion', 'en'),
+    )
+
+@app.route('/payment-terms')
+def payment_terms():
+    """Điều khoản thanh toán"""
+    return render_template(
+        'payment_terms.html',
+        legal=get_legal_for_display('payment'),
+        legal_en=get_legal_for_display('payment', 'en'),
+    )
 
 @app.route('/support')
 def support():
     """Trang hỗ trợ và FAQ"""
-    return render_template('support.html')
+    return render_template(
+        'support.html',
+        support=get_support_for_display('vi'),
+        support_en=get_support_for_display('en'),
+        support_email=get_support_email(),
+        contact_email=get_contact_email(),
+    )
+
+@app.route('/user_guide')
+def user_guide_alias():
+    return redirect('/user-guide')
 
 @app.route('/user-guide')
 def user_guide():
     """Hướng dẫn sử dụng"""
-    return render_template('user_guide.html')
+    legal = get_legal_for_display('user_guide')
+    legal_en = _get_legal_en_for_template('user_guide', legal)
+    return render_template(
+        'user_guide.html',
+        legal=legal,
+        legal_en=legal_en,
+    )
+
+@app.route('/installation_guide')
+def installation_guide_alias():
+    return redirect('/installation-guide')
 
 @app.route('/installation-guide')
 def installation_guide():
     """Hướng dẫn cài đặt hệ thống"""
-    return render_template('installation_guide.html')
+    legal = get_legal_for_display('installation_guide')
+    legal_en = _get_legal_en_for_template('installation_guide', legal)
+    return render_template(
+        'installation_guide.html',
+        legal=legal,
+        legal_en=legal_en,
+    )
 
 @app.route('/api/contact', methods=['POST'])
 def submit_contact():
@@ -3583,13 +5418,11 @@ def get_subscription_status():
         'subscription': limit_info
     })
 
-@app.route('/api/packages')
-def get_packages():
-    """Lấy danh sách các gói thanh toán"""
+def fetch_active_packages():
+    """Đọc gói cước active từ DB (dùng cho API và render trang pricing)."""
     conn = get_db_connection()
     if not conn:
-        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
-    
+        return []
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
@@ -3598,26 +5431,31 @@ def get_packages():
                 WHERE is_active = 1
                 ORDER BY characters_limit ASC
             """)
-            packages = cursor.fetchall()
-            
-            return jsonify({
-                'success': True,
-                'packages': [
-                    {
-                        'id': p['id'],
-                        'name': p['package_name'],
-                        'characters': p['characters_limit'],
-                        'price': p['price_vnd'],
-                        'duration_days': p['duration_days']
-                    }
-                    for p in packages
-                ]
-            })
+            rows = cursor.fetchall()
+            return [
+                {
+                    'id': p['id'],
+                    'name': p['package_name'],
+                    'characters': int(p['characters_limit']),
+                    'price': int(p['price_vnd']),
+                    'duration_days': int(p['duration_days']),
+                }
+                for p in rows
+            ]
     except Exception as e:
-        print(f"[ERROR] Get packages error: {e}")
-        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+        print(f"[ERROR] fetch_active_packages: {e}")
+        return []
     finally:
         conn.close()
+
+@app.route('/api/packages')
+def get_packages():
+    """Lấy danh sách các gói thanh toán"""
+    packages = fetch_active_packages()
+    resp = jsonify({'success': True, 'packages': packages})
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    return resp
 
 @app.route('/api/payment/create', methods=['POST'])
 def create_payment():
@@ -5945,6 +7783,16 @@ def run_db_migrations():
         ('conversions', 'display_name', 'VARCHAR(200) NULL DEFAULT NULL AFTER voice_name'),
         ('conversions', 'is_public',    'TINYINT(1) NOT NULL DEFAULT 0'),
         ('conversions', 'share_token',  'VARCHAR(64) NULL DEFAULT NULL'),
+        ('users', 'status', 'VARCHAR(20) NOT NULL DEFAULT \'active\''),
+        ('users', 'delete_requested', 'TINYINT(1) NOT NULL DEFAULT 0'),
+        ('users', 'delete_requested_at', 'DATETIME NULL DEFAULT NULL'),
+        ('users', 'delete_reason', 'TEXT NULL'),
+        ('users', 'delete_status', 'VARCHAR(20) NOT NULL DEFAULT \'none\''),
+        ('users', 'deleted_at', 'DATETIME NULL DEFAULT NULL'),
+        ('users', 'admin_delete_note', 'TEXT NULL'),
+        ('users', 'deletion_effective_at', 'DATETIME NULL DEFAULT NULL'),
+        ('users', 'restore_requested', 'TINYINT(1) NOT NULL DEFAULT 0'),
+        ('users', 'restore_requested_at', 'DATETIME NULL DEFAULT NULL'),
     ]
     conn = get_db_connection()
     if not conn:
@@ -5975,10 +7823,44 @@ def run_db_migrations():
                 cursor.execute("ALTER TABLE conversions ADD INDEX idx_share_token (share_token)")
                 conn.commit()
                 print("[MIGRATION] ✅ Đã thêm index 'idx_share_token'")
+
+            # Backfill grace period cho tài khoản đã duyệt xóa trước khi có deletion_effective_at
+            cursor.execute("""
+                UPDATE users SET
+                    deletion_effective_at = DATE_ADD(deleted_at, INTERVAL %s DAY),
+                    status = 'deactivated'
+                WHERE delete_status = 'approved'
+                  AND deleted_at IS NOT NULL
+                  AND deletion_effective_at IS NULL
+                  AND status = 'deleted'
+                  AND DATE_ADD(deleted_at, INTERVAL %s DAY) > NOW()
+            """, (ACCOUNT_DELETION_GRACE_DAYS, ACCOUNT_DELETION_GRACE_DAYS))
+            conn.commit()
+
+            _finalize_expired_account_deletions(cursor)
+            conn.commit()
+            print("[MIGRATION] ✓  Đã kiểm tra grace period xóa tài khoản")
     except Exception as e:
         print(f"[MIGRATION] ❌ Lỗi migration: {e}")
     finally:
         conn.close()
+
+
+def warmup_legal_en_cache():
+    """Build EN legal caches at startup so first page load is instant."""
+    for key in LEGAL_CONTENT_PAGE_KEYS:
+        try:
+            get_legal_for_display(key, 'en')
+        except Exception as e:
+            print(f'[i18n] Legal EN cache warmup failed for {key}: {e}')
+
+
+def warmup_support_en_cache():
+    """Build EN support cache at startup."""
+    try:
+        get_support_for_display('en')
+    except Exception as e:
+        print(f'[i18n] Support EN cache warmup failed: {e}')
 
 
 if __name__ == '__main__':
@@ -5991,6 +7873,8 @@ if __name__ == '__main__':
     # Chạy DB migration tự động
     print("[MIGRATION] Kiểm tra và cập nhật cấu trúc database...")
     run_db_migrations()
+    warmup_legal_en_cache()
+    warmup_support_en_cache()
     
     # Start background worker for custom voice training
     try:

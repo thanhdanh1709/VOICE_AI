@@ -1,0 +1,185 @@
+{
+  "vi_hash": "eb820906d68f86277f7a3df4bbfbb83390dec67356aa06096138315e131d10f7",
+  "lp": {
+    "hero": {
+      "tag": "Pioneering AI Solution",
+      "title_line1": "VietVoice: Conversion",
+      "title_grad": "text to speech AI",
+      "title_line2": "Natural & inspiring",
+      "btn_primary": "Get started now",
+      "free_note": "No credit card required - 100,000 characters free with sign up"
+    },
+    "company": {
+      "name": "PIONEER TECHNICAL TECHNOLOGY COMPANY LIMITED",
+      "desc": "SPECIALIZED IN PROVIDING HIGH TECHNOLOGY SOLUTIONS AND IMPORT AND EXPORT OF ADVANCED TECHNOLOGY ITEMS.",
+      "mst": "1801526082",
+      "representative": "NGÔ HỒ ANH KHÔI",
+      "address": "P16, Đường số 8, KDC lô 49, Khu đô thị Nam Cần Thơ, P. Cái Răng, TP. Cần Thơ",
+      "phone": "0916 416 409",
+      "since": "05/04/2017"
+    },
+    "about_new": {
+      "title": "About VietVoice AI",
+      "desc": "We create the future of digital communication through leading AI Synthesis technology, providing a solution to convert text into natural, inspiring and Vietnamese voice.",
+      "cards": [
+        {
+          "icon": "visibility",
+          "title": "Vision",
+          "desc": "Becoming the region's leading AI Voice platform, eliminating language barriers and automating the content creation process for millions of businesses and individuals."
+        },
+        {
+          "icon": "flag",
+          "title": "Mission",
+          "desc": "Providing studio quality voice synthesis solutions, diverse in regions, easy to integrate and cost-optimized for Vietnamese and international markets."
+        },
+        {
+          "icon": "handshake",
+          "title": "Commit",
+          "desc": "Continuously research and apply the latest deep learning models to improve the naturalness, emotions and processing speed of the system."
+        }
+      ]
+    },
+    "footer": {
+      "brand_desc": "Pioneering AI text-to-speech platform — high quality, rich emotions, support for personal voice cloning.",
+      "col1_title": "FEATURES",
+      "col2_title": "SUPPORT",
+      "col3_title": "ACCOUNT",
+      "col1_links": [
+        {
+          "label": "Text → Voice",
+          "href": "/#features"
+        },
+        {
+          "label": "Clone individual voices",
+          "href": "/#features"
+        },
+        {
+          "label": "Emotional TTS",
+          "href": "/#features"
+        },
+        {
+          "label": "Sound library",
+          "href": "/audio-library"
+        },
+        {
+          "label": "Price List & Upgrades",
+          "href": "/pricing"
+        }
+      ],
+      "col2_links": [
+        {
+          "label": "Contact support",
+          "href": "/contact"
+        },
+        {
+          "label": "Frequently asked questions",
+          "href": "#"
+        },
+        {
+          "label": "Report error",
+          "href": "/contact"
+        },
+        {
+          "label": "Feature request",
+          "href": "/contact"
+        }
+      ],
+      "copyright": "© 2024 VietVoice AI · Pioneer Technology Technology Company Limited · Tax code: 1801526082"
+    },
+    "trusted": {
+      "label": "Trusted by",
+      "items": [
+        "Pupils & students",
+        "Content Creator",
+        "Enterprise",
+        "Developer"
+      ]
+    },
+    "features": {
+      "label": "HIGHLIGHTS FEATURES",
+      "title": "Realize your dream voice with AI",
+      "subtitle": "Comprehensive TTS toolset — from natural voices to rich emotions and personal voice clones",
+      "cards": [
+        {
+          "num": "01",
+          "icon": "🎙️",
+          "title": "Natural AI Voice",
+          "desc": "Advanced TTS technology creates voices that sound as natural as real people. Supports multi-regional Vietnamese and many other languages."
+        },
+        {
+          "num": "02",
+          "icon": "🎭",
+          "title": "Emotional TTS",
+          "desc": "AI automatically adjusts emotions according to the content — happy, sad, excited, calm — for a more vivid and realistic voice."
+        },
+        {
+          "num": "03",
+          "icon": "🧬",
+          "title": "Clone Personal Voice",
+          "desc": "Upload a sample voice in a few seconds, and the AI ​​learns and accurately reproduces your voice. The most advanced RVC + viXTTS technology today."
+        },
+        {
+          "num": "04",
+          "icon": "⚡",
+          "title": "Super Fast Processing",
+          "desc": "High-performance background processing AI system. Get results in seconds, no need to wait even if the text is thousands of characters long."
+        }
+      ]
+    },
+    "steps": {
+      "label": "SIMPLE",
+      "title": "Just 3 steps to have the perfect voice",
+      "subtitle": "From text to professional audio — quickly, no technical skills required.",
+      "items": [
+        {
+          "num": "01",
+          "icon": "✍️",
+          "title": "Enter text",
+          "desc": "Type, paste or upload your text file. Support TXT, PDF, DOCX."
+        },
+        {
+          "num": "02",
+          "icon": "🤖",
+          "title": "AI processing",
+          "desc": "Select the voice and press convert. AI generates high-quality audio automatically."
+        },
+        {
+          "num": "03",
+          "icon": "📥",
+          "title": "Download & use now",
+          "desc": "Download high quality audio files. Ready to use for any purpose."
+        }
+      ]
+    },
+    "showcase": {
+      "icon": "🎤",
+      "title": "Experience a natural, human-like voice",
+      "desc": "Advanced AI technology combining RVC and viXTTS delivers outstanding sound quality, suitable for all applications from podcasts, audio books to virtual assistants.",
+      "badges": [
+        "✓ Natural Vietnamese accent",
+        "✓ Clone individual voice",
+        "✓ Rich emotions",
+        "✓ Fast processing",
+        "✓ High quality"
+      ],
+      "btn": "Get started for free now"
+    },
+    "final_cta": {
+      "title": "Start creating your voice today",
+      "subtitle": "No credit card required · Free upon sign up · Upgrade anytime",
+      "btn_primary": "Sign up for free",
+      "btn_secondary": "Already have an account →",
+      "note": "Start with 500 free characters per conversion"
+    },
+    "about": {
+      "label": "ABOUT US",
+      "title": "VietVoice, a comprehensive AI technology toolkit",
+      "company_desc": "PIONEER TECHNICAL TECHNOLOGY COMPANY LIMITED — specializes in providing high-tech technology solutions and importing and exporting advanced technology items.",
+      "info_row1": "Tax code: 1801526082 · Representative: Ngo Ho Anh Khoi",
+      "info_row2": "Ward 16, Street 8, Residential Area Lot 49, South Can Tho Urban Area, Cai Rang Ward, City. Can Tho",
+      "info_row3": "0916 416 409 · Operating from April 5, 2017",
+      "btn": "Get started now",
+      "note": "No credit card required · 100,000 characters free with sign up"
+    }
+  }
+}

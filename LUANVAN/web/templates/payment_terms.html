@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Điều khoản thanh toán — VietVoice{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/legal-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-page legal-page--payment" data-legal-page="payment"
+     data-vi-updated="{{ legal.updated if legal and legal.updated else '' }}"
+     data-en-updated="{{ legal_en.updated if legal_en and legal_en.updated else '' }}">
+<div class="legal-hero">
+    <div class="legal-badge" data-i18n="legal.badge">📄 Pháp lý</div>
+    <h1 data-i18n="legal.payment">Điều khoản thanh toán</h1>
+    <p id="legal-updated-line">{% if legal and legal.updated %}<span data-i18n="legal.updated_prefix">Cập nhật:</span> {{ legal.updated }}{% else %}<span data-i18n="legal.updated">Cập nhật lần cuối: Tháng 6 năm 2026</span>{% endif %}</p>
+</div>
+
+<div class="legal-container">
+    {% include 'partials/legal_dynamic_body.html' %}
+</div>
+</div>
+{% include 'partials/legal_i18n_embeds.html' %}
+{% endblock %}

@@ -1,0 +1,8 @@
+<template id="legal-body-vi" hidden aria-hidden="true">
+{% include 'partials/legal_dynamic_body.html' %}
+</template>
+<template id="legal-body-en" hidden aria-hidden="true">
+{% with legal=legal_en %}
+{% include 'partials/legal_dynamic_body.html' %}
+{% endwith %}
+</template>

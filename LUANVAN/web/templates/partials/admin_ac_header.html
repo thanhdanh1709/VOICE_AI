@@ -1,0 +1,20 @@
+<header class="ac-header">
+  <button type="button" class="ac-mobile-menu-btn" id="adminMobileMenuBtn" onclick="toggleAdminMobileNav()" aria-label="Menu">
+    <span class="material-symbols-outlined" id="adminMobileMenuIcon">menu</span>
+  </button>
+  <div class="ac-header-main">
+    <h1 data-i18n="{{ ac_header_title_key }}">{{ ac_header_title_default }}</h1>
+    {% if ac_header_subtitle_key %}
+    <p class="ac-subtitle ac-header-subtitle" data-i18n="{{ ac_header_subtitle_key }}">{{ ac_header_subtitle_default }}</p>
+    {% elif ac_header_subtitle_block %}
+    <div class="ac-subtitle ac-header-subtitle">{{ ac_header_subtitle_block }}</div>
+    {% endif %}
+  </div>
+  <div class="ac-header-actions">
+    {% include 'partials/admin_lang_toggle.html' %}
+    <a href="{{ url_for('logout') }}" class="ac-logout" title="Đăng xuất">
+      <span class="material-symbols-outlined ac-logout-icon">logout</span>
+      <span class="ac-logout-text" data-i18n="nav.logout">Đăng xuất</span>
+    </a>
+  </div>
+</header>

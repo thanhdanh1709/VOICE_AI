@@ -37,11 +37,14 @@
 
         <!-- Tab: Text Input -->
         <div class="tab-content" id="textTab">
-          <div class="relative mb-5">
+            <div class="relative mb-5">
             <textarea id="textInput"
               class="w-full h-60 bg-surface-container-lowest border border-white/5 rounded-xl p-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/30 resize-none placeholder-on-surface-variant/40 transition-all"
               data-i18n-placeholder="ws.placeholder"
               placeholder="Nhập hoặc dán văn bản của bạn vào đây...&#10;&#10;Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng nói bằng AI."></textarea>
+            <div id="wsLangWarning" class="hidden mt-2 text-xs text-amber-400/90 px-1" data-i18n="ws.lang_warning">
+              Hệ thống được tối ưu cho văn bản tiếng Việt. Kết quả với ngôn ngữ khác có thể không chính xác.
+            </div>
             <div class="absolute bottom-3 right-3 text-xs text-on-surface-variant bg-surface-container-lowest px-2 py-0.5 rounded">
               <span id="charCount">0</span> <span data-i18n="ws.chars">ký tự</span>
             </div>
@@ -67,8 +70,8 @@
           <div class="flex items-start gap-3 p-4 rounded-xl bg-tertiary/10 border border-tertiary/20 mb-4">
             <span class="material-symbols-outlined text-tertiary" style="font-size:22px;flex-shrink:0">sentiment_very_satisfied</span>
             <div>
-              <p class="text-sm font-semibold text-tertiary">Emotional TTS — AI đọc với cảm xúc tự nhiên!</p>
-              <p class="text-xs text-on-surface-variant mt-0.5">Giọng của bạn + cảm xúc tự động thay đổi theo nội dung văn bản</p>
+              <p class="text-sm font-semibold text-tertiary" data-i18n="em.banner.title">Emotional TTS — AI đọc với cảm xúc tự nhiên!</p>
+              <p class="text-xs text-on-surface-variant mt-0.5" data-i18n="em.banner.sub">Giọng của bạn + cảm xúc tự động thay đổi theo nội dung văn bản</p>
             </div>
           </div>
           <!-- Emotional voice selector -->

@@ -1,0 +1,22 @@
+{% if legal %}
+{% if legal.sections %}
+{% set section_num = namespace(value=0) %}
+{% for section in legal.sections %}
+{% if section.title or (section.content|striptags|trim) %}
+{% set section_num.value = section_num.value + 1 %}
+<div class="legal-card">
+    <h2>
+        <span class="section-num">{{ section_num.value }}</span>
+        {{ section.title }}
+    </h2>
+    <div class="legal-section-body">{{ section.content | safe }}</div>
+</div>
+{% endif %}
+{% endfor %}
+{% elif legal.body_html and (legal.body_html|striptags|trim) %}
+<div class="legal-card">
+    <div class="legal-section-body legal-dynamic-html">{{ legal.body_html | safe }}</div>
+</div>
+{% endif %}
+<p class="last-updated">{% if legal.updated %}<span data-i18n="legal.updated_prefix">Cập nhật:</span> {{ legal.updated }}{% else %}{% include 'partials/legal_fallback_footer.html' %}{% endif %}</p>
+{% endif %}

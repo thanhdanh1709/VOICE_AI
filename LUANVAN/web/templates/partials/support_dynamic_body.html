@@ -1,0 +1,48 @@
+{% if support %}
+<div class="contact-grid">
+    {% for card in support.contact_cards %}
+    <a href="{{ support_card_href(card) }}" class="contact-card">
+        <div class="contact-card-icon">{{ card.icon }}</div>
+        <div class="contact-card-title">{{ card.title }}</div>
+        <div class="contact-card-desc">{{ card.desc }}</div>
+        <div class="contact-card-link">{{ support_link_text(card) }}</div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if support.guides_title %}
+<div class="section-title">{{ support.guides_title }}</div>
+{% endif %}
+
+{% for guide in support.guides %}
+<div class="guide-card">
+    <h3>{{ guide.title }}</h3>
+    <div class="guide-steps">
+        {% for step in guide.steps %}
+        <div class="guide-step">
+            <span class="guide-step-num">{{ loop.index }}</span>
+            <div class="guide-step-text">{{ step.text | safe }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% if support.faq_title %}
+<div class="section-title">{{ support.faq_title }}</div>
+{% endif %}
+
+<div class="faq-list">
+    {% for faq in support.faqs %}
+    <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">
+            {{ faq.question }}
+            <span class="faq-arrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </div>
+        <div class="faq-a">{{ faq.answer_html | safe }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

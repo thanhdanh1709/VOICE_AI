@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice Admin — Cấu hình chính sách</title>
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-console.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/legal-pages.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="ac-layout ac-body">
+
+{% set nav_active = 'policies' %}
+{% include 'partials/admin_sidebar.html' %}
+{% include 'partials/admin_mobile_shell.html' %}
+
+<div class="admin-main-shell">
+  {% set ac_header_title_key = 'admin.cfg.policies_title' %}
+  {% set ac_header_title_default = 'Cấu hình chính sách' %}
+  {% set ac_header_subtitle_key = 'admin.cfg.policies_sub' %}
+  {% set ac_header_subtitle_default = 'Điều khoản, chính sách quyền riêng tư, xóa dữ liệu, thanh toán — lưu file JSON' %}
+  {% include 'partials/admin_unified_header.html' %}
+
+  <main class="ac-main ac-main-padded admin-main-with-header">
+    <div id="apStatus" class="as-status"></div>
+
+    <div class="ac-tabs-row" id="adminPoliciesMainTabs" style="margin-bottom:1.25rem">
+      <button type="button" class="legal-page-tab active" data-main-tab="legal" data-i18n="admin.cfg.main_tab.legal">Trang pháp lý</button>
+      <button type="button" class="legal-page-tab" data-main-tab="support" data-i18n="admin.cfg.main_tab.support">Hỗ trợ & FAQ</button>
+    </div>
+
+    <section id="panel-legal" class="glass-panel">
+      <h2 class="ac-section-title">
+        <span class="material-symbols-outlined">gavel</span>
+        <span data-i18n="admin.cfg.legal_title">Trang pháp lý</span>
+      </h2>
+      <p class="ac-desc" data-i18n="admin.cfg.legal_desc">Mỗi mục = một thẻ nội dung trên trang công khai (giữ layout cũ: tiêu đề + danh sách + ô ghi chú/cảnh báo). Nội dung mặc định được tải sẵn khi chưa lưu tùy chỉnh.</p>
+      <p class="ac-muted-xs ac-file-note" style="margin-bottom:1rem">
+        <span class="material-symbols-outlined" style="font-size:14px">save</span>
+        <span data-i18n="admin.cfg.legal_file_note">Thay đổi được ghi vào legal_content.json — không lưu database.</span>
+      </p>
+
+      <div class="ac-tabs-row" id="legalPageTabs">
+        <button type="button" class="legal-page-tab active" data-legal-page="terms" data-i18n="admin.cfg.legal_tab.terms">Điều khoản sử dụng</button>
+        <button type="button" class="legal-page-tab" data-legal-page="privacy" data-i18n="admin.cfg.legal_tab.privacy">Chính sách quyền riêng tư</button>
+        <button type="button" class="legal-page-tab" data-legal-page="data_deletion" data-i18n="admin.cfg.legal_tab.data_deletion">Chính sách xóa dữ liệu</button>
+        <button type="button" class="legal-page-tab" data-legal-page="payment" data-i18n="admin.cfg.legal_tab.payment">Điều khoản thanh toán</button>
+        <button type="button" class="legal-page-tab" data-legal-page="user_guide" data-i18n="admin.cfg.legal_tab.user_guide">Hướng dẫn sử dụng</button>
+        <button type="button" class="legal-page-tab" data-legal-page="installation_guide" data-i18n="admin.cfg.legal_tab.installation_guide">Hướng dẫn cài đặt</button>
+      </div>
+
+      <div class="as-field">
+        <label for="legalPageUpdated" data-i18n="admin.cfg.legal_updated">Ngày cập nhật hiển thị</label>
+        <input id="legalPageUpdated" class="as-input" type="text" data-i18n-placeholder="admin.cfg.legal_updated_ph" placeholder="VD: Tháng 6 năm 2026">
+      </div>
+
+      <div id="legalSectionsList" style="margin-bottom:1rem"></div>
+
+      <button type="button" id="addLegalSectionBtn" class="as-btn-sm" style="margin-bottom:1rem" data-i18n="admin.cfg.add_section">+ Thêm mục nội dung</button>
+
+      <div class="legal-preview-links">
+        <a href="{{ url_for('terms') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_terms">Xem Điều khoản →</a>
+        <a href="{{ url_for('privacy') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_privacy">Xem Chính sách →</a>
+        <a href="{{ url_for('data_deletion') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_deletion">Xem Xóa dữ liệu →</a>
+        <a href="{{ url_for('payment_terms') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_payment">Xem Thanh toán →</a>
+        <a href="{{ url_for('user_guide') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_user_guide">Xem Hướng dẫn SD →</a>
+        <a href="{{ url_for('installation_guide') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_installation_guide">Xem Cài đặt →</a>
+      </div>
+
+      <button type="button" id="saveLegalBtn" class="as-btn-primary" style="margin-top:1rem">
+        <span class="material-symbols-outlined" style="font-size:18px">save</span>
+        <span data-i18n="admin.cfg.save_all_legal">Lưu tất cả trang pháp lý</span>
+      </button>
+    </section>
+
+    <section id="panel-support" class="glass-panel hidden">
+      <h2 class="ac-section-title">
+        <span class="material-symbols-outlined">support_agent</span>
+        <span data-i18n="admin.cfg.support_title">Trang Hỗ trợ & FAQ</span>
+      </h2>
+      <p class="ac-desc" data-i18n="admin.cfg.support_desc">Kênh liên hệ, hướng dẫn sử dụng và câu hỏi thường gặp trên /support. Nội dung EN tự dịch khi người dùng chọn English.</p>
+      <p class="ac-muted-xs ac-file-note" style="margin-bottom:1rem">
+        <span class="material-symbols-outlined" style="font-size:14px">save</span>
+        <span data-i18n="admin.cfg.support_file_note">Thay đổi được ghi vào support_content.json — không lưu database.</span>
+      </p>
+
+      <h3 class="text-sm font-bold text-white mb-3" data-i18n="admin.cfg.support_cards_title">Kênh liên hệ</h3>
+      <div id="supportCardsList" style="margin-bottom:1.5rem"></div>
+      <button type="button" id="addSupportCardBtn" class="as-btn-sm" style="margin-bottom:1.5rem" data-i18n="admin.cfg.add_contact_card">+ Thêm thẻ liên hệ</button>
+
+      <div class="as-field">
+        <label for="supportGuidesTitle" data-i18n="admin.cfg.support_guides_title">Tiêu đề phần hướng dẫn</label>
+        <input id="supportGuidesTitle" class="as-input" type="text" placeholder="📖 Hướng dẫn sử dụng">
+      </div>
+
+      <div id="supportGuidesList" style="margin-bottom:1rem"></div>
+      <button type="button" id="addSupportGuideBtn" class="as-btn-sm" style="margin-bottom:1.5rem" data-i18n="admin.cfg.add_guide">+ Thêm hướng dẫn</button>
+
+      <div class="as-field">
+        <label for="supportFaqTitle" data-i18n="admin.cfg.support_faq_title">Tiêu đề phần FAQ</label>
+        <input id="supportFaqTitle" class="as-input" type="text" placeholder="❓ Câu hỏi thường gặp">
+      </div>
+
+      <div id="supportFaqsList" style="margin-bottom:1rem"></div>
+      <button type="button" id="addSupportFaqBtn" class="as-btn-sm" style="margin-bottom:1rem" data-i18n="admin.cfg.add_faq">+ Thêm câu hỏi</button>
+
+      <div class="legal-preview-links">
+        <a href="{{ url_for('support') }}" target="_blank" rel="noopener" data-i18n="admin.cfg.view_support">Xem trang Hỗ trợ →</a>
+      </div>
+
+      <button type="button" id="saveSupportBtn" class="as-btn-primary" style="margin-top:1rem">
+        <span class="material-symbols-outlined" style="font-size:18px">save</span>
+        <span data-i18n="admin.cfg.save_support">Lưu nội dung hỗ trợ</span>
+      </button>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_mobile_nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_policies.js') }}"></script>
+</body>
+</html>

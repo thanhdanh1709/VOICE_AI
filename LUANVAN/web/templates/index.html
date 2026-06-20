@@ -427,8 +427,12 @@ tailwind.config = {
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <!-- Brand -->
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
+      {% if site_settings.logo_url %}
+      <img src="{{ url_for('static', filename=site_settings.logo_url) }}" alt="{{ site_settings.site_name or 'VietVoice' }}" class="h-8 w-auto max-w-[120px] object-contain">
+      {% else %}
       <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
-      VietVoice
+      {% endif %}
+      {{ site_settings.site_name or 'VietVoice' }}
     </a>
 
     <!-- Nav links -->

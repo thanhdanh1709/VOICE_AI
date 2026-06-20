@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html class="dark" lang="vi" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietVoice Admin — Cấu hình Site</title>
+<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-console.css') }}">
+</head>
+<body class="ac-layout ac-body">
+
+{% set nav_active = 'settings' %}
+{% include 'partials/admin_sidebar.html' %}
+{% include 'partials/admin_mobile_shell.html' %}
+
+<div class="admin-main-shell">
+  {% set ac_header_title_key = 'admin.cfg.settings_title' %}
+  {% set ac_header_title_default = 'Cấu hình Site' %}
+  {% set ac_header_subtitle_block %}
+  <span data-i18n="admin.cfg.settings_sub">Logo, email, gói cước · Chính sách tại</span>
+  <a href="{{ url_for('admin_policies') }}" class="ac-link-violet" data-i18n="admin.nav.policies">Cấu hình chính sách</a>
+  {% endset %}
+  {% include 'partials/admin_unified_header.html' %}
+
+  <main class="ac-main ac-main-padded admin-main-with-header">
+    <div id="asStatus" class="as-status"></div>
+
+    <div class="ac-tabs-row ac-settings-tabs">
+      <button type="button" class="as-tab active" data-tab="brand"><span class="material-symbols-outlined" style="font-size:16px">image</span> <span data-i18n="admin.cfg.tab.brand">Thương hiệu</span></button>
+      <button type="button" class="as-tab" data-tab="email"><span class="material-symbols-outlined" style="font-size:16px">mail</span> <span data-i18n="admin.cfg.tab.email">Email & Liên hệ</span></button>
+      <button type="button" class="as-tab" data-tab="pricing"><span class="material-symbols-outlined" style="font-size:16px">payments</span> <span data-i18n="admin.cfg.tab.pricing">Gói cước</span></button>
+    </div>
+
+    <!-- Brand -->
+    <section id="panel-brand" class="as-panel glass-panel">
+      <h2 class="ac-section-title mb-4">
+        <span class="material-symbols-outlined">branding_watermark</span>
+        <span data-i18n="admin.cfg.brand_title">Logo & Tên site</span>
+      </h2>
+      <div class="as-field">
+        <label for="siteName" data-i18n="admin.cfg.site_name">Tên hiển thị</label>
+        <input id="siteName" class="as-input" type="text" placeholder="VietVoice">
+      </div>
+      <div class="as-field">
+        <label data-i18n="admin.cfg.logo_label">Logo website</label>
+        <img id="logoPreview" class="hidden mb-3" alt="Logo preview">
+        <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="as-input">
+        <p class="ac-muted-xs mt-2" data-i18n="admin.cfg.logo_hint">PNG, JPG, WebP hoặc SVG — tối đa 2MB</p>
+      </div>
+      <div class="as-actions-row">
+        <button type="button" id="uploadLogoBtn" class="as-btn-primary">
+          <span class="material-symbols-outlined" style="font-size:18px">upload</span>
+          <span data-i18n="admin.cfg.upload_logo">Upload logo</span>
+        </button>
+        <button type="button" id="saveGeneralBtn" class="as-btn-primary">
+          <span class="material-symbols-outlined" style="font-size:18px">save</span>
+          <span data-i18n="admin.cfg.save_config">Lưu cấu hình</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Email -->
+    <section id="panel-email" class="as-panel glass-panel hidden">
+      <h2 class="ac-section-title mb-4" data-i18n="admin.cfg.email_title">Email & Liên hệ</h2>
+      <div class="as-panel-email-grid">
+        <div class="as-field">
+          <label for="supportEmail" data-i18n="admin.cfg.support_email">Email hỗ trợ</label>
+          <input id="supportEmail" class="as-input" type="email" placeholder="support@vietvoice.app">
+        </div>
+        <div class="as-field">
+          <label for="contactEmail" data-i18n="admin.cfg.contact_email">Email liên hệ (form)</label>
+          <input id="contactEmail" class="as-input" type="email" placeholder="support@vietvoice.app">
+        </div>
+        <div class="as-field">
+          <label for="smtpFromDisplay" data-i18n="admin.cfg.smtp_display">Email hiển thị (SMTP)</label>
+          <input id="smtpFromDisplay" class="as-input" type="text" placeholder="noreply@vietvoice.app">
+        </div>
+        <div class="as-field">
+          <label for="companyName" data-i18n="admin.cfg.company_name">Tên công ty</label>
+          <input id="companyName" class="as-input" type="text">
+        </div>
+        <div class="as-field">
+          <label for="companyPhone" data-i18n="admin.cfg.company_phone">Điện thoại</label>
+          <input id="companyPhone" class="as-input" type="text">
+        </div>
+      </div>
+      <div class="env-note">
+        <strong data-i18n="admin.cfg.smtp_env_prefix">SMTP thực tế (.env):</strong>
+        From: <span id="smtpFromEnv"></span> · Host: <span id="smtpHostEnv"></span>
+        <br><span data-i18n="admin.cfg.smtp_env_suffix">Để đổi SMTP gửi mail hệ thống, cập nhật SMTP_* trong file .env.local.</span>
+      </div>
+      <button type="button" id="saveGeneralBtn2" class="as-btn-primary mt-4" onclick="document.getElementById('saveGeneralBtn').click()">
+        <span class="material-symbols-outlined" style="font-size:18px">save</span>
+        <span data-i18n="admin.cfg.save_email">Lưu email & liên hệ</span>
+      </button>
+    </section>
+
+    <!-- Pricing -->
+    <section id="panel-pricing" class="as-panel glass-panel hidden">
+      <h2 class="ac-section-title mb-2" data-i18n="admin.cfg.pricing_title">Gói cước (subscription_packages)</h2>
+      <p class="ac-desc" data-i18n="admin.cfg.pricing_hint">Sửa giá/tên/ký tự rồi bấm Lưu trên mỗi dòng (giá 0 = gói miễn phí). Trang Bảng giá cập nhật khi tải lại /pricing.</p>
+      <div class="as-table-responsive mb-6">
+        <table class="as-table">
+          <thead>
+            <tr>
+              <th data-i18n="admin.cfg.pkg_name">Tên gói</th>
+              <th data-i18n="admin.cfg.pkg_chars">Ký tự</th>
+              <th data-i18n="admin.cfg.pkg_price">Giá (VND)</th>
+              <th data-i18n="admin.cfg.pkg_days">Ngày</th>
+              <th class="text-center" data-i18n="admin.cfg.pkg_visible">Hiển thị</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="packagesTableBody"></tbody>
+        </table>
+      </div>
+      <h3 class="ac-section-title ac-section-title-sm mb-3" data-i18n="admin.cfg.add_pkg_title">Thêm gói mới</h3>
+      <div class="as-pkg-add-grid">
+        <input id="newPkgName" class="as-input" type="text" data-i18n-placeholder="admin.cfg.new_pkg_name" placeholder="Tên gói">
+        <input id="newPkgChars" class="as-input" type="number" data-i18n-placeholder="admin.cfg.new_pkg_chars" placeholder="Số ký tự" min="1">
+        <input id="newPkgPrice" class="as-input" type="number" data-i18n-placeholder="admin.cfg.new_pkg_price" placeholder="Giá VND" min="0">
+        <input id="newPkgDays" class="as-input" type="number" data-i18n-placeholder="admin.cfg.new_pkg_days" placeholder="Số ngày" value="30" min="1">
+      </div>
+      <button type="button" id="addPackageBtn" class="as-btn-primary">
+        <span class="material-symbols-outlined" style="font-size:18px">add</span>
+        <span data-i18n="admin.cfg.add_pkg_btn">Thêm gói</span>
+      </button>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_mobile_nav.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_settings.js') }}"></script>
+</body>
+</html>

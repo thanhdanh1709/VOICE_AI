@@ -3,24 +3,41 @@
  */
 
 let selectedPackageId = null;
+let paymentHistoryPage = 1;
+const PAYMENT_HISTORY_PER_PAGE = 8;
 
 // i18n helper — falls back to hardcoded value if VVi18n not ready
-function _t(key, fallback) {
-    return (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+function _t(key, fallback, vars) {
+    let s = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+    if (vars && s) {
+        Object.keys(vars).forEach((k) => {
+            s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+        });
+    }
+    return s;
 }
 
 function initPricingPage() {
     if (!document.getElementById('pricingGrid')) return;
     loadSubscriptionStatus();
     loadPackages();
+    loadPaymentHistory();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     initPricingPage();
 
+    // Tải lại gói khi quay lại tab / trang (sau khi sửa trong admin)
+    window.addEventListener('pageshow', () => {
+        if (document.getElementById('pricingGrid')) loadPackages();
+    });
+
     // Re-render package cards whenever language is switched
     window.addEventListener('vv:langChanged', () => {
         loadPackages();
+        if (document.getElementById('paymentHistoryBody')) {
+            loadPaymentHistory(paymentHistoryPage);
+        }
     });
     
     // QR Modal close
@@ -66,7 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reload subscription numbers
         loadSubscriptionStatus();
+        loadPaymentHistory(paymentHistoryPage);
     });
+
+    if (window.VVPagination) {
+        VVPagination.register('paymentHistory', (p) => loadPaymentHistory(p));
+    }
 });
 
 async function loadSubscriptionStatus() {
@@ -105,17 +127,59 @@ async function loadSubscriptionStatus() {
 }
 
 async function loadPackages() {
+    const grid = document.getElementById('pricingGrid');
+    if (!grid) return;
+
+  // Dữ liệu server render (luôn mới khi mở /pricing)
+    const initialEl = document.getElementById('pricingPackagesJson');
+    if (initialEl && initialEl.textContent.trim()) {
+        try {
+            const initial = JSON.parse(initialEl.textContent);
+            if (Array.isArray(initial) && initial.length) {
+                renderPackagesToGrid(initial, grid);
+            }
+        } catch (e) {
+            console.warn('pricingPackagesJson parse error', e);
+        }
+    }
+
     try {
-        const response = await fetch('/api/packages');
+        const response = await fetch('/api/packages', { cache: 'no-store' });
         const data = await response.json();
 
-        const grid = document.getElementById('pricingGrid');
-
         if (data.success && data.packages) {
-            const featuredIndex = Math.min(2, data.packages.length - 1);
+            renderPackagesToGrid(data.packages, grid);
+        } else if (!initialEl || !initialEl.textContent.trim()) {
+            grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
+                <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">error_outline</span>
+                <p class="text-sm">${_t('pkg.error.load', 'Không thể tải gói dịch vụ. Vui lòng thử lại.')}</p>
+            </div>`;
+        }
+    } catch (error) {
+        console.error('Error loading packages:', error);
+        if (!initialEl || !initialEl.textContent.trim()) {
+            grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
+            <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">wifi_off</span>
+            <p class="text-sm">${_t('pkg.error.connection', 'Lỗi kết nối. Vui lòng tải lại trang.')}</p>
+        </div>`;
+        }
+    }
+}
 
-            grid.innerHTML = data.packages.map((pkg, index) => {
-                const isFree    = pkg.price === 0;
+function renderPackagesToGrid(packages, grid) {
+    if (!packages || !packages.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
+            <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">error_outline</span>
+            <p class="text-sm">${_t('pkg.error.load', 'Không thể tải gói dịch vụ. Vui lòng thử lại.')}</p>
+        </div>`;
+        return;
+    }
+
+    const featuredIndex = Math.min(2, packages.length - 1);
+
+    grid.innerHTML = packages.map((pkg, index) => {
+                const priceNum = Number(pkg.price) || 0;
+                const isFree = priceNum === 0;
                 const isFeatured = index === featuredIndex && !isFree;
 
                 // Feature list items
@@ -141,7 +205,7 @@ async function loadPackages() {
 
                 const priceHtml = isFree
                     ? `<div class="text-2xl font-bold text-primary mt-1">0đ<span class="text-sm text-on-surface-variant font-normal">${_t('pkg.price.forever', '/mãi mãi')}</span></div>`
-                    : `<div class="text-2xl font-bold ${isFeatured ? 'text-tertiary' : 'text-primary'} mt-1">${formatCurrency(pkg.price)}<span class="text-sm text-on-surface-variant font-normal">/${pkg.duration_days} ${_t('pkg.price.days', 'ngày')}</span></div>`;
+                    : `<div class="text-2xl font-bold ${isFeatured ? 'text-tertiary' : 'text-primary'} mt-1">${formatCurrency(priceNum)}<span class="text-sm text-on-surface-variant font-normal">/${pkg.duration_days} ${_t('pkg.price.days', 'ngày')}</span></div>`;
 
                 let btnHtml;
                 if (isFree) {
@@ -164,21 +228,7 @@ async function loadPackages() {
     </ul>
     ${btnHtml}
 </div>`;
-            }).join('');
-        } else {
-            grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
-                <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">error_outline</span>
-                <p class="text-sm">${_t('pkg.error.load', 'Không thể tải gói dịch vụ. Vui lòng thử lại.')}</p>
-            </div>`;
-        }
-    } catch (error) {
-        console.error('Error loading packages:', error);
-        const grid = document.getElementById('pricingGrid');
-        grid.innerHTML = `<div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-2 text-on-surface-variant">
-            <span class="material-symbols-outlined" style="font-size:36px;opacity:0.4">wifi_off</span>
-            <p class="text-sm">${_t('pkg.error.connection', 'Lỗi kết nối. Vui lòng tải lại trang.')}</p>
-        </div>`;
-    }
+    }).join('');
 }
 
 function selectPackage(packageId, isFree) {
@@ -274,6 +324,76 @@ async function verifyBankTransfer() {
                     Kiểm tra ngay`;
             }
         }, 3000);
+    }
+}
+
+function paymentHistoryStatusBadge(status) {
+    if (status === 'completed') {
+        return `<span style="padding:2px 10px;border-radius:9999px;background:rgba(0,159,180,0.15);border:1px solid rgba(47,217,244,0.3);font-size:11px;font-weight:600;color:#2fd9f4">${_t('price.history.status.paid', 'ĐÃ TT')}</span>`;
+    }
+    if (status === 'pending') {
+        return `<span style="padding:2px 10px;border-radius:9999px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);font-size:11px;font-weight:600;color:#f59e0b">${_t('price.history.status.pending', 'Đang chờ')}</span>`;
+    }
+    return status || '—';
+}
+
+function renderPaymentHistoryRow(p) {
+    const date = p.completed_at || p.created_at || '—';
+    const invoiceHtml = p.payment_status === 'completed'
+        ? `<a href="/invoice/${p.id}" class="text-xs font-semibold text-primary hover:underline no-underline">${_t('price.history.invoice', 'Hóa đơn')}</a>`
+        : '<span class="text-on-surface-variant">—</span>';
+    return `
+        <tr class="hover:bg-surface-container/40 transition-colors">
+            <td class="px-4 py-3 font-mono text-xs text-on-surface-variant">${p.transaction_id || '—'}</td>
+            <td class="px-4 py-3 hidden sm:table-cell text-on-surface">${p.package_name || '—'}</td>
+            <td class="px-4 py-3 font-semibold text-tertiary">${formatCurrency(p.amount_vnd)}</td>
+            <td class="px-4 py-3 hidden md:table-cell text-on-surface-variant text-xs">${date}</td>
+            <td class="px-4 py-3">${paymentHistoryStatusBadge(p.payment_status)}</td>
+            <td class="px-4 py-3 text-right">${invoiceHtml}</td>
+        </tr>`;
+}
+
+async function loadPaymentHistory(page = 1) {
+    const loading = document.getElementById('paymentHistoryLoading');
+    const empty = document.getElementById('paymentHistoryEmpty');
+    const table = document.getElementById('paymentHistoryTable');
+    const body = document.getElementById('paymentHistoryBody');
+    if (!body) return;
+
+    if (loading) loading.style.display = 'flex';
+    if (empty) empty.style.display = 'none';
+    if (table) table.style.display = 'none';
+
+    try {
+        const res = await fetch(`/api/user/payments?page=${page}&per_page=${PAYMENT_HISTORY_PER_PAGE}`);
+        const data = await res.json();
+        if (loading) loading.style.display = 'none';
+
+        if (!data.success || !data.payments?.length) {
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+
+        paymentHistoryPage = data.page;
+        body.innerHTML = data.payments.map(renderPaymentHistoryRow).join('');
+        if (table) table.style.display = 'block';
+
+        const wrap = document.getElementById('paymentHistoryPaginationWrap');
+        if (wrap && window.VVPagination) {
+            wrap.style.display = data.total > PAYMENT_HISTORY_PER_PAGE ? 'flex' : 'none';
+            VVPagination.render({
+                id: 'paymentHistory',
+                containerId: 'paymentHistoryPagination',
+                infoId: 'paymentHistoryPaginationInfo',
+                page: data.page,
+                total: data.total,
+                perPage: data.per_page,
+                itemLabel: _t('price.history.item', 'giao dịch'),
+            });
+        }
+    } catch (e) {
+        if (loading) loading.style.display = 'none';
+        console.error('loadPaymentHistory', e);
     }
 }
 
