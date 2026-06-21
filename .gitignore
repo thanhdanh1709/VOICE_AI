@@ -17,5 +17,19 @@ node_modules/
 # Generated / runtime
 uploads/
 audio_outputs/
+processed/
+rvc_training/
+LUANVAN/web/data/
+LUANVAN/web/models/
+
+# AI model weights (large binaries — keep config/docs only)
+models/custom_voices/
+LUANVAN/web/vixtts_model/*.pth
+LUANVAN/web/vixtts_model/*.pt
+*.pth
+*.index
+*.bin
+*.onnx
+*.safetensors
 *.wav
 *.mp3
