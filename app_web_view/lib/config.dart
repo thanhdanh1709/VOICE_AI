@@ -12,11 +12,11 @@ class AppConfig {
   static const String webBaseUrl = 'https://temperate-marcelle-unloaning.ngrok-free.dev';
 
   // ── OAUTH DEEP LINK ────────────────────────────────────────
-  /// Scheme cho Deep Link callback sau Google OAuth
-  static const String callbackScheme = 'ttsvietnam';
+  /// Scheme cho Deep Link callback sau Google OAuth (phải khớp AndroidManifest & Google Cloud)
+  static const String callbackScheme = 'petai';
 
   // ── APP INFO ───────────────────────────────────────────────
-  static const String appName = 'TTS Tiếng Việt';
+  static const String appName = 'VietVoice';
   static const String appVersion = '1.0.0';
 
   // ── COMPUTED ───────────────────────────────────────────────
