@@ -1,5 +1,6 @@
 ﻿venv310/
 __pycache__/
+_recovered/
 *.pyc
 .env
 *.egg-info/
