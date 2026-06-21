@@ -26,6 +26,63 @@
       </div>
     </header>
 
+    <!-- ── Gói & sử dụng ── -->
+    <div class="card mb-6" id="planUsageCard">
+      <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">bolt</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.plan.title">Gói & sử dụng</h2>
+        </div>
+        <div class="flex gap-2">
+          <a href="{{ url_for('pricing') }}" class="btn-primary no-underline" style="padding:8px 16px;font-size:13px">
+            <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+            <span data-i18n="prof.plan.upgrade">Nâng cấp</span>
+          </a>
+        </div>
+      </div>
+
+      <div id="planLoading" class="flex items-center gap-3 py-4 text-on-surface-variant text-sm">
+        <div class="spin" style="width:18px;height:18px;border:2px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%"></div>
+        <span data-i18n="common.loading">Đang tải...</span>
+      </div>
+
+      <div id="planContent" style="display:none">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.current">Gói hiện tại</p>
+            <p class="text-lg font-bold text-primary" id="planName">—</p>
+          </div>
+          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.expires">Hết hạn / gia hạn</p>
+            <p class="text-lg font-bold text-on-surface" id="planExpiry">—</p>
+            <p class="text-xs text-on-surface-variant mt-0.5" id="planDaysLeft"></p>
+          </div>
+          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
+            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.remaining">Ký tự còn lại</p>
+            <p class="text-lg font-bold text-tertiary" id="planRemaining">—</p>
+          </div>
+        </div>
+
+        <div class="mb-2 flex justify-between text-xs text-on-surface-variant">
+          <span data-i18n="prof.plan.used">Đã dùng</span>
+          <span id="planUsedLabel">0 / 0</span>
+        </div>
+        <div class="h-3 rounded-full bg-surface-container overflow-hidden border border-outline-variant/20 mb-6">
+          <div id="planProgressBar" class="h-full rounded-full transition-all duration-500" style="width:0%;background:linear-gradient(90deg,#6d3bd7,#2fd9f4)"></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide" data-i18n="prof.plan.chart">Ký tự dùng (7 ngày)</p>
+            <span id="usageChartTotal" class="text-xs font-bold text-tertiary">—</span>
+          </div>
+          <div class="usage-chart-panel">
+            <div id="usageChart" class="usage-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
       <!-- ── Card 1: Thông tin cá nhân ── -->
@@ -131,6 +188,139 @@
         {% endif %}
       </div>
 
+      <!-- ── Card: Mặc định TTS ── -->
+      <div class="card">
+        <div class="flex items-center gap-2 mb-6">
+          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">tune</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.tts.title">Mặc định TTS</h2>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-4" data-i18n="prof.tts.desc">Áp dụng khi mở Workspace — không cần chọn lại mỗi lần.</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.voice.basic">Giọng TTS cơ bản</label>
+            <select id="ttsDefaultVoice" class="form-input text-sm">
+              <option value="" data-i18n="prof.tts.voice.default">— Không đặt —</option>
+              {% if system_voices %}
+              <optgroup label="Giọng hệ thống">
+                {% for v in system_voices %}
+                <option value="{{ v.voice_id }}">{{ v.voice_name }}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+              {% if custom_voices %}
+              <optgroup label="Giọng của tôi">
+                {% for v in custom_voices %}
+                <option value="custom_{{ v.id }}">{{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.voice.emotional">Giọng Emotional TTS (viXTTS)</label>
+            <select id="ttsDefaultEmotionalVoice" class="form-input text-sm">
+              <option value="" data-i18n="prof.tts.emotional.default">⭐ Mặc định (base_voice.wav)</option>
+              {% if emotional_voices %}
+              <optgroup label="viXTTS Clone">
+                {% for v in emotional_voices %}
+                <option value="{{ v.id }}">🎙️ {{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
+                {% endfor %}
+              </optgroup>
+              {% endif %}
+            </select>
+            <p class="text-[11px] text-outline mt-1" data-i18n="prof.tts.emotional.hint">Áp dụng cho tab Emotional TTS trong Workspace.</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.pitch">Cao độ (Pitch)</label>
+            <div class="flex items-center gap-3">
+              <input type="range" id="ttsDefaultPitch" min="-12" max="12" value="0" step="1" class="flex-1"/>
+              <span id="ttsPitchVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">0</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.speed">Tốc độ (Speed)</label>
+            <div class="flex items-center gap-3">
+              <input type="range" id="ttsDefaultSpeed" min="0.5" max="2" value="1" step="0.1" class="flex-1"/>
+              <span id="ttsSpeedVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">1.0x</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.format">Định dạng xuất</label>
+              <select id="ttsExportFormat" class="form-input text-sm">
+                <option value="wav">WAV</option>
+                <option value="mp3">MP3</option>
+                <option value="ogg">OGG</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.bitrate">Bitrate</label>
+              <select id="ttsExportBitrate" class="form-input text-sm">
+                <option value="128">128 kbps</option>
+                <option value="192" selected>192 kbps</option>
+                <option value="256">256 kbps</option>
+                <option value="320">320 kbps</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.lang">Ngôn ngữ mặc định</label>
+            <select id="ttsDefaultLang" class="form-input text-sm">
+              <option value="vi">Tiếng Việt</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end">
+          <button type="button" id="btnSaveTts" class="btn-primary" onclick="saveTtsSettings()">
+            <span class="material-symbols-outlined" style="font-size:17px">save</span>
+            <span data-i18n="prof.tts.save">Lưu mặc định TTS</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Card: Thông báo email ── -->
+      <div class="card">
+        <div class="flex items-center gap-2 mb-6">
+          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">notifications</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.notify.title">Thông báo & email</h2>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-4" data-i18n="prof.notify.desc">Gửi email khi có sự kiện quan trọng (cần cấu hình SMTP).</p>
+        <div class="space-y-3">
+          <label class="prof-toggle-row">
+            <div>
+              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.chars">Ký tự sắp hết (&lt;10%)</p>
+            </div>
+            <input type="checkbox" id="notifyCharsLow" class="prof-toggle-input"/>
+          </label>
+          <label class="prof-toggle-row">
+            <div>
+              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.payment">Thanh toán thành công / thất bại</p>
+            </div>
+            <input type="checkbox" id="notifyPayment" class="prof-toggle-input"/>
+          </label>
+          <label class="prof-toggle-row">
+            <div>
+              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.expiry">Gói sắp hết hạn</p>
+            </div>
+            <input type="checkbox" id="notifyPlanExpiry" class="prof-toggle-input"/>
+          </label>
+          <label class="prof-toggle-row">
+            <div>
+              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.marketing">Tin tức sản phẩm</p>
+              <p class="text-xs text-on-surface-variant" data-i18n="prof.notify.marketing.hint">Tùy chọn — bật/tắt marketing</p>
+            </div>
+            <input type="checkbox" id="notifyMarketing" class="prof-toggle-input"/>
+          </label>
+        </div>
+        <div class="mt-6 flex justify-end">
+          <button type="button" id="btnSaveNotify" class="btn-secondary" onclick="saveNotificationSettings()">
+            <span class="material-symbols-outlined" style="font-size:17px">save</span>
+            <span data-i18n="prof.notify.save">Lưu thông báo</span>
+          </button>
+        </div>
+      </div>
+
       <!-- ── Card 3: Lịch sử giao dịch ── -->
       <div class="card lg:col-span-2">
         <div class="flex items-center gap-2 mb-5">
@@ -217,6 +407,29 @@
             </button>
           </div>
 
+        </div>
+      </div>
+
+      <!-- ── Card: Xuất dữ liệu cá nhân ── -->
+      <div class="card lg:col-span-2">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">description</span>
+          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.export.title">Xuất dữ liệu cá nhân</h2>
+        </div>
+        <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.export.desc">
+          Tải báo cáo dễ đọc: tài khoản, gói dịch vụ, giao dịch, lịch sử chuyển đổi (không có file âm thanh).
+        </p>
+        <div class="flex flex-wrap gap-3 items-center">
+          <button type="button" id="btnExportPdf" class="btn-primary" onclick="exportPersonalData('pdf')">
+            <span class="material-symbols-outlined" style="font-size:17px">picture_as_pdf</span>
+            <span data-i18n="prof.export.btn_pdf">Tải PDF</span>
+          </button>
+          <button type="button" id="btnExportDocx" class="btn-secondary" onclick="exportPersonalData('docx')">
+            <span class="material-symbols-outlined" style="font-size:17px">description</span>
+            <span data-i18n="prof.export.btn_docx">Tải Word</span>
+          </button>
+          <a href="{{ url_for('data_deletion') }}" class="btn-secondary no-underline" data-i18n="prof.export.deletion">Chính sách xóa dữ liệu →</a>
+          <a href="{{ url_for('privacy') }}" class="text-xs text-on-surface-variant hover:text-primary no-underline" data-i18n="prof.export.privacy">Chính sách quyền riêng tư</a>
         </div>
       </div>
 

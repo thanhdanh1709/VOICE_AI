@@ -180,8 +180,14 @@
               <span data-i18n="ws.result.processing">Đang xử lý âm thanh</span><span class="vv-audio-loader__ellipsis" aria-hidden="true">...</span>
             </p>
             <p class="vv-audio-loader__sub" data-i18n="ws.result.wait">Vui lòng đợi trong giây lát</p>
-            <div class="vv-audio-loader__track" role="progressbar" aria-valuetext="Processing">
-              <div class="vv-audio-loader__track-fill"></div>
+            <div class="vv-audio-loader__progress">
+              <div class="vv-audio-loader__progress-meta">
+                <span data-i18n="ws.result.progress">Tiến trình</span>
+                <span class="vv-audio-loader__pct" id="audioProgressPct">0%</span>
+              </div>
+              <div class="vv-audio-loader__track" id="audioProgressTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="vv-audio-loader__track-fill" id="audioProgressFill"></div>
+              </div>
             </div>
             <div class="vv-audio-loader__chips" aria-hidden="true">
               <span class="vv-audio-loader__chip" data-i18n="ws.result.step1">Phân tích văn bản</span>

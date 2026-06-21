@@ -14,7 +14,11 @@
   const supportQuillMap = new Map();
 
   function _t(key, fallback, vars) {
-    let s = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t(key) : (fallback || key);
+    let s = fallback || key;
+    if (window.VVi18n && window.VVi18n.t) {
+      const tr = window.VVi18n.t(key);
+      if (tr && tr !== key) s = tr;
+    }
     if (vars && s) {
       Object.keys(vars).forEach((k) => {
         s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
@@ -619,7 +623,10 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (window.VVi18n && window.VVi18n.whenReady) {
+      await window.VVi18n.whenReady;
+    }
     loadLegal();
     loadSupport();
   });

@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html class="dark" lang="vi" data-theme="dark">
+<html lang="vi" data-theme="dark" class="vv-workspace">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>VietVoice AI - Bảng điều khiển Quản trị</title>
 
-<!-- Anti-flash -->
-<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+{% include 'partials/vv_theme_head.html' %}
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -15,39 +14,7 @@
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-container-lowest": "#010f1f",
-        "surface-container-low":    "#0d1c2d",
-        "surface-container":        "#122131",
-        "surface-container-high":   "#1c2b3c",
-        "surface-container-highest":"#273647",
-        "surface-dim":  "#051424",
-        "surface":      "#051424",
-        "surface-bright":"#2c3a4c",
-        "surface-variant":"#273647",
-        "on-surface":        "#d4e4fa",
-        "on-surface-variant":"#cbc3d7",
-        "background":        "#051424",
-        "primary":           "#d0bcff",
-        "primary-container": "#a078ff",
-        "on-primary":        "#3c0091",
-        "inverse-primary":   "#6d3bd7",
-        "tertiary":          "#2fd9f4",
-        "tertiary-container":"#009fb4",
-        "error":             "#ffb4ab",
-        "error-container":   "#93000a",
-        "outline":           "#958ea0",
-        "outline-variant":   "#494454",
-      },
-    },
-  },
-}
-</script>
+{% include 'partials/vv_tailwind_config.html' %}
 
 <style>
   html { overflow-x: hidden; max-width: 100%; }
@@ -645,5 +612,6 @@ function filterUsersTable(query) {
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>

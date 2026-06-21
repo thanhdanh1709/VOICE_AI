@@ -157,6 +157,7 @@ if (!window.VVi18n) {
         'ws.result.hint':       'Enter text and press "Convert" to begin',
         'ws.result.processing': 'Processing audio',
         'ws.result.wait':       'Please wait a moment',
+        'ws.result.progress':   'Progress',
         'ws.result.step1':      'Analyzing text',
         'ws.result.step2':      'Synthesizing voice',
         'ws.result.step3':      'Finalizing audio',
@@ -588,6 +589,42 @@ if (!window.VVi18n) {
         'prof.lang.label':        'Language',
         'prof.lang.desc':         'VI / EN',
         'prof.vvpro.label':       'AI Synthesis Active',
+        'prof.plan.title':        'Plan & usage',
+        'prof.plan.upgrade':      'Upgrade',
+        'prof.plan.current':      'Current plan',
+        'prof.plan.expires':      'Expires / renews',
+        'prof.plan.remaining':    'Characters left',
+        'prof.plan.used':         'Used',
+        'prof.plan.chart':        'Characters used (7 days)',
+        'prof.tts.title':         'Default TTS',
+        'prof.tts.desc':          'Applied when you open Workspace.',
+        'prof.tts.voice':         'Default voice',
+        'prof.tts.voice.basic':   'Basic TTS voice',
+        'prof.tts.voice.emotional': 'Emotional TTS voice (viXTTS)',
+        'prof.tts.voice.default': '— None —',
+        'prof.tts.emotional.default': '⭐ Default (base_voice.wav)',
+        'prof.tts.emotional.hint': 'Applied to Emotional TTS tab in Workspace.',
+        'prof.tts.pitch':         'Pitch',
+        'prof.tts.speed':         'Speed',
+        'prof.tts.format':        'Export format',
+        'prof.tts.bitrate':       'Bitrate',
+        'prof.tts.lang':          'Default language',
+        'prof.tts.save':          'Save TTS defaults',
+        'prof.notify.title':      'Notifications & email',
+        'prof.notify.desc':       'Email alerts for important events (requires SMTP).',
+        'prof.notify.chars':      'Characters running low (<10%)',
+        'prof.notify.payment':    'Payment success / failure',
+        'prof.notify.expiry':     'Plan expiring soon',
+        'prof.notify.marketing':  'Product news',
+        'prof.notify.marketing.hint': 'Optional marketing emails',
+        'prof.notify.save':       'Save notifications',
+        'prof.export.title':      'Export personal data',
+        'prof.export.desc':       'Download a readable report: account, plan, payments, conversion history (no audio files).',
+        'prof.export.btn_pdf':    'Download PDF',
+        'prof.export.btn_docx':   'Download Word',
+        'prof.export.deletion':   'Data deletion policy →',
+        'prof.export.privacy':    'Privacy policy',
+        'prof.export.success':    'Personal data report downloaded',
 
         // ── Auth (expanded) ──
         'auth.login.subtitle':    'Sign in to continue your experience with us',
@@ -887,6 +924,7 @@ if (!window.VVi18n) {
         'ws.result.hint':       'Nhập văn bản và nhấn "Chuyển đổi" để bắt đầu',
         'ws.result.processing': 'Đang xử lý âm thanh',
         'ws.result.wait':       'Vui lòng đợi trong giây lát',
+        'ws.result.progress':   'Tiến trình',
         'ws.result.step1':      'Phân tích văn bản',
         'ws.result.step2':      'Tổng hợp giọng nói',
         'ws.result.step3':      'Hoàn thiện audio',
@@ -1280,6 +1318,42 @@ if (!window.VVi18n) {
         'prof.lang.label':        'Ngôn ngữ',
         'prof.lang.desc':         'VI / EN',
         'prof.vvpro.label':       'AI Synthesis Active',
+        'prof.plan.title':        'Gói & sử dụng',
+        'prof.plan.upgrade':      'Nâng cấp',
+        'prof.plan.current':      'Gói hiện tại',
+        'prof.plan.expires':      'Hết hạn / gia hạn',
+        'prof.plan.remaining':    'Ký tự còn lại',
+        'prof.plan.used':         'Đã dùng',
+        'prof.plan.chart':        'Ký tự dùng (7 ngày)',
+        'prof.tts.title':         'Mặc định TTS',
+        'prof.tts.desc':          'Áp dụng khi mở Workspace.',
+        'prof.tts.voice':         'Giọng mặc định',
+        'prof.tts.voice.basic':   'Giọng TTS cơ bản',
+        'prof.tts.voice.emotional': 'Giọng Emotional TTS (viXTTS)',
+        'prof.tts.voice.default': '— Không đặt —',
+        'prof.tts.emotional.default': '⭐ Mặc định (base_voice.wav)',
+        'prof.tts.emotional.hint': 'Áp dụng cho tab Emotional TTS trong Workspace.',
+        'prof.tts.pitch':         'Cao độ (Pitch)',
+        'prof.tts.speed':         'Tốc độ (Speed)',
+        'prof.tts.format':        'Định dạng xuất',
+        'prof.tts.bitrate':       'Bitrate',
+        'prof.tts.lang':          'Ngôn ngữ mặc định',
+        'prof.tts.save':          'Lưu mặc định TTS',
+        'prof.notify.title':      'Thông báo & email',
+        'prof.notify.desc':       'Gửi email khi có sự kiện quan trọng (cần SMTP).',
+        'prof.notify.chars':      'Ký tự sắp hết (<10%)',
+        'prof.notify.payment':    'Thanh toán thành công / thất bại',
+        'prof.notify.expiry':     'Gói sắp hết hạn',
+        'prof.notify.marketing':  'Tin tức sản phẩm',
+        'prof.notify.marketing.hint': 'Tùy chọn — marketing',
+        'prof.notify.save':       'Lưu thông báo',
+        'prof.export.title':      'Xuất dữ liệu cá nhân',
+        'prof.export.desc':       'Tải báo cáo dễ đọc: tài khoản, gói dịch vụ, giao dịch, lịch sử chuyển đổi (không có file audio).',
+        'prof.export.btn_pdf':    'Tải PDF',
+        'prof.export.btn_docx':   'Tải Word',
+        'prof.export.deletion':   'Chính sách xóa dữ liệu →',
+        'prof.export.privacy':    'Chính sách quyền riêng tư',
+        'prof.export.success':    'Đã tải báo cáo dữ liệu',
 
         'auth.login.subtitle':    'Đăng nhập để tiếp tục trải nghiệm cùng chúng tôi',
         'auth.login.or':          'hoặc',
@@ -1510,6 +1584,8 @@ if (!window.VVi18n) {
         }
         dictionariesReady = true;
     }
+
+    const whenReady = loadDictionaries();
 
     function ensureLoadingOverlay() {
         let el = document.getElementById('vv-i18n-loading');
@@ -1908,7 +1984,7 @@ if (!window.VVi18n) {
     function getLang() { return currentLang; }
 
     async function boot() {
-        await loadDictionaries();
+        await whenReady;
         const gen = translateGeneration;
         await applyTranslations(gen);
         if (document.body.hasAttribute('data-landing-page') && window.VVLanding && window.VVLanding.applyLandingLang) {
@@ -1923,7 +1999,7 @@ if (!window.VVi18n) {
     }
 
     window.VVi18n = {
-        t, msg, resolveApiMessage, toggle, setLanguage, getLang, applyTranslations, translateText, callTranslateAPI,
+        t, msg, resolveApiMessage, toggle, setLanguage, getLang, applyTranslations, translateText, callTranslateAPI, whenReady,
     };
     window.__ = window.VVi18n.t;
     window.__msg = window.VVi18n.msg;

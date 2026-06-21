@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="vi" data-theme="dark">
+<html lang="vi" data-theme="dark" class="vv-workspace">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -7,52 +7,12 @@
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
 <title data-i18n="prof.title">Hồ sơ cá nhân - VietVoice</title>
 
-<!-- Anti-flash -->
-<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+{% include 'partials/vv_theme_head.html' %}
 
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-container-lowest": "#010f1f",
-        "surface-container-low":    "#0d1c2d",
-        "surface-container":        "#122131",
-        "surface-container-high":   "#1c2b3c",
-        "surface-container-highest":"#273647",
-        "surface-dim":  "#051424",
-        "surface":      "#051424",
-        "surface-bright":"#2c3a4c",
-        "surface-variant":"#273647",
-        "on-surface":        "#d4e4fa",
-        "on-surface-variant":"#cbc3d7",
-        "on-background":     "#d4e4fa",
-        "background":        "#051424",
-        "primary":           "#d0bcff",
-        "primary-fixed":     "#e9ddff",
-        "primary-container": "#a078ff",
-        "on-primary":        "#3c0091",
-        "inverse-primary":   "#6d3bd7",
-        "secondary":         "#bec6e0",
-        "secondary-container":"#3f465c",
-        "tertiary":          "#2fd9f4",
-        "tertiary-container":"#009fb4",
-        "on-tertiary":       "#00363e",
-        "error":             "#ffb4ab",
-        "error-container":   "#93000a",
-        "outline":           "#958ea0",
-        "outline-variant":   "#494454",
-        "inverse-surface":   "#d4e4fa",
-        "surface-tint":      "#d0bcff",
-      },
-    },
-  },
-}
-</script>
+{% include 'partials/vv_tailwind_config.html' %}
 
 <style>
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -128,6 +88,116 @@ tailwind.config = {
   .btn-secondary:hover { background: rgba(28,43,60,0.9); border-color: rgba(208,188,255,0.35); }
   .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  .prof-toggle-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 12px 14px; border-radius: 12px;
+    background: rgba(18,33,49,0.5); border: 1px solid rgba(73,68,84,0.35);
+    cursor: pointer;
+  }
+  .prof-toggle-input {
+    width: 18px; height: 18px; accent-color: #a078ff; cursor: pointer;
+  }
+  .usage-chart-panel {
+    background: rgba(10, 20, 32, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px 10px 8px;
+  }
+  .usage-chart {
+    position: relative;
+    width: 100%;
+  }
+  .usage-line-svg {
+    display: block;
+    width: 100%;
+    height: 108px;
+    overflow: visible;
+  }
+  .usage-line-grid line {
+    stroke: rgba(148, 163, 184, 0.1);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+  .usage-line-area {
+    fill: url(#usageAreaGrad);
+    opacity: 0.85;
+  }
+  .usage-line-stroke {
+    fill: none;
+    stroke: url(#usageLineGrad);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .usage-line-dot {
+    fill: #0a1520;
+    stroke: #a78bfa;
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.15s ease, stroke 0.15s ease;
+  }
+  .usage-line-dot.is-today {
+    stroke: #2fd9f4;
+    fill: #2fd9f4;
+  }
+  .usage-line-dot.is-active,
+  .usage-line-dot:hover {
+    r: 5;
+    stroke-width: 2.5;
+  }
+  .usage-line-dot.is-today.is-active,
+  .usage-line-dot.is-today:hover {
+    fill: #67e8f9;
+    stroke: #2fd9f4;
+  }
+  .usage-line-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 0 2px;
+  }
+  .usage-line-label {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1;
+    min-width: 0;
+  }
+  .usage-line-label.is-today {
+    color: #2fd9f4;
+  }
+  .usage-line-tooltip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, calc(-100% - 8px));
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(12, 22, 36, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 11px;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  }
+  .usage-line-tooltip.is-visible {
+    opacity: 1;
+  }
+  .usage-line-tooltip-date {
+    display: block;
+    font-size: 9px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-bottom: 1px;
+  }
+
   .avatar-upload-wrap {
     position: relative;
     width: 4rem;
@@ -201,7 +271,7 @@ tailwind.config = {
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
 <!-- ═══ TOP NAVBAR ═══ -->
-<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+<nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
       <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
@@ -223,7 +293,7 @@ tailwind.config = {
         <span id="charsNavCount">...</span>
       </a>
       <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
-        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+        <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
@@ -341,6 +411,7 @@ tailwind.config = {
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
 <script>
 // ── Chars badge ──
@@ -700,13 +771,347 @@ async function submitDeleteAccountRequest() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadTransactions(1);
   updateDeleteAccountUI(null);
   loadDeleteAccountStatus();
+  bindTtsSliders();
+  await loadUserSettings();
+  loadPlanUsage();
 });
 
-// Force dark background on all inputs (override browser autofill)
+function fmtNum(n) {
+  const x = Number(n) || 0;
+  if (x >= 1000000) return (x / 1000000).toFixed(1) + 'M';
+  if (x >= 1000) return (x / 1000).toFixed(1) + 'K';
+  return x.toLocaleString('vi-VN');
+}
+
+function renderUsageChart(chartEl, series) {
+  if (!chartEl || !series || !series.length) return;
+
+  const W = 400;
+  const H = 88;
+  const padX = 16;
+  const padTop = 10;
+  const padBottom = 6;
+  const plotW = W - padX * 2;
+  const plotH = H - padTop - padBottom;
+  const bottom = padTop + plotH;
+
+  const values = series.map(d => Number(d.characters) || 0);
+  const maxVal = Math.max(...values);
+  const max = Math.max(1, maxVal);
+  const weekTotal = values.reduce((a, b) => a + b, 0);
+  const totalEl = document.getElementById('usageChartTotal');
+  if (totalEl) totalEl.textContent = fmtNum(weekTotal) + ' ký tự / 7 ngày';
+
+  const n = series.length;
+  const points = series.map((d, i) => {
+    const x = padX + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+    const y = bottom - (values[i] / max) * plotH;
+    return { x, y, label: d.label, val: values[i], i, isToday: i === n - 1 };
+  });
+
+  const lineD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaD = `${lineD} L${points[n - 1].x.toFixed(1)},${bottom} L${points[0].x.toFixed(1)},${bottom} Z`;
+
+  const gridLines = [0.25, 0.5, 0.75].map(r => {
+    const gy = padTop + plotH * (1 - r);
+    return `<line x1="${padX}" y1="${gy.toFixed(1)}" x2="${W - padX}" y2="${gy.toFixed(1)}"/>`;
+  }).join('');
+
+  const dots = points.map(p => {
+    const cls = 'usage-line-dot' + (p.isToday ? ' is-today' : '');
+    return `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" data-i="${p.i}"/>`;
+  }).join('');
+
+  const labels = series.map((d, i) => {
+    const cls = 'usage-line-label' + (i === n - 1 ? ' is-today' : '');
+    return `<span class="${cls}">${d.label}</span>`;
+  }).join('');
+
+  chartEl.innerHTML =
+    '<div class="usage-line-tooltip" id="usageLineTooltip">' +
+      '<span class="usage-line-tooltip-date"></span>' +
+      '<span class="usage-line-tooltip-val"></span>' +
+    '</div>' +
+    `<svg class="usage-line-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">` +
+      '<defs>' +
+        '<linearGradient id="usageAreaGrad" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#a78bfa" stop-opacity="0.35"/>' +
+          '<stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="usageLineGrad" x1="0" y1="0" x2="1" y2="0">' +
+          '<stop offset="0%" stop-color="#8b5cf6"/>' +
+          '<stop offset="100%" stop-color="#2fd9f4"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      `<g class="usage-line-grid">${gridLines}</g>` +
+      `<path class="usage-line-area" d="${areaD}"/>` +
+      `<path class="usage-line-stroke" d="${lineD}"/>` +
+      dots +
+    '</svg>' +
+    `<div class="usage-line-labels">${labels}</div>`;
+
+  const tooltip = chartEl.querySelector('#usageLineTooltip');
+  const dateEl = tooltip && tooltip.querySelector('.usage-line-tooltip-date');
+  const valEl = tooltip && tooltip.querySelector('.usage-line-tooltip-val');
+  const dotsEl = chartEl.querySelectorAll('.usage-line-dot');
+  const svgEl = chartEl.querySelector('.usage-line-svg');
+
+  function showTip(pt, clientX) {
+    if (!tooltip || !dateEl || !valEl) return;
+    dotsEl.forEach(d => d.classList.remove('is-active'));
+    const dot = chartEl.querySelector(`.usage-line-dot[data-i="${pt.i}"]`);
+    if (dot) dot.classList.add('is-active');
+    dateEl.textContent = pt.label;
+    valEl.textContent = pt.val.toLocaleString('vi-VN') + ' ký tự';
+    const rect = chartEl.getBoundingClientRect();
+    const xPct = pt.x / W;
+    tooltip.style.left = (xPct * 100) + '%';
+    tooltip.style.top = ((pt.y / H) * rect.height) + 'px';
+    tooltip.classList.add('is-visible');
+  }
+
+  function hideTip() {
+    if (tooltip) tooltip.classList.remove('is-visible');
+    dotsEl.forEach(d => d.classList.remove('is-active'));
+  }
+
+  dotsEl.forEach(dot => {
+    dot.addEventListener('mouseenter', () => {
+      const i = parseInt(dot.getAttribute('data-i'), 10);
+      showTip(points[i]);
+    });
+    dot.addEventListener('mouseleave', hideTip);
+  });
+
+  if (svgEl) {
+    svgEl.addEventListener('mousemove', (e) => {
+      const rect = svgEl.getBoundingClientRect();
+      const relX = ((e.clientX - rect.left) / rect.width) * W;
+      let nearest = points[0];
+      let minDist = Infinity;
+      points.forEach(p => {
+        const d = Math.abs(p.x - relX);
+        if (d < minDist) { minDist = d; nearest = p; }
+      });
+      showTip(nearest);
+    });
+    svgEl.addEventListener('mouseleave', hideTip);
+  }
+}
+
+async function loadPlanUsage() {
+  const loading = document.getElementById('planLoading');
+  const content = document.getElementById('planContent');
+  try {
+    const [subRes, chartRes] = await Promise.all([
+      fetch('/api/user/subscription/status'),
+      fetch('/api/user/usage-chart'),
+    ]);
+    const subData = await subRes.json();
+    const chartData = await chartRes.json();
+    if (loading) loading.style.display = 'none';
+    if (content) content.style.display = 'block';
+
+    if (subData.success && subData.subscription) {
+      const s = subData.subscription;
+      const limit = Number(s.characters_limit) || 0;
+      const used = Number(s.characters_used) || 0;
+      const remaining = Number(s.characters_remaining) || 0;
+      const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+      const planName = (() => {
+        const pn = (s.package_name || '').trim();
+        if (pn && pn !== 'Free' && pn !== 'Chưa có gói') return pn;
+        if (limit > 100000) return 'Gói hiện tại';
+        return pn || 'Free';
+      })();
+
+      const elName = document.getElementById('planName');
+      const elExpiry = document.getElementById('planExpiry');
+      const elDays = document.getElementById('planDaysLeft');
+      const elRemain = document.getElementById('planRemaining');
+      const elUsed = document.getElementById('planUsedLabel');
+      const elBar = document.getElementById('planProgressBar');
+
+      if (elName) elName.textContent = planName;
+      if (elExpiry) elExpiry.textContent = s.end_date || '—';
+      if (elDays) elDays.textContent = s.days_remaining != null
+        ? (s.days_remaining + ' ngày còn lại')
+        : '';
+      if (elRemain) elRemain.textContent = fmtNum(remaining) + ' ký tự';
+      if (elUsed) elUsed.textContent = fmtNum(used) + ' / ' + fmtNum(limit);
+      if (elBar) elBar.style.width = pct + '%';
+    }
+
+    if (chartData.success && chartData.chart) {
+      const chart = document.getElementById('usageChart');
+      if (chart) renderUsageChart(chart, chartData.chart);
+    }
+  } catch (e) {
+    console.error('loadPlanUsage', e);
+    if (loading) loading.textContent = _profT('err.network', 'Lỗi tải dữ liệu');
+  }
+}
+
+function bindTtsSliders() {
+  const pitch = document.getElementById('ttsDefaultPitch');
+  const pitchVal = document.getElementById('ttsPitchVal');
+  const speed = document.getElementById('ttsDefaultSpeed');
+  const speedVal = document.getElementById('ttsSpeedVal');
+  if (pitch && pitchVal) {
+    pitch.addEventListener('input', () => {
+      const v = parseInt(pitch.value, 10);
+      pitchVal.textContent = v > 0 ? '+' + v : String(v);
+    });
+  }
+  if (speed && speedVal) {
+    speed.addEventListener('input', () => {
+      speedVal.textContent = parseFloat(speed.value).toFixed(1) + 'x';
+    });
+  }
+}
+
+async function loadUserSettings() {
+  try {
+    const r = await fetch('/api/user/settings');
+    const d = await r.json();
+    if (!d.success || !d.settings) return;
+    const s = d.settings;
+
+    const voiceSel = document.getElementById('ttsDefaultVoice');
+    if (voiceSel && s.default_voice_id) voiceSel.value = s.default_voice_id;
+    const emoSel = document.getElementById('ttsDefaultEmotionalVoice');
+    if (emoSel && s.default_emotional_voice_id) emoSel.value = s.default_emotional_voice_id;
+
+    const pitch = document.getElementById('ttsDefaultPitch');
+    const pitchVal = document.getElementById('ttsPitchVal');
+    if (pitch) {
+      pitch.value = s.default_pitch || 0;
+      if (pitchVal) pitchVal.textContent = (s.default_pitch > 0 ? '+' + s.default_pitch : String(s.default_pitch || 0));
+    }
+    const speed = document.getElementById('ttsDefaultSpeed');
+    const speedVal = document.getElementById('ttsSpeedVal');
+    if (speed) {
+      speed.value = s.default_speed || 1;
+      if (speedVal) speedVal.textContent = parseFloat(speed.value).toFixed(1) + 'x';
+    }
+    const fmt = document.getElementById('ttsExportFormat');
+    if (fmt && s.default_export_format) fmt.value = s.default_export_format;
+    const br = document.getElementById('ttsExportBitrate');
+    if (br && s.default_export_bitrate) br.value = String(s.default_export_bitrate);
+    const lang = document.getElementById('ttsDefaultLang');
+    if (lang && s.default_language) lang.value = s.default_language;
+
+    const nChars = document.getElementById('notifyCharsLow');
+    const nPay = document.getElementById('notifyPayment');
+    const nExp = document.getElementById('notifyPlanExpiry');
+    const nMark = document.getElementById('notifyMarketing');
+    if (nChars) nChars.checked = s.notify_chars_low;
+    if (nPay) nPay.checked = s.notify_payment;
+    if (nExp) nExp.checked = s.notify_plan_expiry;
+    if (nMark) nMark.checked = s.notify_marketing;
+  } catch (e) {
+    console.error('loadUserSettings', e);
+  }
+}
+
+function collectSettingsPayload() {
+  return {
+    default_voice_id: document.getElementById('ttsDefaultVoice')?.value || '',
+    default_emotional_voice_id: document.getElementById('ttsDefaultEmotionalVoice')?.value || '',
+    default_pitch: parseInt(document.getElementById('ttsDefaultPitch')?.value || '0', 10),
+    default_speed: parseFloat(document.getElementById('ttsDefaultSpeed')?.value || '1'),
+    default_export_format: document.getElementById('ttsExportFormat')?.value || 'wav',
+    default_export_bitrate: parseInt(document.getElementById('ttsExportBitrate')?.value || '192', 10),
+    default_language: document.getElementById('ttsDefaultLang')?.value || 'vi',
+    notify_chars_low: document.getElementById('notifyCharsLow')?.checked ?? true,
+    notify_payment: document.getElementById('notifyPayment')?.checked ?? true,
+    notify_plan_expiry: document.getElementById('notifyPlanExpiry')?.checked ?? true,
+    notify_marketing: document.getElementById('notifyMarketing')?.checked ?? false,
+  };
+}
+
+async function saveTtsSettings() {
+  const btn = document.getElementById('btnSaveTts');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectSettingsPayload()),
+    });
+    const d = await res.json();
+    if (d.success) showToast(d.message || _profT('common.success', 'Lưu thành công'), 'success');
+    else showToast(d.message || _profT('err.save_failed', 'Lỗi lưu'), 'error');
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function saveNotificationSettings() {
+  const btn = document.getElementById('btnSaveNotify');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/user/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectSettingsPayload()),
+    });
+    const d = await res.json();
+    if (d.success) showToast(d.message || _profT('common.success', 'Lưu thành công'), 'success');
+    else showToast(d.message || _profT('err.save_failed', 'Lỗi lưu'), 'error');
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function exportPersonalData(format) {
+  const fmt = format || 'pdf';
+  const btnPdf = document.getElementById('btnExportPdf');
+  const btnDocx = document.getElementById('btnExportDocx');
+  if (btnPdf) btnPdf.disabled = true;
+  if (btnDocx) btnDocx.disabled = true;
+  try {
+    const res = await fetch('/api/user/export-data?format=' + encodeURIComponent(fmt));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.message || _profT('err.export_failed', 'Xuất dữ liệu thất bại'), 'error');
+      return;
+    }
+    let filename = fmt === 'docx' ? 'vietvoice_du_lieu_ca_nhan.docx' : 'vietvoice_du_lieu_ca_nhan.pdf';
+    const cd = res.headers.get('Content-Disposition') || '';
+    const m = cd.match(/filename="?([^";\n]+)"?/i);
+    if (m) filename = m[1];
+    const blob = await res.blob();
+    const mime = fmt === 'docx'
+      ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      : 'application/pdf';
+    const fileBlob = blob.type ? blob : new Blob([blob], { type: mime });
+    const url = URL.createObjectURL(fileBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(_profT('prof.export.success', 'Đã tải báo cáo dữ liệu'), 'success');
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (btnPdf) btnPdf.disabled = false;
+    if (btnDocx) btnDocx.disabled = false;
+  }
+}
+
+// Force dark background on all inputs
 document.querySelectorAll('.form-input, input[type="text"], input[type="email"], input[type="password"]').forEach(function(el) {
   el.style.setProperty('background', '#0d1c2d', 'important');
   el.style.setProperty('background-color', '#0d1c2d', 'important');

@@ -74,6 +74,7 @@
   "ws.result.hint": "Nhập văn bản và nhấn \"Chuyển đổi\" để bắt đầu",
   "ws.result.processing": "Đang xử lý âm thanh",
   "ws.result.wait": "Vui lòng đợi trong giây lát",
+  "ws.result.progress": "Tiến trình",
   "ws.result.step1": "Phân tích văn bản",
   "ws.result.step2": "Tổng hợp giọng nói",
   "ws.result.step3": "Hoàn thiện audio",

@@ -75,6 +75,7 @@
   "ws.result.hint": "Enter text and press \"Convert\" to begin",
   "ws.result.processing": "Processing audio",
   "ws.result.wait": "Please wait a moment",
+  "ws.result.progress": "Progress",
   "ws.result.step1": "Analyzing text",
   "ws.result.step2": "Synthesizing voice",
   "ws.result.step3": "Finalizing audio",

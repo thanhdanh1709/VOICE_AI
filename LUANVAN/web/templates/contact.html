@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html class="dark" lang="vi" data-theme="dark">
+<html lang="vi" data-theme="dark" class="vv-workspace">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Liên hệ với chúng tôi - VietVoice</title>
 
-<!-- Anti-flash -->
-<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+{% include 'partials/vv_theme_head.html' %}
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -502,22 +501,7 @@ async function loadCharsRemaining() {
 loadCharsRemaining();
 
 // Theme toggle
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const themeIcon = document.getElementById('themeIcon');
-function updateThemeIcon() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
-}
-updateThemeIcon();
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    document.documentElement.classList.toggle('dark', next === 'dark');
-    localStorage.setItem('tts-theme', next);
-    updateThemeIcon();
-  });
-}
+
 </script>
 <script src="{{ url_for('static', filename='js/contact.js') }}"></script>
 <script>

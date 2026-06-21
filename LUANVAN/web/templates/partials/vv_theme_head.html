@@ -1,4 +1,6 @@
-(function () {
+<!-- Anti-flash: apply saved theme ASAP before paint -->
+<script>
+(function(){
   var t = localStorage.getItem('tts-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', t);
   if (t === 'dark') {
@@ -7,3 +9,4 @@
     document.documentElement.classList.remove('dark');
   }
 })();
+</script>

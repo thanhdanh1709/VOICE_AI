@@ -63,10 +63,23 @@
         .lang-sep { color: rgba(148,163,184,0.3); font-weight: 300; font-size: 0.65rem; }
 
         body {
-            background-color: #0a0a14;
-            color: #f1f5f9;
+            background-color: #051424;
+            color: #d4e4fa;
             min-height: 100vh;
             font-family: 'Inter', sans-serif;
+        }
+
+        body.logged-in-nav-page {
+            background-color: #051424;
+        }
+
+        body.logged-in-nav-page .bg-orbs {
+            display: none;
+        }
+
+        body.logged-in-nav-page .site-footer {
+            background: #051424;
+            border-top-color: rgba(255, 255, 255, 0.06);
         }
 
         /* ── Background orbs ── */
@@ -113,18 +126,18 @@
             top: 0 !important; left: 0 !important; right: 0 !important;
             height: 64px;
             pointer-events: auto !important;
-            background: rgba(10, 10, 20, 0.72);
+            background: rgba(7, 11, 31, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             z-index: 9999;
             transition: all 0.3s ease;
         }
 
         .navbar.scrolled {
-            background: rgba(10, 10, 20, 0.94);
-            border-bottom-color: rgba(124,58,237,0.18);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            background: rgba(7, 11, 31, 0.94);
+            border-bottom-color: rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
         .navbar *, .navbar a, .navbar button {
             pointer-events: auto !important;
@@ -301,19 +314,35 @@
         .theme-toggle:hover { border-color: #7c3aed; background: rgba(124,58,237,0.12); }
         .theme-icon { display: none; }
 
+        /* ── NAV ACTIONS (lang + hamburger — matches public landing nav) ── */
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .nav-actions .theme-toggle { display: block; }
+
+        .mobile-nav-theme {
+            display: none;
+            margin-top: 0.5rem;
+            align-self: flex-start;
+        }
+
         /* ── HAMBURGER BUTTON (mobile) ── */
         .nav-hamburger {
             display: none;
             background: none;
             border: none;
             cursor: pointer;
-            color: #94a3b8;
-            padding: 6px;
+            color: #d4e4fa;
+            padding: 0.25rem;
             border-radius: 8px;
             transition: all 0.15s;
         }
         .nav-hamburger:hover { background: rgba(255,255,255,0.07); color: #f1f5f9; }
-        .nav-hamburger svg { width: 22px; height: 22px; display: block; }
+        .nav-hamburger svg { width: 28px; height: 28px; display: block; }
 
         /* ── MOBILE NAV DRAWER ── */
         .mobile-nav-overlay {
@@ -327,20 +356,30 @@
         .mobile-nav-drawer {
             display: none;
             position: fixed;
-            top: 64px; left: 0; right: 0;
-            background: rgba(10,10,20,0.97);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            top: 0;
+            right: 0;
+            width: 18rem;
+            max-width: 88vw;
+            height: 100%;
+            background: rgba(18, 33, 49, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255,255,255,0.1);
             z-index: 9999;
-            padding: 12px;
-            max-height: 80vh;
+            padding: 6rem 1.5rem 2rem;
             overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            box-shadow: -8px 0 32px rgba(0,0,0,0.45);
+            box-sizing: border-box;
+            flex-direction: column;
+            gap: 0.25rem;
         }
-        .mobile-nav-drawer.open { display: block; }
+        .mobile-nav-drawer.open {
+            display: flex;
+        }
         .mobile-nav-drawer a {
             display: flex; align-items: center; gap: 10px;
-            padding: 12px 16px; border-radius: 10px;
-            color: #94a3b8; font-size: 0.875rem; font-weight: 500;
+            padding: 0.5rem 0; border-radius: 10px;
+            color: #d4e4fa; font-size: 1.0625rem; font-weight: 500;
             text-decoration: none; transition: all 0.15s;
         }
         .mobile-nav-drawer a:hover, .mobile-nav-drawer a.active {
@@ -359,7 +398,17 @@
         @media (max-width: 768px) {
             .nav-menu { display: none !important; }
             .nav-hamburger { display: flex; align-items: center; justify-content: center; }
-            .navbar .container { padding: 0 1rem; }
+            .navbar .container {
+                padding: 0 1rem;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .nav-brand-link { flex-shrink: 0; }
+            .nav-actions { flex-shrink: 0; }
+            .nav-actions .theme-toggle { display: none; }
+            .mobile-nav-theme { display: block; }
         }
 
         /* ── MAIN ── */
@@ -539,7 +588,7 @@
         }
     </style>
 </head>
-<body class="{% if auth_page %}auth-v2-page {% endif %}{% if not session.user_id %}public-landing-nav-page {% endif %}dark">
+<body class="{% if auth_page %}auth-v2-page {% endif %}{% if session.user_id %}logged-in-nav-page {% elif not session.user_id %}public-landing-nav-page {% endif %}dark">
     <!-- Background orbs -->
     <div class="bg-orbs" aria-hidden="true">
         <div class="bg-orb bg-orb-1"></div>
@@ -569,23 +618,20 @@
                         <span>{{ session.full_name or session.username }}</span>
                         <a href="{{ url_for('logout') }}" class="btn-logout" data-i18n="nav.logout">Đăng xuất</a>
                     </li>
-                <li>
-                    <button id="themeToggle" class="theme-toggle" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
-                        <span class="theme-icon"></span>
-                    </button>
-                </li>
-                <li>
-                    <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language" title="Switch language">
-                        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
-                    </button>
-                </li>
             </ul>
-            <!-- Mobile hamburger button -->
-            <button class="nav-hamburger" id="navHamburger" onclick="toggleBaseNav()" aria-label="Menu">
-                <svg id="hamburgerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
+            <div class="nav-actions">
+                <button id="themeToggle" class="theme-toggle" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
+                    <span class="theme-icon"></span>
+                </button>
+                <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language" title="Switch language">
+                    <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+                </button>
+                <button class="nav-hamburger" id="navHamburger" onclick="toggleBaseNav()" aria-label="Menu">
+                    <svg id="hamburgerIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -604,9 +650,8 @@
         {% endif %}
         <hr class="mobile-nav-divider">
         <a href="{{ url_for('logout') }}" class="mobile-logout"><span data-i18n="nav.logout">Đăng xuất</span> ({{ session.full_name or session.username }})</a>
-        <hr class="mobile-nav-divider">
-        <button class="vv-lang-toggle" style="margin:8px 0 4px 0;width:auto;" onclick="VVi18n.toggle()" aria-label="Switch language">
-            <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+        <button type="button" id="themeToggleMobile" class="theme-toggle mobile-nav-theme" data-i18n-title="nav.theme" title="Chuyển sáng/tối" aria-label="Toggle theme">
+            <span class="theme-icon"></span>
         </button>
     </div>
     {% else %}
@@ -771,6 +816,19 @@
             document.getElementById('hamburgerIcon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>';
         }
         window.addEventListener('resize', () => { if (window.innerWidth > 768) closeBaseNav(); });
+
+        function applyTheme(next) {
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('tts-theme', next);
+        }
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(current === 'dark' ? 'light' : 'dark');
+        }
+        const themeToggle = document.getElementById('themeToggle');
+        const themeToggleMobile = document.getElementById('themeToggleMobile');
+        if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
+        if (themeToggleMobile) themeToggleMobile.addEventListener('click', toggleTheme);
     </script>
 
     {% block extra_js %}{% endblock %}

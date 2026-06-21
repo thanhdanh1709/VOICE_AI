@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html class="dark" lang="vi" data-theme="dark">
+<html lang="vi" data-theme="dark" class="vv-workspace">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -7,8 +7,7 @@
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
 <title>VietVoice - Thư viện Audio</title>
 
-<!-- Anti-flash -->
-<script>(function(){var t=localStorage.getItem('tts-theme')||'dark';document.documentElement.setAttribute('data-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}})();</script>
+{% include 'partials/vv_theme_head.html' %}
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -16,51 +15,7 @@
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-container-lowest": "#010f1f",
-        "surface-container-low":    "#0d1c2d",
-        "surface-container":        "#122131",
-        "surface-container-high":   "#1c2b3c",
-        "surface-container-highest":"#273647",
-        "surface-dim":  "#051424",
-        "surface":      "#051424",
-        "surface-bright":"#2c3a4c",
-        "surface-variant":"#273647",
-        "on-surface":        "#d4e4fa",
-        "on-surface-variant":"#cbc3d7",
-        "on-background":     "#d4e4fa",
-        "background":        "#051424",
-        "primary":           "#d0bcff",
-        "primary-fixed":     "#e9ddff",
-        "primary-container": "#a078ff",
-        "on-primary":        "#3c0091",
-        "on-primary-container":"#340080",
-        "inverse-primary":   "#6d3bd7",
-        "secondary":         "#bec6e0",
-        "secondary-container":"#3f465c",
-        "on-secondary":      "#283044",
-        "on-secondary-container":"#adb4ce",
-        "tertiary":          "#2fd9f4",
-        "tertiary-container":"#009fb4",
-        "on-tertiary":       "#00363e",
-        "error":             "#ffb4ab",
-        "error-container":   "#93000a",
-        "on-error":          "#690005",
-        "outline":           "#958ea0",
-        "outline-variant":   "#494454",
-        "inverse-surface":   "#d4e4fa",
-        "inverse-on-surface":"#233143",
-        "surface-tint":      "#d0bcff",
-      },
-    },
-  },
-}
-</script>
+{% include 'partials/vv_tailwind_config.html' %}
 
 <style>
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -134,7 +89,7 @@ tailwind.config = {
 <body class="min-h-screen flex flex-col">
 
 <!-- ═══ TOP NAVBAR ═══ -->
-<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+<nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
       <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
@@ -156,7 +111,7 @@ tailwind.config = {
         <span id="charsNavCount">...</span>
       </a>
       <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
-        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+        <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
@@ -368,22 +323,7 @@ async function loadCharsRemaining() {
 loadCharsRemaining();
 
 // ── Theme toggle ─────────────────────────────────────────────
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const themeIcon = document.getElementById('themeIcon');
-function updateThemeIcon() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
-}
-updateThemeIcon();
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    document.documentElement.classList.toggle('dark', next === 'dark');
-    localStorage.setItem('tts-theme', next);
-    updateThemeIcon();
-  });
-}
+
 </script>
 <script>
 function toggleMobileNav() {
@@ -401,6 +341,7 @@ function closeMobileNav() {
 }
 window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileNav(); });
 </script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
 <script>window.APP_PUBLIC_BASE_URL = {{ app_base_url|tojson }};</script>
 <script src="{{ url_for('static', filename='js/audio-library.js') }}"></script>

@@ -2549,22 +2549,14 @@ body {
         padding: 0 var(--spacing-md);
     }
     
+    /* Logged-in navbar uses hamburger drawer — keep one row (brand left, actions right).
+       Column stacking here broke mobile header on legal/guide pages (base.html). */
     .navbar .container {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
         gap: var(--spacing-sm);
-    }
-    
-    .nav-menu {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        width: 100%;
-        text-align: center;
-    }
-    
-    .user-info {
-        flex-direction: column;
-        gap: var(--spacing-xs);
-        width: 100%;
     }
     
     .page-header h1 {

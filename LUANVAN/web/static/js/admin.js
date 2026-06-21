@@ -149,13 +149,27 @@ function renderTrendChart(chartData) {
     setTimeout(() => { if (trendChart) trendChart.resize(); }, 100);
 }
 
+function voiceChartColors(count) {
+    // Hue cách đều ~137° — tránh các màu tím/cyan/xanh lá dính nhau như palette cũ
+    const fixed = [
+        '#9333EA', '#F59E0B', '#0EA5E9', '#EF4444', '#10B981',
+        '#EC4899', '#3B82F6', '#84CC16', '#F97316', '#6366F1',
+        '#14B8A6', '#E11D48', '#A855F7', '#CA8A04', '#0284C7',
+    ];
+    if (count <= fixed.length) return fixed.slice(0, count);
+    return Array.from({ length: count }, (_, i) => {
+        const h = Math.round((i * 137.508) % 360);
+        return `hsl(${h}, 70%, 55%)`;
+    });
+}
+
 function renderVoiceDistributionChart(voiceData) {
     const ctx = document.getElementById('voiceDistributionChart');
     if (!ctx || typeof Chart === 'undefined' || !voiceData?.length) return;
     const mobile = isAdminMobileView();
     if (voiceDistributionChart) voiceDistributionChart.destroy();
 
-    const colors = ['#d0bcff', '#2fd9f4', '#6ee7b7', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f472b6'];
+    const colors = voiceChartColors(voiceData.length);
 
     voiceDistributionChart = new Chart(ctx, {
         type: 'doughnut',
@@ -163,8 +177,12 @@ function renderVoiceDistributionChart(voiceData) {
             labels: voiceData.map((v) => v.voice_name || '—'),
             datasets: [{
                 data: voiceData.map((v) => v.count),
-                backgroundColor: voiceData.map((_, i) => colors[i % colors.length]),
-                borderWidth: 0,
+                backgroundColor: voiceData.map((_, i) => colors[i]),
+                borderColor: '#0a1520',
+                borderWidth: 2,
+                hoverBorderColor: '#ffffff',
+                hoverBorderWidth: 2,
+                hoverOffset: 6,
             }],
         },
         options: {

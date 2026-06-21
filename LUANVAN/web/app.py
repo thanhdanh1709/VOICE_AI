@@ -23,7 +23,7 @@ if sys.platform == 'win32':
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pymysql
@@ -87,6 +87,7 @@ import base64
 import requests
 import json
 import hashlib
+import zipfile
 import hmac
 import re
 from html import unescape
@@ -272,12 +273,414 @@ def ensure_password_reset_table():
     finally:
         conn.close()
 
+_user_notify_throttle = {}
+_user_notify_throttle_lock = _threading.Lock()
+
+DEFAULT_USER_SETTINGS = {
+    'default_voice_id': '',
+    'default_emotional_voice_id': '',
+    'default_pitch': 0,
+    'default_speed': 1.0,
+    'default_export_format': 'wav',
+    'default_export_bitrate': 192,
+    'default_language': 'vi',
+    'notify_chars_low': True,
+    'notify_payment': True,
+    'notify_plan_expiry': True,
+    'notify_marketing': False,
+}
+
+def ensure_user_settings_table():
+    """Tạo bảng user_settings nếu chưa có."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS user_settings (
+                    user_id INT NOT NULL PRIMARY KEY,
+                    default_voice_id VARCHAR(64) DEFAULT NULL,
+                    default_pitch INT NOT NULL DEFAULT 0,
+                    default_speed DECIMAL(4,2) NOT NULL DEFAULT 1.00,
+                    default_export_format VARCHAR(10) NOT NULL DEFAULT 'wav',
+                    default_export_bitrate INT NOT NULL DEFAULT 192,
+                    default_language VARCHAR(10) NOT NULL DEFAULT 'vi',
+                    notify_chars_low TINYINT(1) NOT NULL DEFAULT 1,
+                    notify_payment TINYINT(1) NOT NULL DEFAULT 1,
+                    notify_plan_expiry TINYINT(1) NOT NULL DEFAULT 1,
+                    notify_marketing TINYINT(1) NOT NULL DEFAULT 0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            conn.commit()
+            try:
+                cursor.execute(
+                    "SHOW COLUMNS FROM user_settings LIKE 'default_emotional_voice_id'"
+                )
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "ALTER TABLE user_settings "
+                        "ADD COLUMN default_emotional_voice_id INT DEFAULT NULL "
+                        "AFTER default_voice_id"
+                    )
+                    conn.commit()
+            except Exception as mig_e:
+                print(f"[WARN] user_settings migration: {mig_e}")
+        return True
+    except Exception as e:
+        print(f"[ERROR] ensure_user_settings_table: {e}")
+        return False
+    finally:
+        conn.close()
+
+def _normalize_user_settings_row(row):
+    if not row:
+        return dict(DEFAULT_USER_SETTINGS)
+    return {
+        'default_voice_id': (row.get('default_voice_id') or '').strip(),
+        'default_emotional_voice_id': (
+            str(row.get('default_emotional_voice_id') or '').strip()
+            if row.get('default_emotional_voice_id') else ''
+        ),
+        'default_pitch': int(row.get('default_pitch') or 0),
+        'default_speed': float(row.get('default_speed') or 1.0),
+        'default_export_format': (row.get('default_export_format') or 'wav').lower(),
+        'default_export_bitrate': int(row.get('default_export_bitrate') or 192),
+        'default_language': (row.get('default_language') or 'vi').lower(),
+        'notify_chars_low': bool(row.get('notify_chars_low')),
+        'notify_payment': bool(row.get('notify_payment')),
+        'notify_plan_expiry': bool(row.get('notify_plan_expiry')),
+        'notify_marketing': bool(row.get('notify_marketing')),
+    }
+
+def get_user_settings(user_id):
+    ensure_user_settings_table()
+    conn = get_db_connection()
+    if not conn:
+        return dict(DEFAULT_USER_SETTINGS)
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM user_settings WHERE user_id = %s", (user_id,))
+            row = cursor.fetchone()
+            if row:
+                return _normalize_user_settings_row(row)
+            cursor.execute(
+                """
+                INSERT INTO user_settings (user_id) VALUES (%s)
+                """,
+                (user_id,),
+            )
+            conn.commit()
+            return dict(DEFAULT_USER_SETTINGS)
+    except Exception as e:
+        print(f"[ERROR] get_user_settings: {e}")
+        return dict(DEFAULT_USER_SETTINGS)
+    finally:
+        conn.close()
+
+def save_user_settings(user_id, data):
+    ensure_user_settings_table()
+    settings = _normalize_user_settings_row(data)
+    fmt = settings['default_export_format']
+    if fmt not in SUPPORTED_FORMATS:
+        fmt = 'wav'
+    bitrate = settings['default_export_bitrate']
+    if bitrate not in ALLOWED_BITRATES:
+        bitrate = 192
+    pitch = max(-12, min(12, settings['default_pitch']))
+    speed = max(0.5, min(2.0, settings['default_speed']))
+    lang = settings['default_language'] if settings['default_language'] in ('vi', 'en') else 'vi'
+    voice_id = (settings.get('default_voice_id') or '').strip()[:64] or None
+    emotional_raw = (settings.get('default_emotional_voice_id') or '').strip()
+    emotional_voice_id = int(emotional_raw) if emotional_raw.isdigit() else None
+
+    conn = get_db_connection()
+    if not conn:
+        return False, 'Database connection failed'
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO user_settings (
+                    user_id, default_voice_id, default_emotional_voice_id, default_pitch, default_speed,
+                    default_export_format, default_export_bitrate, default_language,
+                    notify_chars_low, notify_payment, notify_plan_expiry, notify_marketing
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    default_voice_id = VALUES(default_voice_id),
+                    default_emotional_voice_id = VALUES(default_emotional_voice_id),
+                    default_pitch = VALUES(default_pitch),
+                    default_speed = VALUES(default_speed),
+                    default_export_format = VALUES(default_export_format),
+                    default_export_bitrate = VALUES(default_export_bitrate),
+                    default_language = VALUES(default_language),
+                    notify_chars_low = VALUES(notify_chars_low),
+                    notify_payment = VALUES(notify_payment),
+                    notify_plan_expiry = VALUES(notify_plan_expiry),
+                    notify_marketing = VALUES(notify_marketing)
+                """,
+                (
+                    user_id, voice_id, emotional_voice_id, pitch, speed, fmt, bitrate, lang,
+                    1 if settings['notify_chars_low'] else 0,
+                    1 if settings['notify_payment'] else 0,
+                    1 if settings['notify_plan_expiry'] else 0,
+                    1 if settings['notify_marketing'] else 0,
+                ),
+            )
+            conn.commit()
+        return True, get_user_settings(user_id)
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] save_user_settings: {e}")
+        return False, str(e)
+    finally:
+        conn.close()
+
+def _should_send_user_notification(user_id, kind):
+    """kind: chars_low | payment | plan_expiry | marketing"""
+    settings = get_user_settings(user_id)
+    mapping = {
+        'chars_low': 'notify_chars_low',
+        'payment': 'notify_payment',
+        'plan_expiry': 'notify_plan_expiry',
+        'marketing': 'notify_marketing',
+    }
+    key = mapping.get(kind)
+    return bool(settings.get(key)) if key else False
+
+def _throttle_user_notification(user_id, kind, hours=24):
+    throttle_key = f"{user_id}:{kind}"
+    now = time.time()
+    with _user_notify_throttle_lock:
+        last = _user_notify_throttle.get(throttle_key)
+        if last and now - last < hours * 3600:
+            return False
+        _user_notify_throttle[throttle_key] = now
+    return True
+
+def _send_user_notification_email(user_id, kind, subject, text_body, html_body=None, skip_throttle=False):
+    if not _should_send_user_notification(user_id, kind):
+        return False
+    if not skip_throttle and not _throttle_user_notification(user_id, kind):
+        return False
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT email, full_name, username FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+        if not user or not user.get('email'):
+            return False
+        html = html_body or f"<p>{text_body}</p>"
+        return send_email(user['email'], subject, html, text_body)
+    except Exception as e:
+        print(f"[ERROR] _send_user_notification_email: {e}")
+        return False
+    finally:
+        conn.close()
+
+def _notify_chars_low_if_needed(user_id):
+    limit_info = get_user_characters_limit(user_id)
+    if not limit_info or not limit_info.get('limit'):
+        return
+    limit = int(limit_info['limit'])
+    remaining = int(limit_info['remaining'])
+    if limit <= 0:
+        return
+    if remaining > limit * 0.1:
+        return
+    subject = '[VietVoice] Ký tự sắp hết'
+    text = (
+        f'Bạn còn {remaining:,} ký tự trong gói hiện tại (dưới 10% hạn mức).\n'
+        f'Hãy nâng cấp hoặc mua thêm ký tự tại trang Bảng giá.'
+    )
+    _send_user_notification_email(user_id, 'chars_low', subject, text)
+
+def _build_branded_email_html(title, greeting_name, intro_html, info_rows, extra_html='', cta_url=None, cta_label=None):
+    """HTML email template VietVoice (dark theme, bảng chi tiết)."""
+    rows = ''.join(
+        f'<tr>'
+        f'<td style="padding:10px 14px;color:#94a3b8;font-size:14px;border-bottom:1px solid #1e293b;width:42%">{label}</td>'
+        f'<td style="padding:10px 14px;color:#e2e8f0;font-size:14px;border-bottom:1px solid #1e293b;font-weight:600">{value}</td>'
+        f'</tr>'
+        for label, value in info_rows
+    )
+    cta_block = ''
+    if cta_url and cta_label:
+        cta_block = (
+            f'<p style="text-align:center;margin:28px 0 8px">'
+            f'<a href="{cta_url}" style="display:inline-block;padding:14px 28px;'
+            f'background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;text-decoration:none;'
+            f'border-radius:10px;font-weight:700;font-size:15px">{cta_label}</a></p>'
+        )
+    return f"""
+    <div style="font-family:Arial,Helvetica,sans-serif;background:#051424;padding:24px">
+      <div style="max-width:560px;margin:0 auto;background:#0d1c2d;border:1px solid #1e293b;border-radius:16px;padding:28px">
+        <div style="margin-bottom:20px">
+          <span style="font-size:22px;font-weight:800;color:#a5b4fc">VietVoice AI</span>
+        </div>
+        <h1 style="color:#f1f5f9;font-size:20px;margin:0 0 16px;line-height:1.35">{title}</h1>
+        <p style="color:#cbd5e1;font-size:15px;line-height:1.6;margin:0 0 20px">Xin chào <strong style="color:#e2e8f0">{greeting_name}</strong>,</p>
+        {intro_html}
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;background:#122131;border-radius:12px;overflow:hidden">
+          {rows}
+        </table>
+        {extra_html}
+        {cta_block}
+        <p style="color:#64748b;font-size:12px;line-height:1.5;margin:24px 0 0;border-top:1px solid #1e293b;padding-top:16px">
+          Email tự động từ VietVoice — không trả lời email này.<br>
+          Hỗ trợ: support@vietvoice.ai
+        </p>
+      </div>
+    </div>
+    """
+
+
+def _notify_payment_result(
+    user_id,
+    success,
+    package_name='',
+    amount_vnd=0,
+    message='',
+    transaction_id='',
+    characters_added=0,
+    duration_days=0,
+    characters_limit=None,
+    characters_remaining=None,
+    end_date=None,
+    payment_method='',
+):
+    kind = 'payment'
+    app_url = _get_app_base_url()
+    if success:
+        subject = '[VietVoice] Thanh toán thành công — Gói đã được kích hoạt'
+        pkg = package_name or 'Gói dịch vụ'
+        amt = _fmt_vnd(amount_vnd)
+        txn = transaction_id or '—'
+        chars_added = _fmt_num(characters_added) if characters_added else '—'
+        limit_s = _fmt_num(characters_limit) if characters_limit else '—'
+        remain_s = _fmt_num(characters_remaining) if characters_remaining else '—'
+        if end_date:
+            if hasattr(end_date, 'strftime'):
+                end_s = end_date.strftime('%d/%m/%Y')
+            else:
+                end_s = str(end_date)
+        else:
+            end_s = '—'
+        dur_s = f'{duration_days} ngày' if duration_days else '—'
+        method_s = (payment_method or 'bank_qr').replace('_', ' ').upper()
+        text = (
+            f'Thanh toán thành công!\n\n'
+            f'Gói dịch vụ: {pkg}\n'
+            f'Số tiền: {amt}\n'
+            f'Mã giao dịch: {txn}\n'
+            f'Phương thức: {method_s}\n'
+            f'Ký tự được cộng: +{chars_added}\n'
+            f'Hạn mức hiện tại: {limit_s} ký tự\n'
+            f'Ký tự còn lại: {remain_s}\n'
+            f'Thời hạn gói đến: {end_s} (+{dur_s})\n\n'
+            f'Bạn có thể sử dụng Workspace ngay: {app_url}/'
+        )
+        intro = (
+            '<p style="color:#cbd5e1;font-size:15px;line-height:1.6;margin:0 0 8px">'
+            '🎉 <strong style="color:#34d399">Thanh toán đã được xác nhận thành công.</strong> '
+            'Gói dịch vụ của bạn đã được kích hoạt và cộng ký tự vào tài khoản.</p>'
+        )
+        info_rows = [
+            ('Gói dịch vụ', pkg),
+            ('Số tiền thanh toán', amt),
+            ('Mã giao dịch', txn),
+            ('Phương thức', method_s),
+            ('Ký tự được cộng', f'+{chars_added}'),
+            ('Hạn mức hiện tại', f'{limit_s} ký tự'),
+            ('Ký tự còn lại', f'{remain_s} ký tự'),
+            ('Gói có hiệu lực đến', end_s),
+            ('Thời hạn thêm', dur_s),
+        ]
+        extra = (
+            '<p style="color:#94a3b8;font-size:13px;line-height:1.5;margin:8px 0 0">'
+            '💡 Mở Workspace để bắt đầu chuyển đổi văn bản thành giọng nói ngay.</p>'
+        )
+        html = _build_branded_email_html(
+            'Thanh toán thành công',
+            'bạn',
+            intro,
+            info_rows,
+            extra_html=extra,
+            cta_url=f'{app_url}/',
+            cta_label='Mở Workspace',
+        )
+        _send_user_notification_email(user_id, kind, subject, text, html, skip_throttle=True)
+    else:
+        subject = '[VietVoice] Thanh toán không thành công'
+        text = message or 'Giao dịch thanh toán không được xác nhận. Vui lòng thử lại hoặc liên hệ hỗ trợ.'
+        intro = (
+            '<p style="color:#fca5a5;font-size:15px;line-height:1.6;margin:0">'
+            'Giao dịch thanh toán không được xác nhận. Vui lòng thử lại hoặc liên hệ hỗ trợ.</p>'
+        )
+        html = _build_branded_email_html(
+            'Thanh toán không thành công',
+            'bạn',
+            intro,
+            [('Chi tiết', message or text)],
+            cta_url=f'{app_url}/pricing',
+            cta_label='Thử lại / Nâng cấp',
+        )
+        _send_user_notification_email(user_id, kind, subject, text, html)
+
+
+def _notify_payment_success_from_row(payment_row):
+    """Gửi email và trả thông tin subscription sau khi payment đã completed."""
+    user_id = payment_row['user_id']
+    limit_info = get_user_characters_limit(user_id)
+    end_date = limit_info.get('end_date')
+    _notify_payment_result(
+        user_id,
+        True,
+        package_name=payment_row.get('package_name') or '',
+        amount_vnd=int(payment_row.get('amount_vnd') or 0),
+        transaction_id=payment_row.get('transaction_id') or '',
+        characters_added=int(payment_row.get('characters_limit') or 0),
+        duration_days=int(payment_row.get('duration_days') or 0),
+        characters_limit=limit_info.get('limit'),
+        characters_remaining=limit_info.get('remaining'),
+        end_date=end_date,
+        payment_method=payment_row.get('payment_method') or '',
+    )
+
 def _format_datetime_vn(dt):
     if not dt:
         return '—'
     if isinstance(dt, datetime):
         return dt.strftime('%d/%m/%Y %H:%M')
     return str(dt)
+
+
+def _fmt_vnd(n):
+    try:
+        return f'{int(n):,}'.replace(',', '.') + ' VND'
+    except (TypeError, ValueError):
+        return '—'
+
+
+def _fmt_num(n):
+    try:
+        return f'{int(n):,}'.replace(',', '.')
+    except (TypeError, ValueError):
+        return '—'
+
+
+def _payment_status_vn(status):
+    m = {
+        'completed': 'Đã thanh toán',
+        'pending': 'Chờ xử lý',
+        'failed': 'Thất bại',
+        'cancelled': 'Đã hủy',
+    }
+    return m.get((status or '').lower(), status or '—')
+
 
 def _is_account_deleted(user):
     """Tài khoản đã xóa vĩnh viễn (hết thời gian chờ 30 ngày)."""
@@ -844,7 +1247,8 @@ def update_characters_used(user_id, text_length):
     conn = get_db_connection()
     if not conn:
         return False
-    
+
+    success = False
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
@@ -856,13 +1260,19 @@ def update_characters_used(user_id, text_length):
                 LIMIT 1
             """, (text_length, user_id))
             conn.commit()
-            return True
+            success = True
     except Exception as e:
         print(f"[ERROR] Error updating characters used: {e}")
         conn.rollback()
-        return False
     finally:
         conn.close()
+
+    if success:
+        try:
+            _notify_chars_low_if_needed(user_id)
+        except Exception as e:
+            print(f"[WARN] chars low notify: {e}")
+    return success
 
 # Routes
 @app.route('/')
@@ -4563,7 +4973,60 @@ def profile():
             conn.close()
     if user_data:
         session['avatar_url'] = user_data.get('avatar_url') or ''
-    return render_template('profile.html', user=user_data)
+    system_voices, custom_voices, emotional_voices = _fetch_profile_voice_options(session['user_id'])
+    return render_template(
+        'profile.html',
+        user=user_data,
+        system_voices=system_voices,
+        custom_voices=custom_voices,
+        emotional_voices=emotional_voices,
+    )
+
+
+def _fetch_profile_voice_options(user_id):
+    """Danh sách giọng cho form mặc định TTS trên profile."""
+    system_voices = []
+    custom_voices = []
+    emotional_voices = []
+    conn = get_db_connection()
+    if not conn:
+        return system_voices, custom_voices, emotional_voices
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT voice_id, voice_name FROM voices WHERE is_active = 1 ORDER BY voice_id"
+            )
+            system_voices = cursor.fetchall() or []
+            try:
+                cursor.execute(
+                    """
+                    SELECT id, voice_name, voice_type, quality_score
+                    FROM custom_voices
+                    WHERE user_id = %s AND status = 'completed'
+                    ORDER BY created_at DESC
+                    """,
+                    (user_id,),
+                )
+            except Exception:
+                cursor.execute(
+                    """
+                    SELECT id, voice_name, quality_score
+                    FROM custom_voices
+                    WHERE user_id = %s AND status = 'completed'
+                    ORDER BY created_at DESC
+                    """,
+                    (user_id,),
+                )
+            custom_voices = cursor.fetchall() or []
+    except Exception as e:
+        print(f"[ERROR] _fetch_profile_voice_options: {e}")
+    finally:
+        conn.close()
+    for v in custom_voices:
+        vt = (v.get('voice_type') or 'rvc').strip().lower()
+        if vt == 'vixtts_clone':
+            emotional_voices.append(v)
+    return system_voices, custom_voices, emotional_voices
 
 
 @app.route('/api/user/account-deletion-status', methods=['GET'])
@@ -4796,6 +5259,688 @@ def change_password():
             conn.commit()
         return jsonify({'success': True, 'message': 'Đổi mật khẩu thành công'})
     except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/settings', methods=['GET'])
+@login_required
+def get_user_settings_api():
+    """Lấy cài đặt TTS & thông báo email của user."""
+    settings = get_user_settings(session['user_id'])
+    return jsonify({'success': True, 'settings': settings})
+
+
+@app.route('/api/user/settings', methods=['POST'])
+@login_required
+def update_user_settings_api():
+    """Cập nhật cài đặt TTS & thông báo email."""
+    data = request.get_json() or {}
+    ok, result = save_user_settings(session['user_id'], data)
+    if not ok:
+        return jsonify({'success': False, 'message': result}), 500
+    return jsonify({'success': True, 'message': 'Cập nhật cài đặt thành công', 'settings': result})
+
+
+@app.route('/api/user/usage-chart', methods=['GET'])
+@login_required
+def get_user_usage_chart():
+    """Biểu đồ ký tự đã dùng theo ngày (7 ngày gần nhất)."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+    try:
+        now = datetime.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        chart_data = []
+        for i in range(6, -1, -1):
+            day_start = today_start - timedelta(days=i)
+            day_end = day_start + timedelta(days=1)
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT COALESCE(SUM(text_length), 0) AS chars,
+                           COUNT(*) AS conversions
+                    FROM conversions
+                    WHERE user_id = %s AND created_at >= %s AND created_at < %s
+                    """,
+                    (session['user_id'], day_start, day_end),
+                )
+                row = cursor.fetchone()
+            chart_data.append({
+                'date': day_start.strftime('%Y-%m-%d'),
+                'label': day_start.strftime('%d/%m'),
+                'characters': int(row.get('chars') or 0),
+                'conversions': int(row.get('conversions') or 0),
+            })
+        return jsonify({'success': True, 'chart': chart_data})
+    except Exception as e:
+        print(f"[ERROR] get_user_usage_chart: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+def _pdf_register_viet_fonts():
+    """Đăng ký font Unicode cho PDF (Arial/Verdana trên Windows)."""
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    font_reg, font_bold = 'Helvetica', 'Helvetica-Bold'
+    win_fonts = [
+        ('C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/arialbd.ttf'),
+        ('C:/Windows/Fonts/verdana.ttf', 'C:/Windows/Fonts/verdanab.ttf'),
+    ]
+    for reg_path, bold_path in win_fonts:
+        if os.path.exists(reg_path):
+            try:
+                pdfmetrics.registerFont(TTFont('VV_Reg', reg_path))
+                font_reg = 'VV_Reg'
+                if os.path.exists(bold_path):
+                    pdfmetrics.registerFont(TTFont('VV_Bold', bold_path))
+                    font_bold = 'VV_Bold'
+                break
+            except Exception:
+                pass
+    return font_reg, font_bold
+
+
+def _prepare_personal_export_sections(user, subscription, payments, conversions, settings):
+    """Chuẩn bị dữ liệu sections cho PDF/Word export."""
+    exported_at = datetime.now().strftime('%d/%m/%Y %H:%M')
+    account = [
+        ('Họ và tên', user.get('full_name') or '—'),
+        ('Tên đăng nhập', user.get('username') or '—'),
+        ('Email', user.get('email') or '—'),
+        ('Vai trò', user.get('role') or '—'),
+        ('Ngày tạo tài khoản', _format_datetime_vn(user.get('created_at'))),
+        ('Liên kết Google', 'Có' if user.get('google_id') else 'Không'),
+    ]
+    if subscription:
+        limit = int(subscription.get('characters_limit') or 0)
+        used = int(subscription.get('characters_used') or 0)
+        start_d = subscription.get('start_date')
+        end_d = subscription.get('end_date')
+        period = (
+            f'{start_d.strftime("%d/%m/%Y") if start_d else "—"}'
+            f' → {end_d.strftime("%d/%m/%Y") if end_d else "—"}'
+        )
+        subscription_rows = [
+            ('Gói hiện tại', subscription.get('package_name') or 'Free / Mặc định'),
+            ('Ký tự giới hạn', _fmt_num(limit)),
+            ('Đã sử dụng', _fmt_num(used)),
+            ('Còn lại', _fmt_num(max(0, limit - used))),
+            ('Thời hạn gói', period),
+        ]
+    else:
+        subscription_rows = [('Gói hiện tại', 'Không có gói active')]
+
+    lang = settings.get('default_language') or 'vi'
+    tts = [
+        ('Giọng TTS cơ bản', settings.get('default_voice_id') or 'Không đặt'),
+        (
+            'Giọng Emotional TTS',
+            settings.get('default_emotional_voice_id') or 'Mặc định (base_voice.wav)',
+        ),
+        ('Cao độ (pitch)', str(settings.get('default_pitch', 0))),
+        ('Tốc độ', f'{settings.get("default_speed", 1)}x'),
+        ('Định dạng xuất', (settings.get('default_export_format') or 'wav').upper()),
+        ('Bitrate', f'{settings.get("default_export_bitrate", 192)} kbps'),
+        ('Ngôn ngữ', 'Tiếng Việt' if lang == 'vi' else 'English'),
+    ]
+    notify = [
+        ('Ký tự sắp hết (<10%)', 'Bật' if settings.get('notify_chars_low') else 'Tắt'),
+        ('Thanh toán', 'Bật' if settings.get('notify_payment') else 'Tắt'),
+        ('Gói sắp hết hạn', 'Bật' if settings.get('notify_plan_expiry') else 'Tắt'),
+        ('Tin tức sản phẩm', 'Bật' if settings.get('notify_marketing') else 'Tắt'),
+    ]
+    pay_header = ['Gói dịch vụ', 'Mã giao dịch', 'Số tiền', 'Trạng thái', 'Ngày']
+    pay_rows = []
+    for p in payments[:50]:
+        pay_rows.append([
+            str(p.get('package_name') or '—'),
+            str(p.get('transaction_id') or '—'),
+            _fmt_vnd(p.get('amount_vnd')),
+            _payment_status_vn(p.get('payment_status')),
+            _format_datetime_vn(p.get('created_at')),
+        ])
+    conv_header = ['Tên / Giọng', 'Ký tự', 'Thời lượng', 'Trạng thái', 'Ngày']
+    conv_rows = []
+    total_chars = 0
+    for cv in conversions[:50]:
+        total_chars += int(cv.get('text_length') or 0)
+        dur = cv.get('duration_seconds')
+        conv_rows.append([
+            str(cv.get('display_name') or cv.get('voice_id') or '—'),
+            _fmt_num(cv.get('text_length')),
+            f'{float(dur):.1f}s' if dur else '—',
+            str(cv.get('status') or '—'),
+            _format_datetime_vn(cv.get('created_at')),
+        ])
+    return {
+        'exported_at': exported_at,
+        'account': account,
+        'subscription': subscription_rows,
+        'tts': tts,
+        'notify': notify,
+        'payments_header': pay_header,
+        'payments': pay_rows,
+        'payments_total': len(payments),
+        'conversions_header': conv_header,
+        'conversions': conv_rows,
+        'conversions_total': len(conversions),
+        'total_chars': sum(int(c.get('text_length') or 0) for c in conversions),
+    }
+
+
+def _build_personal_data_pdf(user, subscription, payments, conversions, settings):
+    """Báo cáo dữ liệu cá nhân PDF — layout chuyên nghiệp (Platypus)."""
+    from io import BytesIO
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import mm
+    from reportlab.platypus import (
+        Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
+    )
+
+    buffer = BytesIO()
+    font_reg, font_bold = _pdf_register_viet_fonts()
+    data = _prepare_personal_export_sections(user, subscription, payments, conversions, settings)
+    page_w, page_h = A4
+    margin = 14 * mm
+
+    C_NAVY = colors.HexColor('#051424')
+    C_NAVY_MID = colors.HexColor('#122131')
+    C_PRIMARY = colors.HexColor('#7078ff')
+    C_PRIMARY_LIGHT = colors.HexColor('#eef2ff')
+    C_TEXT = colors.HexColor('#1e293b')
+    C_MUTED = colors.HexColor('#64748b')
+    C_BORDER = colors.HexColor('#e2e8f0')
+    C_ROW_ALT = colors.HexColor('#f8fafc')
+    C_WHITE = colors.white
+    C_ACCENT = colors.HexColor('#2fd9f4')
+
+    styles = {
+        'subtitle': ParagraphStyle(
+            'vv_sub', fontName=font_reg, fontSize=10, leading=14,
+            textColor=C_MUTED, alignment=TA_CENTER,
+        ),
+        'section': ParagraphStyle(
+            'vv_sec', fontName=font_bold, fontSize=12, leading=16,
+            textColor=C_NAVY, spaceBefore=14, spaceAfter=8,
+        ),
+        'cell_label': ParagraphStyle(
+            'vv_cl', fontName=font_bold, fontSize=9, leading=12, textColor=C_TEXT,
+        ),
+        'cell_value': ParagraphStyle(
+            'vv_cv', fontName=font_reg, fontSize=9, leading=12, textColor=C_TEXT,
+        ),
+        'note': ParagraphStyle(
+            'vv_note', fontName=font_reg, fontSize=8, leading=11,
+            textColor=C_MUTED, spaceBefore=4,
+        ),
+        'footer': ParagraphStyle(
+            'vv_foot', fontName=font_reg, fontSize=8, leading=11,
+            textColor=C_MUTED, alignment=TA_CENTER,
+        ),
+    }
+
+    def on_page(canvas, _doc):
+        canvas.saveState()
+        canvas.setStrokeColor(C_BORDER)
+        canvas.setLineWidth(0.5)
+        canvas.line(margin, 22, page_w - margin, 22)
+        canvas.setFont(font_reg, 8)
+        canvas.setFillColor(C_MUTED)
+        canvas.drawString(margin, 10, 'VietVoice AI — Báo cáo dữ liệu cá nhân')
+        canvas.drawRightString(page_w - margin, 10, f'Trang {_doc.page}')
+        canvas.restoreState()
+
+    def on_first_page(canvas, _doc):
+        canvas.saveState()
+        canvas.setFillColor(C_NAVY)
+        canvas.rect(0, page_h - 32 * mm, page_w, 32 * mm, fill=1, stroke=0)
+        canvas.setFillColor(C_PRIMARY)
+        canvas.setFont(font_bold, 20)
+        canvas.drawString(margin, page_h - 18 * mm, 'VietVoice AI')
+        canvas.setFillColor(C_WHITE)
+        canvas.setFont(font_bold, 13)
+        canvas.drawRightString(page_w - margin, page_h - 16 * mm, 'BÁO CÁO DỮ LIỆU CÁ NHÂN')
+        canvas.setFont(font_reg, 9)
+        canvas.setFillColor(colors.HexColor('#94a3b8'))
+        canvas.drawRightString(
+            page_w - margin, page_h - 22 * mm,
+            f'Xuất ngày: {data["exported_at"]}',
+        )
+        on_page(canvas, _doc)
+        canvas.restoreState()
+
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        leftMargin=margin, rightMargin=margin,
+        topMargin=38 * mm, bottomMargin=28 * mm,
+        title='VietVoice — Dữ liệu cá nhân',
+    )
+
+    def kv_table(rows):
+        body = [
+            [Paragraph(label, styles['cell_label']), Paragraph(str(val), styles['cell_value'])]
+            for label, val in rows
+        ]
+        tbl = Table(body, colWidths=[42 * mm, 118 * mm])
+        tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), C_PRIMARY_LIGHT),
+            ('BACKGROUND', (1, 0), (1, -1), C_WHITE),
+            ('BOX', (0, 0), (-1, -1), 0.6, C_BORDER),
+            ('INNERGRID', (0, 0), (-1, -1), 0.4, C_BORDER),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 7),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+        ]))
+        return tbl
+
+    def data_table(headers, rows, col_widths):
+        header_cells = [
+            Paragraph(f'<font color="#ffffff">{h}</font>', ParagraphStyle(
+                'hdr', fontName=font_bold, fontSize=8, leading=10, textColor=C_WHITE,
+            ))
+            for h in headers
+        ]
+        body = []
+        for row in rows:
+            body.append([
+                Paragraph(str(c), ParagraphStyle(
+                    'td', fontName=font_reg, fontSize=8, leading=10, textColor=C_TEXT,
+                ))
+                for c in row
+            ])
+        tbl = Table([header_cells] + body, colWidths=col_widths, repeatRows=1)
+        style_cmds = [
+            ('BACKGROUND', (0, 0), (-1, 0), C_NAVY),
+            ('TEXTCOLOR', (0, 0), (-1, 0), C_WHITE),
+            ('FONTNAME', (0, 0), (-1, 0), font_bold),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('BOX', (0, 0), (-1, -1), 0.6, C_BORDER),
+            ('INNERGRID', (0, 0), (-1, -1), 0.4, C_BORDER),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]
+        for i in range(1, len(body) + 1):
+            bg = C_WHITE if i % 2 == 1 else C_ROW_ALT
+            style_cmds.append(('BACKGROUND', (0, i), (-1, i), bg))
+        tbl.setStyle(TableStyle(style_cmds))
+        return tbl
+
+    story = [
+        Paragraph(
+            'Tài liệu tóm tắt thông tin tài khoản, gói dịch vụ, giao dịch và lịch sử sử dụng '
+            '(không chứa file âm thanh).',
+            styles['subtitle'],
+        ),
+        Spacer(1, 6 * mm),
+        Paragraph('1. Thông tin tài khoản', styles['section']),
+        kv_table(data['account']),
+        Paragraph('2. Gói dịch vụ & sử dụng', styles['section']),
+        kv_table(data['subscription']),
+        Paragraph('3. Cài đặt mặc định TTS', styles['section']),
+        kv_table(data['tts']),
+        Paragraph('4. Thông báo email', styles['section']),
+        kv_table(data['notify']),
+        Paragraph(
+            f'5. Lịch sử giao dịch ({data["payments_total"]} bản ghi)',
+            styles['section'],
+        ),
+    ]
+    if data['payments']:
+        story.append(data_table(
+            data['payments_header'], data['payments'],
+            [32 * mm, 38 * mm, 28 * mm, 24 * mm, 32 * mm],
+        ))
+        if data['payments_total'] > len(data['payments']):
+            story.append(Paragraph(
+                f'Ghi chú: hiển thị {len(data["payments"])}/{data["payments_total"]} giao dịch gần nhất.',
+                styles['note'],
+            ))
+    else:
+        story.append(Paragraph('Chưa có giao dịch.', styles['note']))
+
+    story.append(Paragraph(
+        f'6. Lịch sử chuyển đổi ({data["conversions_total"]} bản ghi)',
+        styles['section'],
+    ))
+    if data['conversions']:
+        story.append(kv_table([('Tổng ký tự (tất cả)', _fmt_num(data['total_chars']))]))
+        story.append(Spacer(1, 3 * mm))
+        story.append(data_table(
+            data['conversions_header'], data['conversions'],
+            [38 * mm, 22 * mm, 22 * mm, 24 * mm, 32 * mm],
+        ))
+        if data['conversions_total'] > len(data['conversions']):
+            story.append(Paragraph(
+                f'Ghi chú: hiển thị {len(data["conversions"])}/{data["conversions_total"]} bản ghi gần nhất.',
+                styles['note'],
+            ))
+    else:
+        story.append(Paragraph('Chưa có lịch sử chuyển đổi.', styles['note']))
+
+    story.append(Spacer(1, 8 * mm))
+    story.append(Paragraph(
+        'Để xóa tài khoản, xem Chính sách xóa dữ liệu trên website VietVoice.',
+        styles['footer'],
+    ))
+
+    doc.build(story, onFirstPage=on_first_page, onLaterPages=on_page)
+    buffer.seek(0)
+    return buffer
+
+
+def _docx_set_cell_shading(cell, fill_hex):
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    tc_pr = cell._tc.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:fill'), fill_hex)
+    shd.set(qn('w:val'), 'clear')
+    tc_pr.append(shd)
+
+
+def _docx_write_cell(cell, text, bold=False, size=10, color_rgb=(0x1e, 0x29, 0x3b), center=False):
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    cell.text = ''
+    p = cell.paragraphs[0]
+    if center:
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(str(text))
+    run.bold = bold
+    run.font.size = Pt(size)
+    run.font.color.rgb = RGBColor(*color_rgb)
+
+
+def _docx_kv_table(doc, rows):
+    from docx.shared import Pt, RGBColor, Cm
+    table = doc.add_table(rows=len(rows), cols=2)
+    table.autofit = False
+    for row_idx, (label, value) in enumerate(rows):
+        c0, c1 = table.rows[row_idx].cells
+        c0.width = Cm(4.5)
+        c1.width = Cm(12)
+        _docx_set_cell_shading(c0, 'EEF2FF')
+        _docx_write_cell(c0, label, bold=True, size=10, color_rgb=(0x37, 0x41, 0x51))
+        _docx_write_cell(c1, value, size=10)
+    return table
+
+
+def _docx_data_table(doc, headers, rows):
+    from docx.shared import Pt, RGBColor, Cm
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
+    table.style = 'Table Grid'
+    table.autofit = False
+    hdr = table.rows[0].cells
+    for i, h in enumerate(headers):
+        _docx_set_cell_shading(hdr[i], '051424')
+        _docx_write_cell(hdr[i], h, bold=True, size=9, color_rgb=(0xff, 0xff, 0xff), center=True)
+    for ri, row_data in enumerate(rows):
+        cells = table.rows[ri + 1].cells
+        bg = 'FFFFFF' if ri % 2 == 0 else 'F8FAFC'
+        for ci, val in enumerate(row_data):
+            _docx_set_cell_shading(cells[ci], bg)
+            _docx_write_cell(cells[ci], val, size=9)
+    return table
+
+
+def _build_personal_data_docx(user, subscription, payments, conversions, settings):
+    """Báo cáo dữ liệu cá nhân Word — layout chuyên nghiệp."""
+    from io import BytesIO
+    from docx import Document
+    from docx.shared import Pt, RGBColor, Cm, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+
+    doc = Document()
+    data = _prepare_personal_export_sections(user, subscription, payments, conversions, settings)
+
+    for section in doc.sections:
+        section.top_margin = Cm(1.2)
+        section.bottom_margin = Cm(1.5)
+        section.left_margin = Cm(1.8)
+        section.right_margin = Cm(1.8)
+
+    normal = doc.styles['Normal']
+    normal.font.name = 'Arial'
+    normal._element.rPr.rFonts.set(qn('w:eastAsia'), 'Arial')
+    normal.font.size = Pt(10)
+
+    # Banner header
+    banner = doc.add_table(rows=1, cols=1)
+    banner_cell = banner.rows[0].cells[0]
+    _docx_set_cell_shading(banner_cell, '051424')
+    p_brand = banner_cell.paragraphs[0]
+    p_brand.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    r_brand = p_brand.add_run('VietVoice AI')
+    r_brand.bold = True
+    r_brand.font.size = Pt(22)
+    r_brand.font.color.rgb = RGBColor(0xa5, 0xb4, 0xfc)
+    p_title = banner_cell.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    r_title = p_title.add_run('BÁO CÁO DỮ LIỆU CÁ NHÂN')
+    r_title.bold = True
+    r_title.font.size = Pt(14)
+    r_title.font.color.rgb = RGBColor(0xff, 0xff, 0xff)
+    p_date = banner_cell.add_paragraph()
+    p_date.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    r_date = p_date.add_run(f'Xuất ngày: {data["exported_at"]}')
+    r_date.font.size = Pt(9)
+    r_date.font.color.rgb = RGBColor(0x94, 0xa3, 0xb8)
+
+    doc.add_paragraph()
+    intro = doc.add_paragraph()
+    intro.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_intro = intro.add_run(
+        'Tài liệu tóm tắt thông tin tài khoản, gói dịch vụ, giao dịch và lịch sử sử dụng '
+        '(không chứa file âm thanh).'
+    )
+    r_intro.font.size = Pt(10)
+    r_intro.font.color.rgb = RGBColor(0x64, 0x74, 0x8b)
+
+    def section_title(text):
+        p = doc.add_paragraph()
+        p.paragraph_format.space_before = Pt(14)
+        p.paragraph_format.space_after = Pt(6)
+        run = p.add_run(text)
+        run.bold = True
+        run.font.size = Pt(12)
+        run.font.color.rgb = RGBColor(0x05, 0x14, 0x24)
+        # Accent line under title
+        bar = doc.add_table(rows=1, cols=1)
+        bar_cell = bar.rows[0].cells[0]
+        _docx_set_cell_shading(bar_cell, '7078FF')
+        bar_cell.height = Cm(0.08)
+
+    section_title('1. Thông tin tài khoản')
+    _docx_kv_table(doc, data['account'])
+
+    section_title('2. Gói dịch vụ & sử dụng')
+    _docx_kv_table(doc, data['subscription'])
+
+    section_title('3. Cài đặt mặc định TTS')
+    _docx_kv_table(doc, data['tts'])
+
+    section_title('4. Thông báo email')
+    _docx_kv_table(doc, data['notify'])
+
+    section_title(f'5. Lịch sử giao dịch ({data["payments_total"]} bản ghi)')
+    if data['payments']:
+        _docx_data_table(doc, data['payments_header'], data['payments'])
+        if data['payments_total'] > len(data['payments']):
+            note = doc.add_paragraph()
+            r = note.add_run(
+                f'Ghi chú: hiển thị {len(data["payments"])}/{data["payments_total"]} giao dịch gần nhất.'
+            )
+            r.font.size = Pt(8)
+            r.font.color.rgb = RGBColor(0x64, 0x74, 0x8b)
+    else:
+        doc.add_paragraph('Chưa có giao dịch.')
+
+    section_title(f'6. Lịch sử chuyển đổi ({data["conversions_total"]} bản ghi)')
+    if data['conversions']:
+        _docx_kv_table(doc, [('Tổng ký tự (tất cả)', _fmt_num(data['total_chars']))])
+        doc.add_paragraph()
+        _docx_data_table(doc, data['conversions_header'], data['conversions'])
+        if data['conversions_total'] > len(data['conversions']):
+            note = doc.add_paragraph()
+            r = note.add_run(
+                f'Ghi chú: hiển thị {len(data["conversions"])}/{data["conversions_total"]} bản ghi gần nhất.'
+            )
+            r.font.size = Pt(8)
+            r.font.color.rgb = RGBColor(0x64, 0x74, 0x8b)
+    else:
+        doc.add_paragraph('Chưa có lịch sử chuyển đổi.')
+
+    doc.add_paragraph()
+    foot_bar = doc.add_table(rows=1, cols=1)
+    foot_cell = foot_bar.rows[0].cells[0]
+    _docx_set_cell_shading(foot_cell, 'F1F5F9')
+    fp = foot_cell.paragraphs[0]
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    fr = fp.add_run(
+        'VietVoice AI — Báo cáo dữ liệu cá nhân — vietvoice.ai\n'
+        'Để xóa tài khoản, xem Chính sách xóa dữ liệu trên website.'
+    )
+    fr.font.size = Pt(8)
+    fr.font.color.rgb = RGBColor(0x64, 0x74, 0x8b)
+
+    out = BytesIO()
+    doc.save(out)
+    out.seek(0)
+    return out
+
+
+@app.route('/api/user/export-data', methods=['GET'])
+@login_required
+def export_user_data():
+    """Xuất báo cáo dữ liệu cá nhân (PDF hoặc Word)."""
+    user_id = session['user_id']
+    fmt = (request.args.get('format') or 'pdf').strip().lower()
+    if fmt not in ('pdf', 'docx'):
+        fmt = 'pdf'
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, username, email, full_name, role, created_at, google_id
+                FROM users WHERE id = %s
+                """,
+                (user_id,),
+            )
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            cursor.execute(
+                """
+                SELECT us.characters_limit, us.characters_used, us.start_date, us.end_date,
+                       sp.package_name
+                FROM user_subscriptions us
+                LEFT JOIN subscription_packages sp ON us.package_id = sp.id
+                WHERE us.user_id = %s AND us.is_active = 1 AND us.end_date >= CURDATE()
+                ORDER BY us.end_date DESC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            subscription = cursor.fetchone()
+
+            cursor.execute(
+                """
+                SELECT p.id, p.transaction_id, p.amount_vnd, p.payment_method,
+                       p.payment_status, p.created_at, p.completed_at,
+                       sp.package_name, sp.characters_limit
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE p.user_id = %s
+                ORDER BY p.created_at DESC
+                LIMIT 500
+                """,
+                (user_id,),
+            )
+            payments = cursor.fetchall()
+
+            cursor.execute(
+                """
+                SELECT id, voice_id, text_length, duration_seconds, status,
+                       created_at, completed_at, display_name
+                FROM conversions
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT 1000
+                """,
+                (user_id,),
+            )
+            conversions = cursor.fetchall()
+
+        settings = get_user_settings(user_id)
+        date_stamp = datetime.now().strftime('%Y%m%d')
+
+        if fmt == 'docx':
+            try:
+                doc_buffer = _build_personal_data_docx(
+                    user, subscription, payments, conversions, settings,
+                )
+            except ImportError:
+                return jsonify({
+                    'success': False,
+                    'message': 'Thư viện python-docx chưa được cài. Chạy: pip install python-docx',
+                }), 500
+            doc_bytes = doc_buffer.getvalue()
+            filename = f'vietvoice_du_lieu_ca_nhan_{user_id}_{date_stamp}.docx'
+            return Response(
+                doc_bytes,
+                mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                headers={
+                    'Content-Disposition': f'attachment; filename="{filename}"',
+                    'Content-Length': str(len(doc_bytes)),
+                    'Cache-Control': 'no-store',
+                },
+            )
+
+        try:
+            pdf_buffer = _build_personal_data_pdf(
+                user, subscription, payments, conversions, settings,
+            )
+        except ImportError:
+            return jsonify({
+                'success': False,
+                'message': 'Thư viện reportlab chưa được cài. Chạy: pip install reportlab',
+            }), 500
+
+        pdf_bytes = pdf_buffer.getvalue()
+        filename = f'vietvoice_du_lieu_ca_nhan_{user_id}_{date_stamp}.pdf'
+        return Response(
+            pdf_bytes,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Length': str(len(pdf_bytes)),
+                'Cache-Control': 'no-store',
+            },
+        )
+    except Exception as e:
+        print(f"[ERROR] export_user_data: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
@@ -5830,7 +6975,8 @@ def verify_bank_transfer():
                 success = update_user_subscription(
                     current_user_id,
                     payment['characters_limit'],
-                    payment['duration_days']
+                    payment['duration_days'],
+                    payment.get('package_id'),
                 )
                 
                 print(f"[DEBUG] Subscription update result: {success}")
@@ -5838,6 +6984,10 @@ def verify_bank_transfer():
                 conn.commit()
                 
                 if success:
+                    try:
+                        _notify_payment_success_from_row(payment)
+                    except Exception as ne:
+                        print(f"[WARN] payment notify: {ne}")
                     return jsonify({
                         'success': True,
                         'message': f'🎉 THANH TOÁN THÀNH CÔNG!\n\n✅ Đã mua gói {payment.get("package_name", "Basic Plan")} thành công!\n💰 Số tiền: {payment["amount_vnd"]:,}đ\n📝 Ký tự được thêm: +{payment["characters_limit"]:,}\n⏰ Thời hạn: +{payment["duration_days"]} ngày\n\n🚀 Bạn có thể sử dụng dịch vụ ngay bây giờ!',
@@ -5942,10 +7092,16 @@ def verify_sepay_payment():
                 update_user_subscription(
                     session['user_id'],
                     payment['characters_limit'],
-                    payment['duration_days']
+                    payment['duration_days'],
+                    payment.get('package_id'),
                 )
                 
                 conn.commit()
+                
+                try:
+                    _notify_payment_success_from_row(payment)
+                except Exception as ne:
+                    print(f"[WARN] payment notify: {ne}")
                 
                 return jsonify({
                     'success': True,
@@ -6163,11 +7319,16 @@ def sepay_webhook():
                 sub_success = update_user_subscription(
                     matched_payment['user_id'],
                     matched_payment['characters_limit'],
-                    matched_payment['duration_days']
+                    matched_payment['duration_days'],
+                    matched_payment.get('package_id'),
                 )
                 
                 if sub_success:
                     print(f"[WEBHOOK] ✅ Auto-approved payment {matched_payment['id']} for user {matched_payment['username']}: +{matched_payment['characters_limit']:,} chars")
+                    try:
+                        _notify_payment_success_from_row(matched_payment)
+                    except Exception as ne:
+                        print(f"[WARN] payment notify: {ne}")
                 else:
                     print(f"[WEBHOOK] ⚠️ Payment approved but subscription update failed for user {matched_payment['username']}")
                 
@@ -6194,9 +7355,12 @@ def sepay_webhook():
         print(traceback.format_exc())
         return jsonify({'success': False, 'message': str(e)}), 500
 
-def update_user_subscription(user_id, characters_limit, duration_days):
-    """Cập nhật subscription cho user"""
-    print(f"[DEBUG] update_user_subscription called - User ID: {user_id}, Characters: {characters_limit}, Days: {duration_days}")
+def update_user_subscription(user_id, characters_limit, duration_days, package_id=None):
+    """Cập nhật subscription cho user (cộng ký tự, gia hạn, gán package_id)."""
+    print(
+        f"[DEBUG] update_user_subscription - User ID: {user_id}, Characters: {characters_limit}, "
+        f"Days: {duration_days}, Package ID: {package_id}"
+    )
     
     conn = get_db_connection()
     if not conn:
@@ -6236,9 +7400,17 @@ def update_user_subscription(user_id, characters_limit, duration_days):
                     UPDATE user_subscriptions
                     SET characters_used = %s,
                         characters_limit = %s,
-                        end_date = %s
+                        end_date = %s,
+                        package_id = CASE WHEN %s IS NOT NULL THEN %s ELSE package_id END
                     WHERE id = %s
-                """, (new_characters_used, new_characters_limit, new_end_date, current_sub['id']))
+                """, (
+                    new_characters_used,
+                    new_characters_limit,
+                    new_end_date,
+                    package_id,
+                    package_id,
+                    current_sub['id'],
+                ))
                 
                 print(f"[DEBUG] Updated existing subscription for user {user['username']}")
             else:
@@ -6249,9 +7421,9 @@ def update_user_subscription(user_id, characters_limit, duration_days):
                 end_date = start_date + timedelta(days=duration_days)
                 cursor.execute("""
                     INSERT INTO user_subscriptions
-                    (user_id, characters_limit, characters_used, start_date, end_date, is_active)
-                    VALUES (%s, %s, 0, %s, %s, 1)
-                """, (user_id, characters_limit, start_date, end_date))
+                    (user_id, package_id, characters_limit, characters_used, start_date, end_date, is_active)
+                    VALUES (%s, %s, %s, 0, %s, %s, 1)
+                """, (user_id, package_id, characters_limit, start_date, end_date))
                 
                 print(f"[DEBUG] Created new subscription for user {user['username']}")
             
@@ -6353,10 +7525,15 @@ def admin_approve_payment():
             success = update_user_subscription(
                 payment['user_id'],
                 payment['characters_limit'],
-                payment['duration_days']
+                payment['duration_days'],
+                payment.get('package_id'),
             )
             
             if success:
+                try:
+                    _notify_payment_success_from_row(payment)
+                except Exception as ne:
+                    print(f"[WARN] payment notify: {ne}")
                 return jsonify({
                     'success': True,
                     'verified': True,
@@ -6413,25 +7590,55 @@ def get_user_subscription_status():
             subscription = cursor.fetchone()
             
             if subscription:
+                package_name = subscription.get('package_name')
+                if not package_name or not subscription.get('package_id'):
+                    cursor.execute("""
+                        SELECT sp.package_name, sp.id AS package_id
+                        FROM payments p
+                        JOIN subscription_packages sp ON p.package_id = sp.id
+                        WHERE p.user_id = %s AND p.payment_status = 'completed'
+                        ORDER BY p.completed_at DESC, p.id DESC
+                        LIMIT 1
+                    """, (session['user_id'],))
+                    pay_pkg = cursor.fetchone()
+                    if pay_pkg:
+                        package_name = pay_pkg.get('package_name') or package_name
+                        if not subscription.get('package_id') and pay_pkg.get('package_id'):
+                            cursor.execute(
+                                "UPDATE user_subscriptions SET package_id = %s WHERE id = %s",
+                                (pay_pkg['package_id'], subscription['id']),
+                            )
+                            conn.commit()
+
                 characters_remaining = max(0, subscription['characters_limit'] - subscription['characters_used'])
                 days_remaining = (subscription['end_date'] - datetime.now().date()).days
+                display_package = package_name or 'Gói hiện tại'
                 
                 # Tạo message status dựa trên subscription
                 if characters_remaining > 1000000:  # > 1M chars
-                    status_message = f'🚀 Bạn đang có gói {subscription["package_name"] or "VIP"}! Còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
+                    status_message = f'🚀 Bạn đang có gói {display_package}! Còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
                 elif characters_remaining > 100000:  # > 100K chars  
-                    status_message = f'✅ Gói {subscription["package_name"] or "Active"} còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
+                    status_message = f'✅ Gói {display_package} còn {characters_remaining:,} ký tự và {days_remaining} ngày.'
                 elif days_remaining <= 7:  # Sắp hết hạn
-                    status_message = f'⚠️ Gói {subscription["package_name"] or "Current"} sắp hết hạn ({days_remaining} ngày). Hãy gia hạn sớm!'
+                    status_message = f'⚠️ Gói {display_package} sắp hết hạn ({days_remaining} ngày). Hãy gia hạn sớm!'
+                    try:
+                        _send_user_notification_email(
+                            session['user_id'],
+                            'plan_expiry',
+                            '[VietVoice] Gói dịch vụ sắp hết hạn',
+                            f'Gói của bạn còn {days_remaining} ngày. Hãy gia hạn tại trang Bảng giá.',
+                        )
+                    except Exception as ne:
+                        print(f"[WARN] plan expiry notify: {ne}")
                 elif characters_remaining <= 10000:  # Sắp hết ký tự
-                    status_message = f'⚠️ Gói {subscription["package_name"] or "Current"} còn ít ký tự ({characters_remaining:,}). Hãy nâng cấp!'
+                    status_message = f'⚠️ Gói {display_package} còn ít ký tự ({characters_remaining:,}). Hãy nâng cấp!'
                 else:
-                    status_message = f'📋 Gói {subscription["package_name"] or "Active"}: {characters_remaining:,} ký tự, {days_remaining} ngày.'
+                    status_message = f'📋 Gói {display_package}: {characters_remaining:,} ký tự, {days_remaining} ngày.'
                 
                 return jsonify({
                     'success': True,
                     'subscription': {
-                        'package_name': subscription['package_name'] or 'Custom',
+                        'package_name': display_package,
                         'characters_limit': subscription['characters_limit'],
                         'characters_used': subscription['characters_used'],
                         'characters_remaining': characters_remaining,
@@ -6576,7 +7783,8 @@ def admin_bulk_auto_approve():
                         success = update_user_subscription(
                             payment['user_id'],
                             payment['characters_limit'],
-                            payment['duration_days']
+                            payment['duration_days'],
+                            payment.get('package_id'),
                         )
                         
                         if success:
@@ -7614,10 +8822,16 @@ def check_payment_status(payment_id):
                     update_user_subscription(
                         session['user_id'],
                         payment['characters_limit'],
-                        payment['duration_days']
+                        payment['duration_days'],
+                        payment.get('package_id'),
                     )
                     
                     print(f"[POLL-AUTO] Payment {payment_id} auto-approved for user {session.get('username')}")
+                    
+                    try:
+                        _notify_payment_success_from_row(payment)
+                    except Exception as ne:
+                        print(f"[WARN] payment notify: {ne}")
                     
                     # Re-fetch updated status
                     payment['payment_status'] = 'completed'
@@ -7725,7 +8939,7 @@ def manual_verify_payment(transaction_id):
         with conn.cursor() as cursor:
             # Kiểm tra payment thuộc về user hiện tại
             cursor.execute("""
-                SELECT id, payment_status, user_id, package_id, amount_vnd
+                SELECT id, payment_status, user_id, package_id, amount_vnd, transaction_id, payment_method
                 FROM payments
                 WHERE transaction_id = %s AND user_id = %s
             """, (transaction_id, session['user_id']))
@@ -7741,26 +8955,47 @@ def manual_verify_payment(transaction_id):
                     'message': 'Thanh toán đã được xác nhận thành công'
                 })
             
-            # Verify với SePay
             verify_result = verify_sepay_transaction(transaction_id, payment['amount_vnd'])
             
             if verify_result['verified']:
-                # Update payment status và user subscription
-                update_result = update_user_subscription(payment['id'], payment['user_id'], payment['package_id'])
+                cursor.execute("""
+                    SELECT p.*, sp.characters_limit, sp.duration_days, sp.package_name
+                    FROM payments p
+                    LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                    WHERE p.id = %s
+                """, (payment['id'],))
+                payment_full = cursor.fetchone()
+
+                cursor.execute("""
+                    UPDATE payments
+                    SET payment_status = 'completed',
+                        description = 'Manual verify SePay',
+                        completed_at = NOW()
+                    WHERE id = %s AND payment_status != 'completed'
+                """, (payment['id'],))
+                conn.commit()
+
+                sub_ok = update_user_subscription(
+                    payment['user_id'],
+                    payment_full['characters_limit'],
+                    payment_full['duration_days'],
+                    payment_full.get('package_id'),
+                )
                 
-                if update_result['success']:
+                if sub_ok:
+                    try:
+                        _notify_payment_success_from_row(payment_full)
+                    except Exception as ne:
+                        print(f"[WARN] payment notify: {ne}")
                     return jsonify({
                         'success': True,
                         'verified': True,
                         'message': '🎉 Thanh toán đã được xác nhận! Bạn đã nhận thêm ký tự vào tài khoản.',
-                        'characters_added': update_result.get('characters_added'),
-                        'total_characters': update_result.get('total_characters')
                     })
-                else:
-                    return jsonify({
-                        'success': False,
-                        'message': f'Lỗi cập nhật tài khoản: {update_result.get("error")}'
-                    })
+                return jsonify({
+                    'success': False,
+                    'message': 'Thanh toán đã ghi nhận nhưng cập nhật gói thất bại. Liên hệ hỗ trợ.',
+                })
             else:
                 return jsonify({
                     'success': True,

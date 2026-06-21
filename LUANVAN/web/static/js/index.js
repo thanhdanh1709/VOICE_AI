@@ -7,6 +7,95 @@ let voices = [];
 let currentAudioFilename = null;
 let ffmpegAvailable = true;
 
+let _audioProgressTimer = null;
+let _audioProgressValue = 0;
+
+function _updateAudioProgressUI(pct) {
+    const fill = document.getElementById('audioProgressFill');
+    const track = document.getElementById('audioProgressTrack');
+    const pctEl = document.getElementById('audioProgressPct');
+    const rounded = Math.min(100, Math.max(0, Math.round(pct)));
+    if (fill) fill.style.width = rounded + '%';
+    if (track) track.setAttribute('aria-valuenow', String(rounded));
+    if (pctEl) pctEl.textContent = rounded + '%';
+
+    const chips = document.querySelectorAll('.vv-audio-loader__chip');
+    chips.forEach((c) => c.classList.remove('vv-audio-loader__chip--active'));
+    if (rounded >= 66 && chips[2]) chips[2].classList.add('vv-audio-loader__chip--active');
+    else if (rounded >= 33 && chips[1]) chips[1].classList.add('vv-audio-loader__chip--active');
+    else if (chips[0]) chips[0].classList.add('vv-audio-loader__chip--active');
+}
+
+function _resetAudioProgress() {
+    _audioProgressValue = 0;
+    _updateAudioProgressUI(0);
+}
+
+function stopAudioProgress() {
+    if (_audioProgressTimer) {
+        clearInterval(_audioProgressTimer);
+        _audioProgressTimer = null;
+    }
+}
+
+function startAudioProgress() {
+    stopAudioProgress();
+    _resetAudioProgress();
+    _audioProgressTimer = setInterval(() => {
+        if (_audioProgressValue >= 92) return;
+        const remaining = 92 - _audioProgressValue;
+        const step = Math.max(0.35, remaining * 0.045 + Math.random() * 1.1);
+        _audioProgressValue = Math.min(92, _audioProgressValue + step);
+        _updateAudioProgressUI(_audioProgressValue);
+    }, 110);
+}
+
+function finishAudioProgress(done) {
+    stopAudioProgress();
+    const tick = () => {
+        if (_audioProgressValue >= 100) {
+            _updateAudioProgressUI(100);
+            setTimeout(() => {
+                _resetAudioProgress();
+                if (typeof done === 'function') done();
+            }, 280);
+            return;
+        }
+        _audioProgressValue = Math.min(100, _audioProgressValue + Math.max(2, (100 - _audioProgressValue) * 0.28));
+        _updateAudioProgressUI(_audioProgressValue);
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
+function hideLoadingWithProgress(loadingIndicator, onDone) {
+    if (!loadingIndicator) {
+        if (typeof onDone === 'function') onDone();
+        return;
+    }
+    finishAudioProgress(() => {
+        loadingIndicator.style.display = 'none';
+        loadingIndicator.classList.add('hidden');
+        if (typeof onDone === 'function') onDone();
+    });
+}
+
+function hideLoadingImmediate(loadingIndicator) {
+    stopAudioProgress();
+    _resetAudioProgress();
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+        loadingIndicator.classList.add('hidden');
+    }
+}
+
+function showLoadingIndicator(loadingIndicator) {
+    if (!loadingIndicator) return;
+    loadingIndicator.classList.remove('hidden');
+    loadingIndicator.style.display = 'block';
+    startAudioProgress();
+}
+
 function _msg(text) {
     return (window.__msg ? window.__msg(text) : text);
 }
@@ -71,6 +160,42 @@ function handleDownloadClick() {
     a.remove();
 }
 
+async function applyUserTtsDefaults() {
+    try {
+        const r = await fetch('/api/user/settings');
+        const d = await r.json();
+        if (!d.success || !d.settings) return;
+        const s = d.settings;
+        const select = document.getElementById('voiceSelect');
+        if (s.default_voice_id && select) {
+            const opt = select.querySelector(`option[value="${CSS.escape(s.default_voice_id)}"]`);
+            if (opt) select.value = s.default_voice_id;
+        }
+        const fmt = document.getElementById('exportFormat');
+        if (fmt && s.default_export_format) fmt.value = s.default_export_format;
+        const br = document.getElementById('exportBitrate');
+        if (br && s.default_export_bitrate) br.value = String(s.default_export_bitrate);
+        const pitchSlider = document.getElementById('pitchSlider');
+        const pitchValue = document.getElementById('pitchValue');
+        if (pitchSlider && s.default_pitch != null) {
+            pitchSlider.value = s.default_pitch;
+            if (pitchValue) {
+                pitchValue.textContent = s.default_pitch > 0 ? `+${s.default_pitch}` : String(s.default_pitch);
+            }
+        }
+        const emotionalSelect = document.getElementById('emotionalVoiceSelect');
+        if (emotionalSelect && s.default_emotional_voice_id) {
+            const emoOpt = emotionalSelect.querySelector(
+                `option[value="${CSS.escape(s.default_emotional_voice_id)}"]`
+            );
+            if (emoOpt) emotionalSelect.value = s.default_emotional_voice_id;
+        }
+        syncExportBitrateVisibility();
+    } catch (e) {
+        console.log('[TTS] Could not apply user defaults:', e);
+    }
+}
+
 async function initExportControls() {
     try {
         const r = await fetch('/api/audio/formats');
@@ -87,6 +212,7 @@ async function initExportControls() {
 // Load voices on page load
 document.addEventListener('DOMContentLoaded', async () => {
     await loadVoices();
+    await applyUserTtsDefaults();
     await loadStatistics();
     await initExportControls();
     
@@ -376,10 +502,7 @@ async function handleConvert() {
     
     // Show loading, hide others
     if (emptyState) emptyState.style.display = 'none';
-    if (loadingIndicator) {
-        loadingIndicator.classList.remove('hidden');
-        loadingIndicator.style.display = 'block';
-    }
+    showLoadingIndicator(loadingIndicator);
     audioPlayer.style.display = 'none';
     errorMessage.style.display = 'none';
     
@@ -405,63 +528,46 @@ async function handleConvert() {
         const data = await response.json();
         console.log('[TTS] Response data:', data);
         
-        // Hide loading
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-            loadingIndicator.classList.add('hidden');
-        }
-        
         if (data.success) {
-            // Show audio player
-            const audioElement = document.getElementById('audioElement');
-            
-            audioElement.pause();
-            audioElement.currentTime = 0;
-            audioElement.src = data.audio_url;
-            setCurrentAudio(data.audio_filename || `tts_${Date.now()}.wav`);
-            
-            // Load audio metadata
-            audioElement.load();
-            
-            // Add event listeners for debugging
-            audioElement.addEventListener('loadedmetadata', () => {
-                console.log(`[AUDIO] Metadata loaded: duration=${audioElement.duration}s`);
-            });
-            
-            audioElement.addEventListener('loadeddata', () => {
-                console.log(`[AUDIO] Data loaded: readyState=${audioElement.readyState}`);
-            });
-            
-            audioElement.addEventListener('canplay', () => {
-                console.log(`[AUDIO] Can play: duration=${audioElement.duration}s`);
-            });
-            
-            audioElement.addEventListener('error', (e) => {
-                console.error(`[AUDIO] Error loading audio:`, e);
-                console.error(`[AUDIO] Error code: ${audioElement.error?.code}, message: ${audioElement.error?.message}`);
-            });
-            
-            audioPlayer.style.display = 'block';
+            hideLoadingWithProgress(loadingIndicator, async () => {
+                const audioElement = document.getElementById('audioElement');
+                
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                audioElement.src = data.audio_url;
+                setCurrentAudio(data.audio_filename || `tts_${Date.now()}.wav`);
+                audioElement.load();
+                
+                audioElement.addEventListener('loadedmetadata', () => {
+                    console.log(`[AUDIO] Metadata loaded: duration=${audioElement.duration}s`);
+                });
+                audioElement.addEventListener('loadeddata', () => {
+                    console.log(`[AUDIO] Data loaded: readyState=${audioElement.readyState}`);
+                });
+                audioElement.addEventListener('canplay', () => {
+                    console.log(`[AUDIO] Can play: duration=${audioElement.duration}s`);
+                });
+                audioElement.addEventListener('error', (e) => {
+                    console.error(`[AUDIO] Error loading audio:`, e);
+                    console.error(`[AUDIO] Error code: ${audioElement.error?.code}, message: ${audioElement.error?.message}`);
+                });
+                
+                audioPlayer.style.display = 'block';
 
-            // Expose conversion_id for workspace quick-name feature
-            if (typeof window.wsSetConversionId === 'function') {
-                window.wsSetConversionId(data.conversion_id || null);
-            }
-            
-            // Show voice adjustment panel
-            showVoiceAdjustmentPanel(data.audio_filename || currentAudioFilename);
-            
-            // Reload statistics
-            await loadStatistics();
+                if (typeof window.wsSetConversionId === 'function') {
+                    window.wsSetConversionId(data.conversion_id || null);
+                }
+                
+                showVoiceAdjustmentPanel(data.audio_filename || currentAudioFilename);
+                await loadStatistics();
+            });
         } else {
+            hideLoadingImmediate(loadingIndicator);
             errorMessage.textContent = _msg(data.message) || __('err.convert_failed');
             errorMessage.style.display = 'block';
         }
     } catch (error) {
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-            loadingIndicator.classList.add('hidden');
-        }
+        hideLoadingImmediate(loadingIndicator);
         console.error('Convert error:', error);
         
         // Kiểm tra loại lỗi
@@ -1016,10 +1122,7 @@ async function handleEmotionalConvert() {
     
     // Show loading, hide others
     if (emptyState) emptyState.style.display = 'none';
-    if (loadingIndicator) {
-        loadingIndicator.classList.remove('hidden');
-        loadingIndicator.style.display = 'block';
-    }
+    showLoadingIndicator(loadingIndicator);
     if (audioPlayer) audioPlayer.style.display = 'none';
     if (errorMessage) errorMessage.style.display = 'none';
     
@@ -1058,37 +1161,30 @@ async function handleEmotionalConvert() {
         const data = await response.json();
         console.log('[EMOTIONAL TTS] Response:', data);
         
-        // Hide loading
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-            loadingIndicator.classList.add('hidden');
-        }
-        
         if (data.success) {
-            // Show audio player
-            const audioElement = document.getElementById('audioElement');
-            
-            if (audioElement) {
-                audioElement.pause();
-                audioElement.currentTime = 0;
-                audioElement.src = data.audio_url;
-                setCurrentAudio(data.audio_filename || `emotional_${Date.now()}.wav`);
-                audioElement.load();
+            hideLoadingWithProgress(loadingIndicator, async () => {
+                const audioElement = document.getElementById('audioElement');
                 
-                if (audioPlayer) audioPlayer.style.display = 'block';
+                if (audioElement) {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    audioElement.src = data.audio_url;
+                    setCurrentAudio(data.audio_filename || `emotional_${Date.now()}.wav`);
+                    audioElement.load();
+                    
+                    if (audioPlayer) audioPlayer.style.display = 'block';
 
-                // Expose conversion_id for workspace quick-name feature
-                if (typeof window.wsSetConversionId === 'function') {
-                    window.wsSetConversionId(data.conversion_id || null);
+                    if (typeof window.wsSetConversionId === 'function') {
+                        window.wsSetConversionId(data.conversion_id || null);
+                    }
+                    
+                    console.log('[EMOTIONAL TTS] ✅ Success! File:', data.audio_filename);
                 }
                 
-                console.log('[EMOTIONAL TTS] ✅ Success! File:', data.audio_filename);
-            }
-            
-            // Update stats
-            await loadStatistics();
-            
+                await loadStatistics();
+            });
         } else {
+            hideLoadingImmediate(loadingIndicator);
             if (errorMessage) {
                 errorMessage.textContent = _msg(data.message) || __('err.convert_failed');
                 errorMessage.style.display = 'block';
@@ -1097,10 +1193,7 @@ async function handleEmotionalConvert() {
     } catch (error) {
         console.error('[EMOTIONAL TTS] Error:', error);
         
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-            loadingIndicator.classList.add('hidden');
-        }
+        hideLoadingImmediate(loadingIndicator);
         
         let errorMsg = 'Lỗi kết nối';
         if (error.message === 'Failed to fetch') {

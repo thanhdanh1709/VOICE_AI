@@ -20,11 +20,11 @@
       },
       {
         "title": "Quản lý tài khoản",
-        "content": "<p>Mỗi người dùng chỉ được phép tạo một tài khoản. Hạn ngạch ký tự được tính theo gói dịch vụ và đặt lại hàng tháng theo chu kỳ đăng ký.</p><p>Tài khoản miễn phí có giới hạn sử dụng nhất định. Chi tiết xem tại <a href=\"__PRICING_URL__\" rel=\"noopener noreferrer\" target=\"_blank\">Bảng giá</a>.</p>"
+        "content": "<p>Mỗi người dùng chỉ được phép tạo một tài khoản. Hạn ngạch ký tự được tính theo gói dịch vụ và đặt lại hàng tháng theo chu kỳ đăng ký.</p><p>Tài khoản miễn phí có giới hạn sử dụng nhất định. Chi tiết xem tại <a href=\"/pricing\" rel=\"noopener noreferrer\" target=\"_blank\">Bảng giá</a>.</p>"
       },
       {
         "title": "Thanh toán và hoàn tiền",
-        "content": "<p>Các gói trả phí được thanh toán qua cổng SePay. Phí được tính theo tháng hoặc theo gói đã chọn.</p><p><strong>Chính sách hoàn tiền:</strong> Trong vòng 3 ngày kể từ ngày thanh toán, nếu dịch vụ không hoạt động đúng như mô tả, bạn có thể yêu cầu hoàn tiền bằng cách liên hệ <a href=\"mailto:__SUPPORT_EMAIL__\" rel=\"noopener noreferrer\" target=\"_blank\">__SUPPORT_EMAIL__</a>.</p><div class=\"warning-box\">⚠️ Hoàn tiền chỉ áp dụng trong 3 ngày và khi lỗi được xác minh từ phía VietVoice. Gói đã sử dụng quá 50% hạn mức ký tự có thể không được hoàn tiền.</div>"
+        "content": "<p>Các gói trả phí được thanh toán qua cổng SePay. Phí được tính theo tháng hoặc theo gói đã chọn.</p><p><strong>Chính sách hoàn tiền:</strong> Trong vòng 3 ngày kể từ ngày thanh toán, nếu dịch vụ không hoạt động đúng như mô tả, bạn có thể yêu cầu hoàn tiền bằng cách liên hệ <a href=\"mailto:danhvt388@gmail.com\" rel=\"noopener noreferrer\" target=\"_blank\">danhvt388@gmail.com</a>.</p><div class=\"warning-box\">⚠️ Hoàn tiền chỉ áp dụng trong 3 ngày và khi lỗi được xác minh từ phía VietVoice. Gói đã sử dụng quá 50% hạn mức ký tự có thể không được hoàn tiền.</div>"
       },
       {
         "title": "Giới hạn trách nhiệm",
@@ -32,7 +32,7 @@
       },
       {
         "title": "Chấm dứt tài khoản",
-        "content": "<p>Chúng tôi có quyền chấm dứt hoặc tạm ngừng tài khoản trong trường hợp:</p><ol><li data-list=\"bullet\">Vi phạm các điều khoản được nêu trong mục 4</li><li data-list=\"bullet\">Nghi ngờ gian lận hoặc lạm dụng hệ thống</li><li data-list=\"bullet\">Theo yêu cầu của cơ quan pháp luật</li></ol><p>Bạn cũng có thể tự xóa tài khoản bất kỳ lúc nào bằng cách liên hệ <a href=\"mailto:__SUPPORT_EMAIL__\" rel=\"noopener noreferrer\" target=\"_blank\">__SUPPORT_EMAIL__</a>.</p>"
+        "content": "<p>Chúng tôi có quyền chấm dứt hoặc tạm ngừng tài khoản trong trường hợp:</p><ol><li data-list=\"bullet\">Vi phạm các điều khoản được nêu trong mục 4</li><li data-list=\"bullet\">Nghi ngờ gian lận hoặc lạm dụng hệ thống</li><li data-list=\"bullet\">Theo yêu cầu của cơ quan pháp luật</li></ol><p>Bạn cũng có thể tự xóa tài khoản bất kỳ lúc nào bằng cách liên hệ <a href=\"mailto:danhvt388@gmail.com\" rel=\"noopener noreferrer\" target=\"_blank\">danhvt388@gmail.com</a>.</p>"
       },
       {
         "title": "Thay đổi điều khoản",
@@ -40,7 +40,7 @@
       },
       {
         "title": "Luật áp dụng",
-        "content": "<p>Các điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được giải quyết tại tòa án có thẩm quyền tại Việt Nam.</p><div class=\"warning-box\">📧 Câu hỏi về điều khoản: <strong>__SUPPORT_EMAIL__</strong></div>"
+        "content": "<p>Các điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được giải quyết tại tòa án có thẩm quyền tại Việt Nam.</p><div class=\"warning-box\">📧 Câu hỏi về điều khoản: <strong>danhvt388@gmail.com</strong></div>"
       }
     ],
     "body_html": ""
@@ -49,40 +49,40 @@
     "updated": "Tháng 06 năm 2026",
     "sections": [
       {
-        "title": "Giới thiệu",
-        "content": "<p>VietVoice (\"chúng tôi\") cam kết bảo vệ quyền riêng tư của bạn. Chính sách này mô tả cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân khi bạn sử dụng ứng dụng VietVoice — nền tảng chuyển văn bản thành giọng nói AI.</p><div class=\"warning-box\">📋 Bằng cách sử dụng VietVoice, bạn đồng ý với các điều khoản của chính sách này.</div>"
+        "content": "<p>VietVoice (\"chúng tôi\") cam kết bảo vệ quyền riêng tư của bạn. Chính sách này mô tả cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân khi bạn sử dụng ứng dụng VietVoice — nền tảng chuyển văn bản thành giọng nói AI.</p><div class=\"warning-box\">📋 Bằng cách sử dụng VietVoice, bạn đồng ý với các điều khoản của chính sách này.</div>",
+        "title": "Giới thiệu"
       },
       {
-        "title": "Thông tin nhà phát triển",
-        "content": "<p><strong>Tên ứng dụng:</strong> VietVoice – Text to Speech AI</p><p><strong>Nhà phát triển:</strong> VietVoice Development Team</p><p><strong>Email liên hệ:</strong> __CONTACT_EMAIL__</p><p><strong>Nền tảng:</strong> Web, Android, iOS</p>"
+        "content": "<p><strong>Tên ứng dụng:</strong> VietVoice – Text to Speech AI</p><p><strong>Nhà phát triển:</strong> VietVoice Development Team</p><p><strong>Email liên hệ:</strong> vthanhdanhag@gmail.com</p><p><strong>Nền tảng:</strong> Web, Android, iOS</p>",
+        "title": "Thông tin nhà phát triển"
       },
       {
-        "title": "Dữ liệu chúng tôi thu thập",
-        "content": "<p>Chúng tôi thu thập các thông tin sau:</p><ol><li data-list=\"bullet\"><strong>Thông tin tài khoản:</strong> họ tên, địa chỉ email, mật khẩu (đã mã hóa)</li><li data-list=\"bullet\"><strong>Dữ liệu sử dụng:</strong> văn bản bạn nhập để chuyển đổi, file âm thanh đầu ra</li><li data-list=\"bullet\"><strong>File giọng nói:</strong> nếu bạn tải lên để clone giọng cá nhân</li><li data-list=\"bullet\"><strong>Lịch sử giao dịch:</strong> thông tin thanh toán và nâng cấp gói dịch vụ</li><li data-list=\"bullet\"><strong>Thông tin kỹ thuật:</strong> địa chỉ IP, loại thiết bị, phiên bản hệ điều hành</li><li data-list=\"bullet\"><strong>Nhật ký hoạt động:</strong> thời gian đăng nhập, số ký tự đã sử dụng</li></ol><div class=\"warning-box\">⚠️ Không nhập thông tin nhạy cảm (mật khẩu, số thẻ, mã OTP) vào ô chuyển văn bản thành giọng nói.</div>"
+        "content": "<p>Chúng tôi thu thập các thông tin sau:</p><ol><li data-list=\"bullet\"><strong>Thông tin tài khoản:</strong> họ tên, địa chỉ email, mật khẩu (đã mã hóa)</li><li data-list=\"bullet\"><strong>Dữ liệu sử dụng:</strong> văn bản bạn nhập để chuyển đổi, file âm thanh đầu ra</li><li data-list=\"bullet\"><strong>File giọng nói:</strong> nếu bạn tải lên để clone giọng cá nhân</li><li data-list=\"bullet\"><strong>Lịch sử giao dịch:</strong> thông tin thanh toán và nâng cấp gói dịch vụ</li><li data-list=\"bullet\"><strong>Thông tin kỹ thuật:</strong> địa chỉ IP, loại thiết bị, phiên bản hệ điều hành</li><li data-list=\"bullet\"><strong>Nhật ký hoạt động:</strong> thời gian đăng nhập, số ký tự đã sử dụng</li></ol><div class=\"warning-box\">⚠️ Không nhập thông tin nhạy cảm (mật khẩu, số thẻ, mã OTP) vào ô chuyển văn bản thành giọng nói.</div>",
+        "title": "Dữ liệu chúng tôi thu thập"
       },
       {
-        "title": "Mục đích sử dụng dữ liệu",
-        "content": "<p>Chúng tôi sử dụng dữ liệu thu thập để:</p><ol><li data-list=\"bullet\">Cung cấp dịch vụ chuyển văn bản thành giọng nói</li><li data-list=\"bullet\">Quản lý tài khoản và phiên đăng nhập của bạn</li><li data-list=\"bullet\">Xử lý thanh toán và quản lý gói dịch vụ</li><li data-list=\"bullet\">Cải thiện chất lượng giọng nói AI và trải nghiệm người dùng</li><li data-list=\"bullet\">Gửi thông báo về dịch vụ khi cần thiết</li><li data-list=\"bullet\">Phát hiện và ngăn chặn hành vi lạm dụng hệ thống</li></ol>"
+        "content": "<p>Chúng tôi sử dụng dữ liệu thu thập để:</p><ol><li data-list=\"bullet\">Cung cấp dịch vụ chuyển văn bản thành giọng nói</li><li data-list=\"bullet\">Quản lý tài khoản và phiên đăng nhập của bạn</li><li data-list=\"bullet\">Xử lý thanh toán và quản lý gói dịch vụ</li><li data-list=\"bullet\">Cải thiện chất lượng giọng nói AI và trải nghiệm người dùng</li><li data-list=\"bullet\">Gửi thông báo về dịch vụ khi cần thiết</li><li data-list=\"bullet\">Phát hiện và ngăn chặn hành vi lạm dụng hệ thống</li></ol>",
+        "title": "Mục đích sử dụng dữ liệu"
       },
       {
-        "title": "Chia sẻ dữ liệu với bên thứ ba",
-        "content": "<p>Chúng tôi <strong>không bán</strong> dữ liệu cá nhân của bạn. Dữ liệu chỉ được chia sẻ trong các trường hợp:</p><ol><li data-list=\"bullet\"><strong>Cổng thanh toán SePay:</strong> để xử lý giao dịch nâng cấp tài khoản</li><li data-list=\"bullet\"><strong>Dịch vụ lưu trữ đám mây:</strong> Railway / hosting provider để vận hành ứng dụng</li><li data-list=\"bullet\"><strong>Yêu cầu pháp lý:</strong> khi có lệnh của cơ quan pháp luật Việt Nam</li></ol><div class=\"warning-box\">🛡️ Chúng tôi không chia sẻ dữ liệu với bên thứ ba cho mục đích quảng cáo.</div>"
+        "content": "<p>Chúng tôi <strong>không bán</strong> dữ liệu cá nhân của bạn. Dữ liệu chỉ được chia sẻ trong các trường hợp:</p><ol><li data-list=\"bullet\"><strong>Cổng thanh toán SePay:</strong> để xử lý giao dịch nâng cấp tài khoản</li><li data-list=\"bullet\"><strong>Dịch vụ lưu trữ đám mây:</strong> Railway / hosting provider để vận hành ứng dụng</li><li data-list=\"bullet\"><strong>Yêu cầu pháp lý:</strong> khi có lệnh của cơ quan pháp luật Việt Nam</li></ol><div class=\"warning-box\">🛡️ Chúng tôi không chia sẻ dữ liệu với bên thứ ba cho mục đích quảng cáo.</div>",
+        "title": "Chia sẻ dữ liệu với bên thứ ba"
       },
       {
-        "title": "Cookies & Session",
-        "content": "<p>VietVoice sử dụng:</p><ol><li data-list=\"bullet\"><strong>Session cookies:</strong> để duy trì trạng thái đăng nhập của bạn</li><li data-list=\"bullet\"><strong>Local Storage:</strong> lưu tùy chọn giao diện (sáng/tối)</li></ol><p>Chúng tôi không sử dụng Google Analytics, Facebook Pixel, hay bất kỳ công cụ theo dõi của bên thứ ba.</p>"
+        "content": "<p>VietVoice sử dụng:</p><ol><li data-list=\"bullet\"><strong>Session cookies:</strong> để duy trì trạng thái đăng nhập của bạn</li><li data-list=\"bullet\"><strong>Local Storage:</strong> lưu tùy chọn giao diện (sáng/tối)</li></ol><p>Chúng tôi không sử dụng Google Analytics, Facebook Pixel, hay bất kỳ công cụ theo dõi của bên thứ ba.</p>",
+        "title": "Cookies & Session"
       },
       {
-        "title": "Quyền của bạn",
-        "content": "<p>Bạn có các quyền sau đối với dữ liệu cá nhân:</p><ol><li data-list=\"bullet\"><strong>Truy cập:</strong> xem dữ liệu chúng tôi lưu trữ về bạn</li><li data-list=\"bullet\"><strong>Chỉnh sửa:</strong> cập nhật thông tin tài khoản bất kỳ lúc nào</li><li data-list=\"bullet\"><strong>Xóa:</strong> yêu cầu xóa toàn bộ dữ liệu tài khoản</li><li data-list=\"bullet\"><strong>Phản đối:</strong> từ chối một số hình thức xử lý dữ liệu nhất định</li></ol><div class=\"warning-box\">🗑️ Để xóa tài khoản và toàn bộ dữ liệu, hãy gửi email đến <strong>__SUPPORT_EMAIL__</strong> với tiêu đề <em>\"Yêu cầu xóa dữ liệu\"</em>. Chúng tôi sẽ xử lý trong vòng 30 ngày.</div>"
+        "content": "<p>Bạn có các quyền sau đối với dữ liệu cá nhân:</p><ol><li data-list=\"bullet\"><strong>Truy cập:</strong> xem dữ liệu chúng tôi lưu trữ về bạn</li><li data-list=\"bullet\"><strong>Chỉnh sửa:</strong> cập nhật thông tin tài khoản bất kỳ lúc nào</li><li data-list=\"bullet\"><strong>Xóa:</strong> yêu cầu xóa toàn bộ dữ liệu tài khoản</li><li data-list=\"bullet\"><strong>Phản đối:</strong> từ chối một số hình thức xử lý dữ liệu nhất định</li></ol><div class=\"warning-box\">🗑️ Để xóa tài khoản và toàn bộ dữ liệu, hãy gửi email đến <strong>danhvt388@gmail.com</strong> với tiêu đề <em>\"Yêu cầu xóa dữ liệu\"</em>. Chúng tôi sẽ xử lý trong vòng 30 ngày.</div>",
+        "title": "Quyền của bạn"
       },
       {
-        "title": "Bảo mật dữ liệu",
-        "content": "<p>Chúng tôi áp dụng các biện pháp bảo mật sau:</p><ol><li data-list=\"bullet\">Mã hóa mật khẩu bằng bcrypt hashing</li><li data-list=\"bullet\">Kết nối HTTPS/TLS cho mọi giao tiếp</li><li data-list=\"bullet\">Giới hạn quyền truy cập cơ sở dữ liệu theo vai trò</li><li data-list=\"bullet\">Không lưu trữ thông tin thẻ thanh toán trực tiếp</li></ol><div class=\"warning-box\">⚠️ Không chia sẻ mật khẩu tài khoản. Bạn nên đăng xuất khi dùng thiết bị công cộng hoặc máy tính dùng chung.</div>"
+        "content": "<p>Chúng tôi áp dụng các biện pháp bảo mật sau:</p><ol><li data-list=\"bullet\">Mã hóa mật khẩu bằng bcrypt hashing</li><li data-list=\"bullet\">Kết nối HTTPS/TLS cho mọi giao tiếp</li><li data-list=\"bullet\">Giới hạn quyền truy cập cơ sở dữ liệu theo vai trò</li><li data-list=\"bullet\">Không lưu trữ thông tin thẻ thanh toán trực tiếp</li></ol><div class=\"warning-box\">⚠️ Không chia sẻ mật khẩu tài khoản. Bạn nên đăng xuất khi dùng thiết bị công cộng hoặc máy tính dùng chung.</div>",
+        "title": "Bảo mật dữ liệu"
       },
       {
-        "title": "Liên hệ",
-        "content": "<p>Nếu có câu hỏi về chính sách quyền riêng tư, vui lòng liên hệ:</p><div class=\"warning-box\"><a href=\"mailto:__CONTACT_EMAIL__\" rel=\"noopener noreferrer\" target=\"_blank\">📧 __CONTACT_EMAIL__</a><a href=\"__CONTACT_URL__\" rel=\"noopener noreferrer\" target=\"_blank\">💬 Trang liên hệ</a><a href=\"__SUPPORT_URL__\" rel=\"noopener noreferrer\" target=\"_blank\">❓ Trang hỗ trợ</a></div>"
+        "content": "<p>Nếu có câu hỏi về chính sách quyền riêng tư, vui lòng liên hệ:</p><div class=\"warning-box\"><a href=\"mailto:vthanhdanhag@gmail.com\" rel=\"noopener noreferrer\" target=\"_blank\">📧 vthanhdanhag@gmail.com</a><a href=\"/contact\" rel=\"noopener noreferrer\" target=\"_blank\">💬 Trang liên hệ</a><a href=\"/support\" rel=\"noopener noreferrer\" target=\"_blank\">❓ Trang hỗ trợ</a></div>",
+        "title": "Liên hệ"
       }
     ],
     "body_html": ""
@@ -99,7 +99,7 @@
         "title": "Dữ liệu sẽ bị xóa"
       },
       {
-        "content": "<p>Bạn có thể yêu cầu xóa dữ liệu theo các cách sau:</p><ol><li data-list=\"bullet\"><strong>Qua email:</strong> Gửi email đến <a href=\"mailto:__SUPPORT_EMAIL__\" rel=\"noopener noreferrer\" target=\"_blank\">__SUPPORT_EMAIL__</a> với tiêu đề <em>\"Yêu cầu xóa dữ liệu\"</em> và địa chỉ email tài khoản của bạn.</li><li data-list=\"bullet\"><strong>Qua trang liên hệ:</strong> Điền form tại <a href=\"__CONTACT_URL__\" rel=\"noopener noreferrer\" target=\"_blank\">trang Liên hệ</a> với nội dung yêu cầu xóa tài khoản.</li><li data-list=\"bullet\"><strong>Trong ứng dụng:</strong> Vào <strong>Hồ sơ cá nhân</strong> → <strong>Yêu cầu xóa tài khoản</strong>.</li></ol><div class=\"warning-box\"><a href=\"mailto:__SUPPORT_EMAIL__?subject=Yêu cầu xóa dữ liệu\" rel=\"noopener noreferrer\" target=\"_blank\">📧 Gửi yêu cầu xóa dữ liệu ngay</a></div>",
+        "content": "<p>Bạn có thể yêu cầu xóa dữ liệu theo các cách sau:</p><ol><li data-list=\"bullet\"><strong>Qua email:</strong> Gửi email đến <a href=\"mailto:danhvt388@gmail.com\" rel=\"noopener noreferrer\" target=\"_blank\">danhvt388@gmail.com</a> với tiêu đề <em>\"Yêu cầu xóa dữ liệu\"</em> và địa chỉ email tài khoản của bạn.</li><li data-list=\"bullet\"><strong>Qua trang liên hệ:</strong> Điền form tại <a href=\"/contact\" rel=\"noopener noreferrer\" target=\"_blank\">trang Liên hệ</a> với nội dung yêu cầu xóa tài khoản.</li><li data-list=\"bullet\"><strong>Trong ứng dụng:</strong> Vào <strong>Hồ sơ cá nhân</strong> → <strong>Yêu cầu xóa tài khoản</strong>.</li></ol><div class=\"warning-box\"><a href=\"mailto:danhvt388@gmail.com?subject=Yêu cầu xóa dữ liệu\" rel=\"noopener noreferrer\" target=\"_blank\">📧 Gửi yêu cầu xóa dữ liệu ngay</a></div>",
         "title": "Cách yêu cầu xóa dữ liệu"
       },
       {
@@ -125,15 +125,15 @@
         "title": "Phương thức thanh toán"
       },
       {
-        "content": "<p>Giá các gói được niêm yết tại trang <a href=\"__PRICING_URL__\">Bảng giá</a> và có thể thay đổi theo thời gian. Giá đã bao gồm hạn mức ký tự theo gói và thời hạn sử dụng (thường 30 ngày/kỳ).</p><p>Sau khi thanh toán thành công, hạn mức ký tự được cộng vào tài khoản của bạn theo gói đã chọn.</p>",
+        "content": "<p>Giá các gói được niêm yết tại trang <a href=\"/pricing\">Bảng giá</a> và có thể thay đổi theo thời gian. Giá đã bao gồm hạn mức ký tự theo gói và thời hạn sử dụng (thường 30 ngày/kỳ).</p><p>Sau khi thanh toán thành công, hạn mức ký tự được cộng vào tài khoản của bạn theo gói đã chọn.</p>",
         "title": "Giá và gói dịch vụ"
       },
       {
-        "content": "<p>Sau khi bạn chuyển khoản đúng thông tin:</p><ul><li>Hệ thống tự động kiểm tra giao dịch qua SePay (thường trong vài phút)</li><li>Bạn có thể bấm <strong>Kiểm tra ngay</strong> trên trang thanh toán nếu cần</li><li>Khi xác nhận thành công, gói được kích hoạt và số ký tự được cộng ngay</li></ul><div class=\"highlight-box\"><p>ℹ️ Nếu quá 30 phút chưa được cộng gói, vui lòng liên hệ <strong>__SUPPORT_EMAIL__</strong> kèm mã giao dịch.</p></div>",
+        "content": "<p>Sau khi bạn chuyển khoản đúng thông tin:</p><ul><li>Hệ thống tự động kiểm tra giao dịch qua SePay (thường trong vài phút)</li><li>Bạn có thể bấm <strong>Kiểm tra ngay</strong> trên trang thanh toán nếu cần</li><li>Khi xác nhận thành công, gói được kích hoạt và số ký tự được cộng ngay</li></ul><div class=\"highlight-box\"><p>ℹ️ Nếu quá 30 phút chưa được cộng gói, vui lòng liên hệ <strong>danhvt388@gmail.com</strong> kèm mã giao dịch.</p></div>",
         "title": "Xác nhận thanh toán"
       },
       {
-        "content": "<p>Bạn có thể yêu cầu hoàn tiền trong <strong>3 ngày</strong> kể từ ngày thanh toán nếu:</p><ul><li>Dịch vụ không hoạt động đúng như mô tả trên trang Bảng giá</li><li>Lỗi kỹ thuật từ phía VietVoice khiến không thể sử dụng dịch vụ</li></ul><div class=\"warning-box\"><p>⚠️ Hoàn tiền không áp dụng khi đã sử dụng quá 50% hạn mức ký tự của gói, hoặc vi phạm Điều khoản sử dụng.</p></div><p>Gửi yêu cầu hoàn tiền tới <a href=\"mailto:__SUPPORT_EMAIL__\">__SUPPORT_EMAIL__</a> với email tài khoản và mã giao dịch.</p>",
+        "content": "<p>Bạn có thể yêu cầu hoàn tiền trong <strong>3 ngày</strong> kể từ ngày thanh toán nếu:</p><ul><li>Dịch vụ không hoạt động đúng như mô tả trên trang Bảng giá</li><li>Lỗi kỹ thuật từ phía VietVoice khiến không thể sử dụng dịch vụ</li></ul><div class=\"warning-box\"><p>⚠️ Hoàn tiền không áp dụng khi đã sử dụng quá 50% hạn mức ký tự của gói, hoặc vi phạm Điều khoản sử dụng.</p></div><p>Gửi yêu cầu hoàn tiền tới <a href=\"mailto:danhvt388@gmail.com\">danhvt388@gmail.com</a> với email tài khoản và mã giao dịch.</p>",
         "title": "Chính sách hoàn tiền"
       },
       {
@@ -141,7 +141,7 @@
         "title": "Gia hạn và hủy gói"
       },
       {
-        "content": "<p>Mọi thắc mắc về thanh toán, hoàn tiền hoặc giao dịch chưa được ghi nhận:</p><div class=\"contact-row\"><a href=\"mailto:__SUPPORT_EMAIL__\" class=\"contact-item\">📧 __SUPPORT_EMAIL__</a><a href=\"__CONTACT_URL__\" class=\"contact-item\">💬 Trang liên hệ</a><a href=\"__PRICING_URL__\" class=\"contact-item\">💳 Bảng giá</a></div>",
+        "content": "<p>Mọi thắc mắc về thanh toán, hoàn tiền hoặc giao dịch chưa được ghi nhận:</p><div class=\"contact-row\"><a href=\"mailto:danhvt388@gmail.com\" class=\"contact-item\">📧 danhvt388@gmail.com</a><a href=\"/contact\" class=\"contact-item\">💬 Trang liên hệ</a><a href=\"/pricing\" class=\"contact-item\">💳 Bảng giá</a></div>",
         "title": "Liên hệ thanh toán"
       }
     ],
