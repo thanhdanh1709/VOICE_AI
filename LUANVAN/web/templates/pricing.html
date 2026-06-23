@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
-<title>VietVoice - N├óng cß║Ñp g├│i dß╗ïch vß╗Ñ</title>
+<title>VietVoice - Nâng cấp gói dịch vụ</title>
 
 {% include 'partials/vv_theme_head.html' %}
 
@@ -81,7 +81,7 @@
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
-<!-- ΓòÉΓòÉΓòÉ TOP NAVBAR ΓòÉΓòÉΓòÉ -->
+<!-- ═══ TOP NAVBAR ═══ -->
 <nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
@@ -99,17 +99,17 @@
       {% endif %}
     </div>
     <div class="flex items-center gap-1.5 md:gap-3">
-      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="K├╜ tß╗▒ c├▓n lß║íi">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
       </a>
-      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="─Éß╗òi giao diß╗çn">
+      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
         <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
       </button>
-      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Li├¬n hß╗ç">
+      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
         <span class="material-symbols-outlined">help_outline</span>
       </a>
       <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
@@ -133,7 +133,7 @@
 {% set mob_nav_active = 'pricing' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ LAYOUT ΓòÉΓòÉΓòÉ -->
+<!-- ═══ LAYOUT ═══ -->
 <div class="vv-app-shell">
 
   <!-- Sidebar -->
@@ -153,31 +153,31 @@
     <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
         <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-        <span class="sb-label" data-i18n="side.create_audio">Tß║ío Audio mß╗¢i</span>
+        <span class="sb-label" data-i18n="side.create_audio">Tạo Audio mới</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
         <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
-        <span class="sb-label" data-i18n="side.audio_library">Th╞░ viß╗çn Audio</span>
+        <span class="sb-label" data-i18n="side.audio_library">Thư viện Audio</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
         <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-        <span class="sb-label" data-i18n="side.my_voices">Giß╗ìng cß╗ºa t├┤i</span>
+        <span class="sb-label" data-i18n="side.my_voices">Giọng của tôi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
         <span class="material-symbols-outlined" style="font-size:18px">history</span>
-        <span class="sb-label" data-i18n="side.history">Lß╗ïch sß╗¡ chuyß╗ân ─æß╗òi</span>
+        <span class="sb-label" data-i18n="side.history">Lịch sử chuyển đổi</span>
       </a>
       <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('pricing') }}">
         <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
-        <span class="sb-label" data-i18n="side.pricing">Bß║úng gi├í</span>
+        <span class="sb-label" data-i18n="side.pricing">Bảng giá</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
         <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
-        <span class="sb-label" data-i18n="side.profile">Hß╗ô s╞í</span>
+        <span class="sb-label" data-i18n="side.profile">Hồ sơ</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
         <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
-        <span class="sb-label" data-i18n="side.contact">Li├¬n hß╗ç</span>
+        <span class="sb-label" data-i18n="side.contact">Liên hệ</span>
       </a>
     </nav>
 
@@ -188,32 +188,32 @@
     <div class="px-3 pb-4 sb-upgrade">
       <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
         <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span class="sb-label" data-i18n="side.upgrade">N├óng cß║Ñp g├│i</span>
+        <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
       </a>
     </div>
   </aside>
 
-  <!-- ΓòÉΓòÉΓòÉ MAIN CONTENT ΓòÉΓòÉΓòÉ -->
+  <!-- ═══ MAIN CONTENT ═══ -->
   <main id="content" data-spa-page="pricing" class="flex-1 flex flex-col min-w-0 flex-grow py-6 md:py-10 px-4 md:px-6 lg:px-10 max-w-[1300px] mx-auto w-full pb-[76px] md:pb-10 overflow-hidden">
     <script id="pricingPackagesJson" type="application/json">{{ pricing_packages|tojson }}</script>
     {% include 'partials/content/pricing.html' %}
   </main>
 </div>
 
-<!-- ΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉ -->
+<!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ MOBILE BOTTOM NAV ΓòÉΓòÉΓòÉ -->
+<!-- ═══ MOBILE BOTTOM NAV ═══ -->
 {% include 'partials/mobile_bottom_nav.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ QR PAYMENT MODAL ΓòÉΓòÉΓòÉ -->
+<!-- ═══ QR PAYMENT MODAL ═══ -->
 <div id="qrPaymentModal">
   <div class="modal-overlay"></div>
   <div class="modal-content">
     <div class="modal-header">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">qr_code</span>
-        <h2 class="text-base font-bold text-on-surface" data-i18n="price.qr_modal.title">Thanh to├ín qua QR Code</h2>
+        <h2 class="text-base font-bold text-on-surface" data-i18n="price.qr_modal.title">Thanh toán qua QR Code</h2>
       </div>
       <button class="close-qr text-on-surface-variant hover:text-on-surface p-1.5 rounded-lg hover:bg-white/5 transition-colors">
         <span class="material-symbols-outlined" style="font-size:20px">close</span>
@@ -222,13 +222,13 @@
     <div class="modal-body">
       <!-- Instructions -->
       <div class="bg-surface-container rounded-xl p-4 mb-5 text-sm text-on-surface-variant space-y-1.5">
-        <p class="font-semibold text-on-surface mb-2" data-i18n="price.qr_modal.guide_title">H╞░ß╗¢ng dß║½n thanh to├ín:</p>
-        <p data-i18n="price.qr_modal.step1">1. Mß╗ƒ app ng├ón h├áng (TPBank, Vietcombank, BIDV, v.v.)</p>
-        <p data-i18n="price.qr_modal.step2">2. Chß╗ìn "Qu├⌐t QR" hoß║╖c "Chuyß╗ân khoß║ún"</p>
-        <p data-i18n="price.qr_modal.step3">3. Qu├⌐t QR code b├¬n d╞░ß╗¢i</p>
-        <p data-i18n="price.qr_modal.step4">4. Kiß╗âm tra th├┤ng tin: Sß╗æ t├ái khoß║ún, sß╗æ tiß╗ün, nß╗Öi dung</p>
-        <p data-i18n="price.qr_modal.step5">5. X├íc nhß║¡n thanh to├ín trong app ng├ón h├áng</p>
-        <p data-i18n="price.qr_modal.step6">6. Hß╗ç thß╗æng tß╗▒ ─æß╗Öng x├íc nhß║¡n ΓÇö kh├┤ng cß║ºn nhß║¡p m├ú</p>
+        <p class="font-semibold text-on-surface mb-2" data-i18n="price.qr_modal.guide_title">Hướng dẫn thanh toán:</p>
+        <p data-i18n="price.qr_modal.step1">1. Mở app ngân hàng (TPBank, Vietcombank, BIDV, v.v.)</p>
+        <p data-i18n="price.qr_modal.step2">2. Chọn "Quét QR" hoặc "Chuyển khoản"</p>
+        <p data-i18n="price.qr_modal.step3">3. Quét QR code bên dưới</p>
+        <p data-i18n="price.qr_modal.step4">4. Kiểm tra thông tin: Số tài khoản, số tiền, nội dung</p>
+        <p data-i18n="price.qr_modal.step5">5. Xác nhận thanh toán trong app ngân hàng</p>
+        <p data-i18n="price.qr_modal.step6">6. Hệ thống tự động xác nhận — không cần nhập mã</p>
       </div>
 
       <!-- QR Code display -->
@@ -238,62 +238,62 @@
              style="display:none;max-height:280px;object-fit:contain"/>
         <div id="qrLoading" class="flex flex-col items-center gap-3 py-8 text-on-surface-variant">
           <div style="width:28px;height:28px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
-          <p class="text-sm" data-i18n="price.qr_modal.generating">─Éang tß║ío QR code...</p>
+          <p class="text-sm" data-i18n="price.qr_modal.generating">Đang tạo QR code...</p>
         </div>
         <div id="qrDebugInfo" style="display:none" class="text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded-lg"></div>
       </div>
 
       <!-- Bank Info -->
       <div id="bankInfo" style="display:none" class="bg-surface-container rounded-xl p-4 mb-5 space-y-2.5 text-sm">
-        <p class="font-semibold text-on-surface mb-3" data-i18n="price.qr_modal.bank_title">Th├┤ng tin chuyß╗ân khoß║ún:</p>
+        <p class="font-semibold text-on-surface mb-3" data-i18n="price.qr_modal.bank_title">Thông tin chuyển khoản:</p>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.bank">Ng├ón h├áng:</span>
-          <span id="bankName" class="text-on-surface font-medium">ΓÇö</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.bank">Ngân hàng:</span>
+          <span id="bankName" class="text-on-surface font-medium">—</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account">Sß╗æ t├ái khoß║ún:</span>
-          <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">ΓÇö</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account">Số tài khoản:</span>
+          <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">—</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account_name">Chß╗º t├ái khoß║ún:</span>
-          <span id="accountName" class="text-on-surface font-medium">ΓÇö</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account_name">Chủ tài khoản:</span>
+          <span id="accountName" class="text-on-surface font-medium">—</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.amount">Sß╗æ tiß╗ün:</span>
-          <span id="amount" class="text-tertiary font-bold">ΓÇö</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.amount">Số tiền:</span>
+          <span id="amount" class="text-tertiary font-bold">—</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.content">Nß╗Öi dung:</span>
-          <span id="qrTransferContent" class="copyable-text" onclick="copyToClipboard(this)">ΓÇö</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.content">Nội dung:</span>
+          <span id="qrTransferContent" class="copyable-text" onclick="copyToClipboard(this)">—</span>
         </div>
-        <p class="text-[11px] text-on-surface-variant pt-1" data-i18n="price.qr_modal.copy_hint">(Click v├áo sß╗æ t├ái khoß║ún / nß╗Öi dung ─æß╗â copy)</p>
+        <p class="text-[11px] text-on-surface-variant pt-1" data-i18n="price.qr_modal.copy_hint">(Click vào số tài khoản / nội dung để copy)</p>
       </div>
 
       <!-- Auto-Verify Section -->
       <div id="verifySection" style="display:none;background:rgba(208,188,255,0.06);border:1px solid rgba(208,188,255,0.15)" class="rounded-xl p-4">
 
-        <!-- Trß║íng th├íi ─æang chß╗¥ -->
+        <!-- Trạng thái đang chờ -->
         <div id="verifyWaiting">
           <div class="flex items-center gap-3 mb-3">
             <div id="verifySpinner" style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.2);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.9s linear infinite;flex-shrink:0"></div>
-            <p class="text-sm font-semibold text-on-surface" data-i18n="price.qr_modal.waiting">─Éang chß╗¥ x├íc nhß║¡n thanh to├ín...</p>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="price.qr_modal.waiting">Đang chờ xác nhận thanh toán...</p>
           </div>
           <p class="text-xs text-on-surface-variant mb-3 ml-8" data-i18n="price.qr_modal.waiting_desc">
-            Hß╗ç thß╗æng tß╗▒ ─æß╗Öng kiß╗âm tra mß╗ùi 5 gi├óy. Sau khi chuyß╗ân khoß║ún th├ánh c├┤ng, g├│i sß║╜ ─æ╞░ß╗úc k├¡ch hoß║ít ngay lß║¡p tß╗⌐c.
+            Hệ thống tự động kiểm tra mỗi 5 giây. Sau khi chuyển khoản thành công, gói sẽ được kích hoạt ngay lập tức.
           </p>
           <button id="verifyBtn"
             class="ml-8 flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
             style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.25);color:#d0bcff">
             <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
-            <span data-i18n="price.qr_modal.verify_now">Kiß╗âm tra ngay</span>
+            <span data-i18n="price.qr_modal.verify_now">Kiểm tra ngay</span>
           </button>
         </div>
 
-        <!-- Trß║íng th├íi th├ánh c├┤ng (ß║⌐n, hiß╗çn khi x├íc nhß║¡n) -->
+        <!-- Trạng thái thành công (ẩn, hiện khi xác nhận) -->
         <div id="verifySuccess" style="display:none" class="flex items-center gap-3">
-          <span class="text-2xl">≡ƒÄë</span>
+          <span class="text-2xl">🎉</span>
           <div>
-            <p class="text-sm font-bold" style="color:#6ee7b7" data-i18n="price.qr_modal.success">Thanh to├ín th├ánh c├┤ng!</p>
+            <p class="text-sm font-bold" style="color:#6ee7b7" data-i18n="price.qr_modal.success">Thanh toán thành công!</p>
             <p id="verifySuccessMsg" class="text-xs text-on-surface-variant mt-0.5"></p>
           </div>
         </div>
@@ -303,12 +303,12 @@
   </div>
 </div>
 
-<!-- ΓòÉΓòÉΓòÉ SCRIPTS ΓòÉΓòÉΓòÉ -->
+<!-- ═══ SCRIPTS ═══ -->
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 <script>
-// ΓöÇΓöÇ Characters remaining (nav badge) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Characters remaining (nav badge) ─────────────────────────
 async function loadCharsRemaining() {
   try {
     const r = await fetch('/api/user/characters');
@@ -317,13 +317,13 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' ' + ((window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.chars') : 'k├╜ tß╗▒');
+      if (el) el.textContent = fmt + ' ' + ((window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.chars') : 'ký tự');
     }
   } catch(e) {}
 }
 loadCharsRemaining();
 
-// ΓöÇΓöÇ Theme toggle ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Theme toggle ──────────────────────────────────────────────
 
 
 function toggleMobileNav() {
@@ -346,12 +346,12 @@ function copyToClipboard(element) {
   const text = element.textContent.trim();
   navigator.clipboard.writeText(text).then(() => {
     const orig = element.textContent;
-    const copied = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copied') : '─É├ú copy!';
+    const copied = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copied') : 'Đã copy!';
     element.textContent = copied;
     element.style.color = '#2fd9f4';
     setTimeout(() => { element.textContent = orig; element.style.color = ''; }, 2000);
   }).catch(() => {
-    const msg = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copy_fail') : 'Kh├┤ng thß╗â copy';
+    const msg = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copy_fail') : 'Không thể copy';
     alert(msg + ': ' + text);
   });
 }

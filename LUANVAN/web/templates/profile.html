@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
-<title data-i18n="prof.title">Hß╗ô s╞í c├í nh├ón - VietVoice</title>
+<title data-i18n="prof.title">Hồ sơ cá nhân - VietVoice</title>
 
 {% include 'partials/vv_theme_head.html' %}
 
@@ -270,7 +270,7 @@
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
-<!-- ΓòÉΓòÉΓòÉ TOP NAVBAR ΓòÉΓòÉΓòÉ -->
+<!-- ═══ TOP NAVBAR ═══ -->
 <nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
@@ -292,7 +292,7 @@
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
       </a>
-      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="─Éß╗òi giao diß╗çn">
+      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
         <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
@@ -319,7 +319,7 @@
 {% set mob_nav_active = 'profile' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ LAYOUT ΓòÉΓòÉΓòÉ -->
+<!-- ═══ LAYOUT ═══ -->
 <div class="vv-app-shell">
 
   <!-- Sidebar -->
@@ -340,25 +340,25 @@
 
     <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span><span class="sb-label" data-i18n="side.create_audio">Tß║ío Audio mß╗¢i</span>
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span><span class="sb-label" data-i18n="side.create_audio">Tạo Audio mới</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">library_music</span><span class="sb-label" data-i18n="side.audio_library">Th╞░ viß╗çn Audio</span>
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span><span class="sb-label" data-i18n="side.audio_library">Thư viện Audio</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span><span class="sb-label" data-i18n="side.my_voices">Giß╗ìng cß╗ºa t├┤i</span>
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span><span class="sb-label" data-i18n="side.my_voices">Giọng của tôi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">history</span><span class="sb-label" data-i18n="side.history">Lß╗ïch sß╗¡ chuyß╗ân ─æß╗òi</span>
+        <span class="material-symbols-outlined" style="font-size:18px">history</span><span class="sb-label" data-i18n="side.history">Lịch sử chuyển đổi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">bolt</span><span class="sb-label" data-i18n="side.pricing">Bß║úng gi├í</span>
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span><span class="sb-label" data-i18n="side.pricing">Bảng giá</span>
       </a>
       <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('profile') }}">
-        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="sb-label" data-i18n="side.profile">Hß╗ô s╞í c├í nh├ón</span>
+        <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">manage_accounts</span><span class="sb-label" data-i18n="side.profile">Hồ sơ cá nhân</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span><span class="sb-label" data-i18n="side.contact">Li├¬n hß╗ç</span>
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span><span class="sb-label" data-i18n="side.contact">Liên hệ</span>
       </a>
     </nav>
 
@@ -370,12 +370,12 @@
     <div class="px-3 pb-4 sb-upgrade">
       <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
         <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span class="sb-label" data-i18n="side.upgrade">N├óng cß║Ñp g├│i</span>
+        <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
       </a>
     </div>
   </aside>
 
-  <!-- ΓòÉΓòÉΓòÉ MAIN CONTENT ΓòÉΓòÉΓòÉ -->
+  <!-- ═══ MAIN CONTENT ═══ -->
     <main id="content" data-spa-page="profile" class="flex-1 min-w-0 py-8 px-4 md:px-8 pb-[76px] md:pb-10 w-full">
     {% include 'partials/content/profile.html' %}
   </main>
@@ -389,21 +389,21 @@
   <span id="toastMsg"></span>
 </div>
 
-<!-- ΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉ -->
+<!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}
 
-<!-- Modal: Y├¬u cß║ºu x├│a t├ái khoß║ún -->
+<!-- Modal: Yêu cầu xóa tài khoản -->
 <div id="deleteAccountModal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.65);backdrop-filter:blur(4px)">
   <div class="bg-surface-container border border-outline-variant/40 rounded-2xl w-full max-w-md shadow-2xl p-6" role="dialog" aria-modal="true">
-    <h3 class="text-lg font-bold text-on-surface mb-3" data-i18n="prof.delete.modal.title">X├íc nhß║¡n y├¬u cß║ºu x├│a t├ái khoß║ún</h3>
+    <h3 class="text-lg font-bold text-on-surface mb-3" data-i18n="prof.delete.modal.title">Xác nhận yêu cầu xóa tài khoản</h3>
     <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.delete.modal.confirm">
-      Bß║ín c├│ chß║»c chß║»n muß╗æn y├¬u cß║ºu x├│a t├ái khoß║ún kh├┤ng? Sau khi admin x├íc nhß║¡n, t├ái khoß║ún cß╗ºa bß║ín sß║╜ bß╗ï x├│a hoß║╖c v├┤ hiß╗çu h├│a khß╗Åi hß╗ç thß╗æng.
+      Bạn có chắc chắn muốn yêu cầu xóa tài khoản không? Sau khi admin xác nhận, tài khoản của bạn sẽ bị xóa hoặc vô hiệu hóa khỏi hệ thống.
     </p>
-    <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.delete.reason.label">L├╜ do x├│a t├ái khoß║ún (kh├┤ng bß║»t buß╗Öc)</label>
-    <textarea id="deleteAccountReason" rows="3" class="form-input text-sm mb-5" placeholder="T├┤i kh├┤ng c├▓n nhu cß║ºu sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ." data-i18n-placeholder="prof.delete.reason.ph"></textarea>
+    <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.delete.reason.label">Lý do xóa tài khoản (không bắt buộc)</label>
+    <textarea id="deleteAccountReason" rows="3" class="form-input text-sm mb-5" placeholder="Tôi không còn nhu cầu sử dụng dịch vụ." data-i18n-placeholder="prof.delete.reason.ph"></textarea>
     <div class="flex justify-end gap-3">
-      <button type="button" class="btn-secondary" onclick="closeDeleteAccountModal()" data-i18n="prof.delete.modal.cancel">Hß╗ºy</button>
-      <button type="button" id="btnConfirmDeleteRequest" class="btn-primary bg-red-600 hover:bg-red-700" onclick="submitDeleteAccountRequest()" data-i18n="prof.delete.modal.submit">X├íc nhß║¡n y├¬u cß║ºu x├│a</button>
+      <button type="button" class="btn-secondary" onclick="closeDeleteAccountModal()" data-i18n="prof.delete.modal.cancel">Hủy</button>
+      <button type="button" id="btnConfirmDeleteRequest" class="btn-primary bg-red-600 hover:bg-red-700" onclick="submitDeleteAccountRequest()" data-i18n="prof.delete.modal.submit">Xác nhận yêu cầu xóa</button>
     </div>
   </div>
 </div>
@@ -414,7 +414,7 @@
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
 <script>
-// ΓöÇΓöÇ Chars badge ΓöÇΓöÇ
+// ── Chars badge ──
 async function loadCharsRemaining() {
   try {
     const r = await fetch('/api/user/characters');
@@ -423,39 +423,13 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' k├╜ tß╗▒';
+      if (el) el.textContent = fmt + ' ký tự';
     }
   } catch(e) {}
 }
 loadCharsRemaining();
 
-// ΓöÇΓöÇ Theme ΓöÇΓöÇ
-const themeToggleBtn = document.getElementById('themeToggleBtn');
-const themeIcon      = document.getElementById('themeIcon');
-function updateThemeIcon() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
-}
-updateThemeIcon();
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener('click', () => {
-    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    document.documentElement.classList.toggle('dark', next === 'dark');
-    localStorage.setItem('tts-theme', next);
-    updateThemeIcon();
-  });
-}
-function toggleTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const next = isDark ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  document.documentElement.classList.toggle('dark', next === 'dark');
-  localStorage.setItem('tts-theme', next);
-  updateThemeIcon();
-}
-
-// ΓöÇΓöÇ Mobile nav ΓöÇΓöÇ
+// ── Mobile nav ──
 function toggleMobileNav() {
   const drawer  = document.getElementById('mobileNavDrawer');
   const overlay = document.getElementById('mobileNavOverlay');
@@ -471,7 +445,7 @@ function closeMobileNav() {
 }
 window.addEventListener('resize', () => { if (window.innerWidth >= 768) closeMobileNav(); });
 
-// ΓöÇΓöÇ Toast ΓöÇΓöÇ
+// ── Toast ──
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   const i = document.getElementById('toastIcon');
@@ -483,13 +457,13 @@ function showToast(msg, type = 'success') {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// ΓöÇΓöÇ Toggle password visibility ΓöÇΓöÇ
+// ── Toggle password visibility ──
 function togglePw(id) {
   const el = document.getElementById(id);
   el.type = el.type === 'password' ? 'text' : 'password';
 }
 
-// ΓöÇΓöÇ Avatar upload ΓöÇΓöÇ
+// ── Avatar upload ──
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -522,11 +496,11 @@ function setAvatarPreview(url) {
 async function uploadAvatar(file) {
   if (!file) return;
   if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-    showToast(window.__ ? __('prof.avatar.err_type') : 'Chß╗ë chß║Ñp nhß║¡n JPG, PNG hoß║╖c WEBP', 'error');
+    showToast(window.__ ? __('prof.avatar.err_type') : 'Chỉ chấp nhận JPG, PNG hoặc WEBP', 'error');
     return;
   }
   if (file.size > MAX_AVATAR_BYTES) {
-    showToast(window.__ ? __('prof.avatar.err_size') : 'ß║ónh tß╗æi ─æa 2MB', 'error');
+    showToast(window.__ ? __('prof.avatar.err_size') : 'Ảnh tối đa 2MB', 'error');
     return;
   }
 
@@ -537,17 +511,17 @@ async function uploadAvatar(file) {
   labels.forEach(l => l.style.pointerEvents = 'none');
 
   try {
-    showToast(window.__ ? __('prof.avatar.uploading') : '─Éang tß║úi ß║únh l├¬n...', 'success');
+    showToast(window.__ ? __('prof.avatar.uploading') : 'Đang tải ảnh lên...', 'success');
     const res = await fetch('/api/user/upload-avatar', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success && data.avatar_url) {
       setAvatarPreview(data.avatar_url);
-      showToast(data.message || (window.__ ? __('prof.avatar.success') : 'Cß║¡p nhß║¡t ß║únh ─æß║íi diß╗çn th├ánh c├┤ng'), 'success');
+      showToast(data.message || (window.__ ? __('prof.avatar.success') : 'Cập nhật ảnh đại diện thành công'), 'success');
     } else {
-      showToast(data.message || (window.__ ? __('common.error') : 'Lß╗ùi tß║úi ß║únh'), 'error');
+      showToast(data.message || (window.__ ? __('common.error') : 'Lỗi tải ảnh'), 'error');
     }
   } catch (e) {
-    showToast(window.__ ? __('common.error') : 'Lß╗ùi kß║┐t nß╗æi', 'error');
+    showToast(window.__ ? __('common.error') : 'Lỗi kết nối', 'error');
   } finally {
     labels.forEach(l => l.style.pointerEvents = '');
     const input = document.getElementById('avatarInput');
@@ -559,13 +533,13 @@ document.getElementById('avatarInput')?.addEventListener('change', function () {
   if (this.files && this.files[0]) uploadAvatar(this.files[0]);
 });
 
-// ΓöÇΓöÇ Update profile ΓöÇΓöÇ
+// ── Update profile ──
 async function updateProfile() {
   const btn  = document.getElementById('btnUpdateProfile');
   const name = document.getElementById('inputFullName').value.trim();
-  if (!name) { showToast((window.__ && __('prof.field.fullname')) + ' ' || 'T├¬n kh├┤ng ─æ╞░ß╗úc ─æß╗â trß╗æng', 'error'); return; }
+  if (!name) { showToast((window.__ && __('prof.field.fullname')) + ' ' || 'Tên không được để trống', 'error'); return; }
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : '─Éang l╞░u...');
+  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : 'Đang lưu...');
   try {
     const res  = await fetch('/api/user/update-profile', {
       method: 'POST',
@@ -573,26 +547,26 @@ async function updateProfile() {
       body: JSON.stringify({ full_name: name })
     });
     const data = await res.json();
-    if (data.success) { showToast(window.__ ? __('common.success') : 'Cß║¡p nhß║¡t th├ánh c├┤ng!', 'success'); }
-    else { showToast(data.message || (window.__ ? __('common.error') : 'Lß╗ùi cß║¡p nhß║¡t'), 'error'); }
-  } catch(e) { showToast(window.__ ? __('common.error') : 'Lß╗ùi kß║┐t nß╗æi', 'error'); }
+    if (data.success) { showToast(window.__ ? __('common.success') : 'Cập nhật thành công!', 'success'); }
+    else { showToast(data.message || (window.__ ? __('common.error') : 'Lỗi cập nhật'), 'error'); }
+  } catch(e) { showToast(window.__ ? __('common.error') : 'Lỗi kết nối', 'error'); }
   finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">save</span> ' + (window.__ ? __('prof.btn.save') : 'L╞░u thay ─æß╗òi');
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">save</span> ' + (window.__ ? __('prof.btn.save') : 'Lưu thay đổi');
   }
 }
 
-// ΓöÇΓöÇ Change password ΓöÇΓöÇ
+// ── Change password ──
 async function changePassword() {
   const btn        = document.getElementById('btnChangePw');
   const currentPw  = document.getElementById('inputCurrentPw').value;
   const newPw      = document.getElementById('inputNewPw').value;
   const confirmPw  = document.getElementById('inputConfirmPw').value;
-  if (!currentPw || !newPw || !confirmPw) { showToast('Vui l├▓ng ─æiß╗ün ─æß║ºy ─æß╗º', 'error'); return; }
-  if (newPw !== confirmPw) { showToast('Mß║¡t khß║⌐u x├íc nhß║¡n kh├┤ng khß╗¢p', 'error'); return; }
-  if (newPw.length < 6) { showToast('Mß║¡t khß║⌐u phß║úi c├│ ├¡t nhß║Ñt 6 k├╜ tß╗▒', 'error'); return; }
+  if (!currentPw || !newPw || !confirmPw) { showToast('Vui lòng điền đầy đủ', 'error'); return; }
+  if (newPw !== confirmPw) { showToast('Mật khẩu xác nhận không khớp', 'error'); return; }
+  if (newPw.length < 6) { showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error'); return; }
   btn.disabled = true;
-  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : '─Éang xß╗¡ l├╜...');
+  btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size:17px">sync</span> ' + (window.__ ? __('common.loading') : 'Đang xử lý...');
   try {
     const res  = await fetch('/api/user/change-password', {
       method: 'POST',
@@ -601,38 +575,38 @@ async function changePassword() {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(window.__ ? __('common.success') : '─Éß╗òi mß║¡t khß║⌐u th├ánh c├┤ng!', 'success');
+      showToast(window.__ ? __('common.success') : 'Đổi mật khẩu thành công!', 'success');
       document.getElementById('inputCurrentPw').value = '';
       document.getElementById('inputNewPw').value = '';
       document.getElementById('inputConfirmPw').value = '';
     } else {
-      showToast(data.message || (window.__ ? __('common.error') : 'Lß╗ùi ─æß╗òi mß║¡t khß║⌐u'), 'error');
+      showToast(data.message || (window.__ ? __('common.error') : 'Lỗi đổi mật khẩu'), 'error');
     }
-  } catch(e) { showToast(window.__ ? __('common.error') : 'Lß╗ùi kß║┐t nß╗æi', 'error'); }
+  } catch(e) { showToast(window.__ ? __('common.error') : 'Lỗi kết nối', 'error'); }
   finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">lock_reset</span> ' + (window.__ ? __('prof.btn.change_pw') : '─Éß╗òi mß║¡t khß║⌐u');
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:17px">lock_reset</span> ' + (window.__ ? __('prof.btn.change_pw') : 'Đổi mật khẩu');
   }
 }
 
-// ΓöÇΓöÇ Transaction history ΓöÇΓöÇ
+// ── Transaction history ──
 let txPage = 1;
 const TX_PER_PAGE = 8;
 
 function renderTxRow(p) {
   const isCompleted = p.payment_status === 'completed';
   const statusBadge = isCompleted
-    ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(0,159,180,0.15);border:1px solid rgba(47,217,244,0.3);font-size:11px;font-weight:600;color:#2fd9f4">─É├ú TT</span>`
+    ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(0,159,180,0.15);border:1px solid rgba(47,217,244,0.3);font-size:11px;font-weight:600;color:#2fd9f4">Đã TT</span>`
     : p.payment_status === 'pending'
-      ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);font-size:11px;font-weight:600;color:#d0bcff">Chß╗¥</span>`
+      ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);font-size:11px;font-weight:600;color:#d0bcff">Chờ</span>`
       : `<span style="padding:2px 10px;border-radius:9999px;background:rgba(147,0,10,0.2);border:1px solid rgba(255,180,171,0.3);font-size:11px;font-weight:600;color:#ffb4ab">${p.payment_status}</span>`;
   const invoiceBtn = isCompleted
     ? `<a href="/invoice/${p.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline" style="background:rgba(47,217,244,0.12);border:1px solid rgba(47,217,244,0.3);color:#2fd9f4"><span class="material-symbols-outlined" style="font-size:13px">download</span>PDF</a>`
-    : `<span class="text-xs text-outline">ΓÇö</span>`;
+    : `<span class="text-xs text-outline">—</span>`;
   return `<tr class="hover:bg-surface-container/30 transition-colors">
     <td class="py-3 pr-4 text-on-surface font-medium">${p.package_name}</td>
     <td class="py-3 pr-4 font-mono text-xs text-on-surface-variant hidden sm:table-cell">${p.transaction_id || ('#'+p.id)}</td>
-    <td class="py-3 pr-4 font-semibold text-primary">${p.amount_vnd.toLocaleString('vi-VN')}─æ</td>
+    <td class="py-3 pr-4 font-semibold text-primary">${p.amount_vnd.toLocaleString('vi-VN')}đ</td>
     <td class="py-3 pr-4 text-xs text-on-surface-variant hidden md:table-cell">${p.completed_at || p.created_at}</td>
     <td class="py-3 pr-4">${statusBadge}</td>
     <td class="py-3 text-right">${invoiceBtn}</td>
@@ -710,13 +684,13 @@ function updateDeleteAccountUI(status) {
     pendingBanner.style.display = 'block';
     btn.style.display = 'none';
     if (pendingAt && status && status.delete_requested_at) {
-      pendingAt.textContent = _profT('prof.delete.sent_at', 'Gß╗¡i l├║c:') + ' ' + status.delete_requested_at;
+      pendingAt.textContent = _profT('prof.delete.sent_at', 'Gửi lúc:') + ' ' + status.delete_requested_at;
     }
   } else if (ds === 'rejected') {
     const note = (status && status.admin_delete_note) || '{{ user.admin_delete_note or "" }}';
     if (note) {
       rejectedBanner.style.display = 'block';
-      if (rejectedNote) rejectedNote.textContent = _profT('prof.delete.reject_note', 'L├╜ do:') + ' ' + note;
+      if (rejectedNote) rejectedNote.textContent = _profT('prof.delete.reject_note', 'Lý do:') + ' ' + note;
     }
   }
 }
@@ -759,13 +733,13 @@ async function submitDeleteAccountRequest() {
     const d = await r.json();
     if (d.success) {
       closeDeleteAccountModal();
-      showToast(d.message || _profT('prof.delete.success', 'Y├¬u cß║ºu ─æ├ú ─æ╞░ß╗úc gß╗¡i'), 'success');
+      showToast(d.message || _profT('prof.delete.success', 'Yêu cầu đã được gửi'), 'success');
       updateDeleteAccountUI({ delete_status: 'pending', delete_requested_at: new Date().toLocaleString('vi-VN') });
     } else {
-      showToast(d.message || _profT('err.save_failed', 'Gß╗¡i y├¬u cß║ºu thß║Ñt bß║íi'), 'error');
+      showToast(d.message || _profT('err.save_failed', 'Gửi yêu cầu thất bại'), 'error');
     }
   } catch (e) {
-    showToast(_profT('err.network', 'Lß╗ùi kß║┐t nß╗æi'), 'error');
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -804,7 +778,7 @@ function renderUsageChart(chartEl, series) {
   const max = Math.max(1, maxVal);
   const weekTotal = values.reduce((a, b) => a + b, 0);
   const totalEl = document.getElementById('usageChartTotal');
-  if (totalEl) totalEl.textContent = fmtNum(weekTotal) + ' k├╜ tß╗▒ / 7 ng├áy';
+  if (totalEl) totalEl.textContent = fmtNum(weekTotal) + ' ký tự / 7 ngày';
 
   const n = series.length;
   const points = series.map((d, i) => {
@@ -866,7 +840,7 @@ function renderUsageChart(chartEl, series) {
     const dot = chartEl.querySelector(`.usage-line-dot[data-i="${pt.i}"]`);
     if (dot) dot.classList.add('is-active');
     dateEl.textContent = pt.label;
-    valEl.textContent = pt.val.toLocaleString('vi-VN') + ' k├╜ tß╗▒';
+    valEl.textContent = pt.val.toLocaleString('vi-VN') + ' ký tự';
     const rect = chartEl.getBoundingClientRect();
     const xPct = pt.x / W;
     tooltip.style.left = (xPct * 100) + '%';
@@ -924,8 +898,8 @@ async function loadPlanUsage() {
       const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
       const planName = (() => {
         const pn = (s.package_name || '').trim();
-        if (pn && pn !== 'Free' && pn !== 'Ch╞░a c├│ g├│i') return pn;
-        if (limit > 100000) return 'G├│i hiß╗çn tß║íi';
+        if (pn && pn !== 'Free' && pn !== 'Chưa có gói') return pn;
+        if (limit > 100000) return 'Gói hiện tại';
         return pn || 'Free';
       })();
 
@@ -937,11 +911,11 @@ async function loadPlanUsage() {
       const elBar = document.getElementById('planProgressBar');
 
       if (elName) elName.textContent = planName;
-      if (elExpiry) elExpiry.textContent = s.end_date || 'ΓÇö';
+      if (elExpiry) elExpiry.textContent = s.end_date || '—';
       if (elDays) elDays.textContent = s.days_remaining != null
-        ? (s.days_remaining + ' ng├áy c├▓n lß║íi')
+        ? (s.days_remaining + ' ngày còn lại')
         : '';
-      if (elRemain) elRemain.textContent = fmtNum(remaining) + ' k├╜ tß╗▒';
+      if (elRemain) elRemain.textContent = fmtNum(remaining) + ' ký tự';
       if (elUsed) elUsed.textContent = fmtNum(used) + ' / ' + fmtNum(limit);
       if (elBar) elBar.style.width = pct + '%';
     }
@@ -952,7 +926,7 @@ async function loadPlanUsage() {
     }
   } catch (e) {
     console.error('loadPlanUsage', e);
-    if (loading) loading.textContent = _profT('err.network', 'Lß╗ùi tß║úi dß╗» liß╗çu');
+    if (loading) loading.textContent = _profT('err.network', 'Lỗi tải dữ liệu');
   }
 }
 
@@ -1044,10 +1018,10 @@ async function saveTtsSettings() {
       body: JSON.stringify(collectSettingsPayload()),
     });
     const d = await res.json();
-    if (d.success) showToast(d.message || _profT('common.success', 'L╞░u th├ánh c├┤ng'), 'success');
-    else showToast(d.message || _profT('err.save_failed', 'Lß╗ùi l╞░u'), 'error');
+    if (d.success) showToast(d.message || _profT('common.success', 'Lưu thành công'), 'success');
+    else showToast(d.message || _profT('err.save_failed', 'Lỗi lưu'), 'error');
   } catch (e) {
-    showToast(_profT('err.network', 'Lß╗ùi kß║┐t nß╗æi'), 'error');
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1063,10 +1037,10 @@ async function saveNotificationSettings() {
       body: JSON.stringify(collectSettingsPayload()),
     });
     const d = await res.json();
-    if (d.success) showToast(d.message || _profT('common.success', 'L╞░u th├ánh c├┤ng'), 'success');
-    else showToast(d.message || _profT('err.save_failed', 'Lß╗ùi l╞░u'), 'error');
+    if (d.success) showToast(d.message || _profT('common.success', 'Lưu thành công'), 'success');
+    else showToast(d.message || _profT('err.save_failed', 'Lỗi lưu'), 'error');
   } catch (e) {
-    showToast(_profT('err.network', 'Lß╗ùi kß║┐t nß╗æi'), 'error');
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -1082,7 +1056,7 @@ async function exportPersonalData(format) {
     const res = await fetch('/api/user/export-data?format=' + encodeURIComponent(fmt));
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      showToast(err.message || _profT('err.export_failed', 'Xuß║Ñt dß╗» liß╗çu thß║Ñt bß║íi'), 'error');
+      showToast(err.message || _profT('err.export_failed', 'Xuất dữ liệu thất bại'), 'error');
       return;
     }
     let filename = fmt === 'docx' ? 'vietvoice_du_lieu_ca_nhan.docx' : 'vietvoice_du_lieu_ca_nhan.pdf';
@@ -1102,9 +1076,9 @@ async function exportPersonalData(format) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    showToast(_profT('prof.export.success', '─É├ú tß║úi b├ío c├ío dß╗» liß╗çu'), 'success');
+    showToast(_profT('prof.export.success', 'Đã tải báo cáo dữ liệu'), 'success');
   } catch (e) {
-    showToast(_profT('err.network', 'Lß╗ùi kß║┐t nß╗æi'), 'error');
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
   } finally {
     if (btnPdf) btnPdf.disabled = false;
     if (btnDocx) btnDocx.disabled = false;

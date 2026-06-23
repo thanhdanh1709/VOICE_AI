@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Li├¬n hß╗ç vß╗¢i ch├║ng t├┤i - VietVoice</title>
+<title>Liên hệ với chúng tôi - VietVoice</title>
 
 {% include 'partials/vv_theme_head.html' %}
 
@@ -172,7 +172,7 @@ tailwind.config = {
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
-<!-- ΓòÉΓòÉΓòÉ TOP NAVBAR ΓòÉΓòÉΓòÉ -->
+<!-- ═══ TOP NAVBAR ═══ -->
 <nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
@@ -190,11 +190,11 @@ tailwind.config = {
       {% endif %}
     </div>
     <div class="flex items-center gap-1.5 md:gap-3">
-      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="K├╜ tß╗▒ c├▓n lß║íi">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
       </a>
-      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="─Éß╗òi giao diß╗çn">
+      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
         <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
@@ -221,7 +221,7 @@ tailwind.config = {
 {% set mob_nav_active = 'contact' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ LAYOUT: Sidebar + Main ΓòÉΓòÉΓòÉ -->
+<!-- ═══ LAYOUT: Sidebar + Main ═══ -->
 <div class="flex flex-1 pt-16 min-h-screen w-full overflow-hidden">
 
   <!-- Sidebar -->
@@ -241,48 +241,48 @@ tailwind.config = {
     <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
         <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-        <span data-i18n="side.create_audio">Tß║ío Audio mß╗¢i</span>
+        <span data-i18n="side.create_audio">Tạo Audio mới</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
         <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
-        <span data-i18n="side.audio_library">Th╞░ viß╗çn Audio</span>
+        <span data-i18n="side.audio_library">Thư viện Audio</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
         <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-        <span data-i18n="side.my_voices">Giß╗ìng cß╗ºa t├┤i</span>
+        <span data-i18n="side.my_voices">Giọng của tôi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
         <span class="material-symbols-outlined" style="font-size:18px">history</span>
-        <span data-i18n="side.history">Lß╗ïch sß╗¡ chuyß╗ân ─æß╗òi</span>
+        <span data-i18n="side.history">Lịch sử chuyển đổi</span>
       </a>
       <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
         <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
-        <span data-i18n="side.pricing">Bß║úng gi├í</span>
+        <span data-i18n="side.pricing">Bảng giá</span>
       </a>
       <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('contact') }}">
         <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
-        <span data-i18n="side.contact">Li├¬n hß╗ç</span>
+        <span data-i18n="side.contact">Liên hệ</span>
       </a>
     </nav>
 
     <div class="p-4 mt-auto">
       <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
         <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span data-i18n="side.upgrade">N├óng cß║Ñp g├│i</span>
+        <span data-i18n="side.upgrade">Nâng cấp gói</span>
       </a>
     </div>
   </aside>
 
-  <!-- ΓòÉΓòÉΓòÉ MAIN CONTENT ΓòÉΓòÉΓòÉ -->
+  <!-- ═══ MAIN CONTENT ═══ -->
   <main class="flex-1 min-w-0 md:ml-60 px-4 md:px-10 py-6 md:py-10 pb-[76px] md:pb-16 max-w-[1360px] mx-auto w-full overflow-hidden">
 
     <!-- Page Header -->
     <div class="text-center mb-8 md:mb-12 animate-in">
       <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-3 md:mb-4 tracking-tight">
-        <span data-i18n="contact.title">Li├¬n hß╗ç vß╗¢i </span><span class="gradient-text" data-i18n="contact.title_highlight">ch├║ng t├┤i</span>
+        <span data-i18n="contact.title">Liên hệ với </span><span class="gradient-text" data-i18n="contact.title_highlight">chúng tôi</span>
       </h1>
       <p class="text-sm md:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed" data-i18n="contact.subtitle">
-        Ch├║ng t├┤i lu├┤n sß║╡n s├áng hß╗ù trß╗ú bß║ín 24/7. H├úy gß╗¡i c├óu hß╗Åi, phß║ún hß╗ôi hoß║╖c y├¬u cß║ºu hß╗ù trß╗ú kß╗╣ thuß║¡t cho ─æß╗Öi ng┼⌐ chuy├¬n gia AI cß╗ºa ch├║ng t├┤i.
+        Chúng tôi luôn sẵn sàng hỗ trợ bạn 24/7. Hãy gửi câu hỏi, phản hồi hoặc yêu cầu hỗ trợ kỹ thuật cho đội ngũ chuyên gia AI của chúng tôi.
       </p>
     </div>
 
@@ -299,7 +299,7 @@ tailwind.config = {
               <span class="material-symbols-outlined text-primary-container" style="font-variation-settings:'FILL' 1;font-size:20px">mail</span>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.email_title">Email Hß╗ù Trß╗ú</h3>
+              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.email_title">Email Hỗ Trợ</h3>
               <a href="mailto:{{ contact_email_addr() }}" class="text-sm text-slate-400 hover:text-primary transition-colors no-underline">{{ contact_email_addr() }}</a>
             </div>
           </div>
@@ -317,8 +317,8 @@ tailwind.config = {
               <span class="material-symbols-outlined text-primary-container" style="font-variation-settings:'FILL' 1;font-size:20px">location_on</span>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.office_title">V─ân Ph├▓ng</h3>
-              <p class="text-sm text-slate-400">146/MO Long Tuyß╗ün,<br/>B├¼nh Thß╗ºy, Cß║ºn Th╞í</p>
+              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.office_title">Văn Phòng</h3>
+              <p class="text-sm text-slate-400">146/MO Long Tuyền,<br/>Bình Thủy, Cần Thơ</p>
             </div>
           </div>
           <div class="glass-card p-5 rounded-xl flex items-start gap-4">
@@ -326,11 +326,11 @@ tailwind.config = {
               <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;font-size:20px">schedule</span>
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.hours_title">Giß╗¥ L├ám Viß╗çc</h3>
+              <h3 class="text-sm font-semibold text-white mb-1" data-i18n="contact.info.hours_title">Giờ Làm Việc</h3>
               <p class="text-sm text-slate-400">T2 - T6: 9:00 - 18:00<br/>T7: 9:00 - 12:00</p>
               <span class="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-tertiary bg-tertiary/10 px-2 py-0.5 rounded-full">
                 <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                <span data-i18n="contact.info.active">─Éang hoß║ít ─æß╗Öng</span>
+                <span data-i18n="contact.info.active">Đang hoạt động</span>
               </span>
             </div>
           </div>
@@ -339,14 +339,14 @@ tailwind.config = {
         <!-- Contact Form -->
         <div class="glass-card p-7 rounded-xl relative overflow-hidden animate-in" style="animation-delay:0.1s">
           <div class="absolute top-0 right-0 w-64 h-64 bg-primary-container/8 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-          <h2 class="text-xl font-bold text-white mb-6" data-i18n="contact.form.title">Gß╗¡i Tin Nhß║»n</h2>
+          <h2 class="text-xl font-bold text-white mb-6" data-i18n="contact.form.title">Gửi Tin Nhắn</h2>
 
           <form id="contactForm" class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div class="space-y-1.5">
-                <label for="contactName" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.name">Hß╗ì v├á t├¬n</label>
+                <label for="contactName" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.name">Họ và tên</label>
                 <input type="text" id="contactName" required
-                  placeholder="Nguyß╗àn V─ân A" data-i18n-placeholder="contact.form.name_placeholder"
+                  placeholder="Nguyễn Văn A" data-i18n-placeholder="contact.form.name_placeholder"
                   class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500"/>
               </div>
               <div class="space-y-1.5">
@@ -358,37 +358,37 @@ tailwind.config = {
             </div>
 
             <div class="space-y-1.5">
-              <label for="contactSubject" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.subject">Chß╗º ─æß╗ü</label>
+              <label for="contactSubject" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.subject">Chủ đề</label>
               <select id="contactSubject" required
                 class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all appearance-none">
-                <option value="" disabled selected class="text-slate-500" data-i18n="contact.form.subject_placeholder">Chß╗ìn chß╗º ─æß╗ü cß║ºn hß╗ù trß╗ú</option>
-                <option value="support" data-i18n="contact.form.subject.support">Hß╗ù trß╗ú kß╗╣ thuß║¡t / Lß╗ùi hß╗ç thß╗æng</option>
-                <option value="billing" data-i18n="contact.form.subject.billing">Thanh to├ín &amp; G├│i c╞░ß╗¢c</option>
-                <option value="feature" data-i18n="contact.form.subject.feature">Y├¬u cß║ºu t├¡nh n─âng mß╗¢i</option>
-                <option value="bug" data-i18n="contact.form.subject.bug">B├ío lß╗ùi</option>
-                <option value="partnership" data-i18n="contact.form.subject.partnership">Hß╗úp t├íc</option>
-                <option value="api" data-i18n="contact.form.subject.api">T├¡ch hß╗úp API</option>
-                <option value="other" data-i18n="contact.form.subject.other">Y├¬u cß║ºu kh├íc</option>
+                <option value="" disabled selected class="text-slate-500" data-i18n="contact.form.subject_placeholder">Chọn chủ đề cần hỗ trợ</option>
+                <option value="support" data-i18n="contact.form.subject.support">Hỗ trợ kỹ thuật / Lỗi hệ thống</option>
+                <option value="billing" data-i18n="contact.form.subject.billing">Thanh toán &amp; Gói cước</option>
+                <option value="feature" data-i18n="contact.form.subject.feature">Yêu cầu tính năng mới</option>
+                <option value="bug" data-i18n="contact.form.subject.bug">Báo lỗi</option>
+                <option value="partnership" data-i18n="contact.form.subject.partnership">Hợp tác</option>
+                <option value="api" data-i18n="contact.form.subject.api">Tích hợp API</option>
+                <option value="other" data-i18n="contact.form.subject.other">Yêu cầu khác</option>
               </select>
             </div>
 
             <div class="space-y-1.5">
-              <label for="contactMessage" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.message">Nß╗Öi dung tin nhß║»n</label>
+              <label for="contactMessage" class="block text-xs font-semibold text-slate-300 uppercase tracking-wide" data-i18n="contact.form.message">Nội dung tin nhắn</label>
               <textarea id="contactMessage" rows="5" required
-                placeholder="M├┤ tß║ú chi tiß║┐t vß║Ñn ─æß╗ü cß╗ºa bß║ín..." data-i18n-placeholder="contact.form.message_placeholder"
+                placeholder="Mô tả chi tiết vấn đề của bạn..." data-i18n-placeholder="contact.form.message_placeholder"
                 class="w-full bg-surface-container-high border border-outline-variant text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500 resize-none"></textarea>
               <div class="text-xs text-on-surface-variant text-right">
-                <span id="messageCharCount" class="font-semibold text-on-surface">0</span> <span data-i18n="contact.form.char_limit">/ 1000 k├╜ tß╗▒</span>
+                <span id="messageCharCount" class="font-semibold text-on-surface">0</span> <span data-i18n="contact.form.char_limit">/ 1000 ký tự</span>
               </div>
             </div>
 
             <button type="submit" id="submitContactBtn"
               class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg bg-gradient-to-r from-[#6d3bd7] to-[#009fb4] text-white text-sm font-semibold hover:opacity-90 transition-all shadow-[0_0_15px_rgba(109,59,215,0.35)]">
               <span class="btn-icon material-symbols-outlined" style="font-size:18px">send</span>
-              <span class="btn-text" data-i18n="contact.form.submit">Gß╗¡i tin nhß║»n ngay</span>
+              <span class="btn-text" data-i18n="contact.form.submit">Gửi tin nhắn ngay</span>
             </button>
 
-            <!-- Status alerts ΓÇö controlled by contact.js -->
+            <!-- Status alerts — controlled by contact.js -->
             <div id="contactSuccess">
               <span class="material-symbols-outlined" style="font-size:18px;font-variation-settings:'FILL' 1">check_circle</span>
               <span class="alert-text"></span>
@@ -403,42 +403,42 @@ tailwind.config = {
 
       <!-- Right: FAQs -->
       <div class="lg:col-span-5 flex flex-col gap-5 animate-in" style="animation-delay:0.15s">
-        <h2 class="text-xl font-bold text-white" data-i18n="contact.faq.title">C├óu Hß╗Åi Th╞░ß╗¥ng Gß║╖p</h2>
+        <h2 class="text-xl font-bold text-white" data-i18n="contact.faq.title">Câu Hỏi Thường Gặp</h2>
 
         <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
-          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q1">L├ám thß║┐ n├áo ─æß╗â bß║»t ─æß║ºu sß╗¡ dß╗Ñng?</h4>
-          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a1">Bß║ín chß╗ë cß║ºn ─æ─âng k├╜ t├ái khoß║ún miß╗àn ph├¡, sau ─æ├│ c├│ thß╗â bß║»t ─æß║ºu chuyß╗ân ─æß╗òi v─ân bß║ún th├ánh giß╗ìng n├│i ngay lß║¡p tß╗⌐c vß╗¢i g├│i Free.</p>
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q1">Làm thế nào để bắt đầu sử dụng?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a1">Bạn chỉ cần đăng ký tài khoản miễn phí, sau đó có thể bắt đầu chuyển đổi văn bản thành giọng nói ngay lập tức với gói Free.</p>
         </div>
         <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
-          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q2">C├íc ph╞░╞íng thß╗⌐c thanh to├ín ─æ╞░ß╗úc hß╗ù trß╗ú?</h4>
-          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a2">Ch├║ng t├┤i hß╗ù trß╗ú thanh to├ín qua QR Code chuyß╗ân khoß║ún ng├ón h├áng ΓÇô nhanh ch├│ng, tiß╗çn lß╗úi v├á bß║úo mß║¡t.</p>
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q2">Các phương thức thanh toán được hỗ trợ?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a2">Chúng tôi hỗ trợ thanh toán qua QR Code chuyển khoản ngân hàng – nhanh chóng, tiện lợi và bảo mật.</p>
         </div>
         <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
-          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q3">C├│ bao nhi├¬u t├╣y chß╗ìn giß╗ìng n├│i?</h4>
-          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a3">Hß╗ç thß╗æng cung cß║Ñp ─æa dß║íng giß╗ìng ─æß╗ìc AI tiß║┐ng Viß╗çt miß╗ün Nam, Bß║»c, Trung vß╗¢i cß║úm x├║c phong ph├║ v├á chß║Ñt l╞░ß╗úng tß╗▒ nhi├¬n cao.</p>
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q3">Có bao nhiêu tùy chọn giọng nói?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a3">Hệ thống cung cấp đa dạng giọng đọc AI tiếng Việt miền Nam, Bắc, Trung với cảm xúc phong phú và chất lượng tự nhiên cao.</p>
         </div>
         <div class="faq-card glass-card p-5 rounded-xl border-l-2 hover:bg-surface-container-high transition-colors cursor-pointer">
-          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q4">ß╗¿ng dß╗Ñng di ─æß╗Öng c├│ khß║ú dß╗Ñng kh├┤ng?</h4>
-          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a4">Website ─æ╞░ß╗úc tß╗æi ╞░u responsive ho├án hß║úo. ß╗¿ng dß╗Ñng VietVoice mobile ─æang trong giai ─æoß║ín ph├ít triß╗ân v├á sß║╜ sß╗¢m ra mß║»t tr├¬n iOS &amp; Android.</p>
+          <h4 class="text-sm font-semibold text-white mb-2 transition-colors" data-i18n="contact.faq.q4">Ứng dụng di động có khả dụng không?</h4>
+          <p class="text-sm text-slate-400 leading-relaxed" data-i18n="contact.faq.a4">Website được tối ưu responsive hoàn hảo. Ứng dụng VietVoice mobile đang trong giai đoạn phát triển và sẽ sớm ra mắt trên iOS &amp; Android.</p>
         </div>
 
         <!-- Map -->
         <div class="contact-map-wrap animate-in" style="animation-delay:0.18s">
           <iframe
             class="contact-map-iframe"
-            title="VietVoice ΓÇö 146/MO Long Tuyß╗ün, B├¼nh Thß╗ºy, Cß║ºn Th╞í"
+            title="VietVoice — 146/MO Long Tuyền, Bình Thủy, Cần Thơ"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
             allowfullscreen
             src="https://www.google.com/maps?q=146+MO+Long+Tuy%E1%BB%81n,+B%C3%ACnh+Th%E1%BB%A7y,+C%E1%BA%A7n+Th%C6%A1,+Vi%E1%BB%87t+Nam&hl=vi&z=16&output=embed">
           </iframe>
           <div class="contact-map-footer">
-            <span data-i18n="contact.map.location">B├¼nh Thß╗ºy, Cß║ºn Th╞í</span>
+            <span data-i18n="contact.map.location">Bình Thủy, Cần Thơ</span>
             <a href="https://www.google.com/maps/search/?api=1&amp;query=146+MO+Long+Tuy%E1%BB%81n,+B%C3%ACnh+Th%E1%BB%A7y,+C%E1%BA%A7n+Th%C6%A1"
                target="_blank"
                rel="noopener noreferrer"
                class="contact-map-open">
-              <span data-i18n="contact.map.view">Xem tr├¬n bß║ún ─æß╗ô</span>
+              <span data-i18n="contact.map.view">Xem trên bản đồ</span>
             </a>
           </div>
         </div>
@@ -448,15 +448,15 @@ tailwind.config = {
     <!-- Bottom CTA / Newsletter -->
     <div class="glass-card rounded-2xl p-8 md:p-12 text-center relative overflow-hidden animate-in" style="animation-delay:0.2s">
       <div class="absolute inset-0 bg-gradient-to-br from-primary-container/5 to-tertiary/5 pointer-events-none rounded-2xl"></div>
-      <h2 class="text-2xl font-bold text-white mb-3" data-i18n="contact.newsletter.title">Kß║┐t nß╗æi vß╗¢i ch├║ng t├┤i</h2>
+      <h2 class="text-2xl font-bold text-white mb-3" data-i18n="contact.newsletter.title">Kết nối với chúng tôi</h2>
       <p class="text-sm text-slate-400 max-w-md mx-auto mb-7 leading-relaxed" data-i18n="contact.newsletter.desc">
-        ─É─âng k├╜ nhß║¡n bß║ún tin ─æß╗â cß║¡p nhß║¡t nhß╗»ng c├┤ng nghß╗ç tß╗òng hß╗úp giß╗ìng n├│i AI mß╗¢i nhß║Ñt tß╗½ VietVoice.
+        Đăng ký nhận bản tin để cập nhật những công nghệ tổng hợp giọng nói AI mới nhất từ VietVoice.
       </p>
       <div class="flex flex-col sm:flex-row justify-center items-center gap-3 max-w-md mx-auto mb-8">
-        <input type="email" placeholder="Nhß║¡p ─æß╗ïa chß╗ë email cß╗ºa bß║ín" data-i18n-placeholder="contact.newsletter.placeholder"
+        <input type="email" placeholder="Nhập địa chỉ email của bạn" data-i18n-placeholder="contact.newsletter.placeholder"
           class="w-full sm:flex-1 bg-surface-container border border-outline-variant text-white rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-all placeholder-slate-500"/>
         <button class="w-full sm:w-auto bg-white text-surface-dim text-sm font-semibold py-2.5 px-6 rounded-full hover:bg-slate-200 transition-colors whitespace-nowrap" data-i18n="contact.newsletter.subscribe">
-          ─É─âng k├╜
+          Đăng ký
         </button>
       </div>
       <div class="flex justify-center gap-4">
@@ -475,17 +475,17 @@ tailwind.config = {
   </main>
 </div>
 
-<!-- ΓòÉΓòÉΓòÉ MOBILE BOTTOM NAV ΓòÉΓòÉΓòÉ -->
+<!-- ═══ MOBILE BOTTOM NAV ═══ -->
 {% include 'partials/mobile_bottom_nav.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉ -->
+<!-- ═══ FOOTER ═══ -->
 {% include '_footer.html' %}
 
-<!-- ΓòÉΓòÉΓòÉ SCRIPTS ΓòÉΓòÉΓòÉ -->
+<!-- ═══ SCRIPTS ═══ -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 <script>
-// ΓöÇΓöÇ Characters remaining (nav badge) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── Characters remaining (nav badge) ─────────────────────────
 async function loadCharsRemaining() {
   try {
     const r = await fetch('/api/user/characters');
@@ -494,15 +494,15 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' k├╜ tß╗▒';
+      if (el) el.textContent = fmt + ' ký tự';
     }
   } catch(e) {}
 }
 loadCharsRemaining();
 
-// Theme toggle
 
 </script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/contact.js') }}"></script>
 <script>
 function toggleMobileNav() {
