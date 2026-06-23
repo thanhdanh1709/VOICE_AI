@@ -1382,6 +1382,7 @@ def login():
                     session['user_role'] = user['role']
                     session['full_name'] = user['full_name']
                     session['avatar_url'] = user.get('avatar_url') or ''
+                    session['user_email'] = user.get('email', '')
                     session.permanent = True
                     
                     return jsonify({
@@ -1745,6 +1746,7 @@ def google_callback():
             session['user_role'] = user.get('role', 'user')
             session['full_name'] = user.get('full_name', '')
             session['avatar_url'] = user.get('avatar_url') or ''
+            session['user_email'] = user.get('email', '')
             session.permanent    = True
             print(f"[GOOGLE AUTH] Web login OK: {user['username']} ({email})")
             return redirect(url_for('index'))
@@ -1802,6 +1804,7 @@ def mobile_auth_callback():
         session['user_role'] = user.get('role', 'user')
         session['full_name'] = user.get('full_name', '')
         session['avatar_url'] = user.get('avatar_url') or ''
+        session['user_email'] = user.get('email', '')
         session.permanent    = True
 
         print(f"[MOBILE AUTH] WebView session tạo thành công: {user['username']}")
@@ -6170,11 +6173,50 @@ def submit_contact():
                 'message': 'Email không hợp lệ'
             }), 400
         
-        # Log contact (có thể lưu vào database nếu muốn)
-        print(f"[CONTACT] From: {name} ({email})")
-        print(f"[CONTACT] Subject: {subject}")
-        print(f"[CONTACT] Message: {message}")
-        
+        # Gửi email thông báo đến admin
+        admin_dest = (ADMIN_EMAIL or SMTP_USER or '').strip()
+        if admin_dest:
+            admin_html = f"""
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1b2a;color:#e2e8f0;border-radius:12px">
+  <h2 style="color:#7c3aed;margin-top:0">📩 Tin nhắn liên hệ mới</h2>
+  <table style="width:100%;border-collapse:collapse">
+    <tr><td style="padding:8px 0;color:#94a3b8;width:120px">Họ tên:</td><td style="padding:8px 0;font-weight:600">{name}</td></tr>
+    <tr><td style="padding:8px 0;color:#94a3b8">Email:</td><td style="padding:8px 0"><a href="mailto:{email}" style="color:#7c3aed">{email}</a></td></tr>
+    <tr><td style="padding:8px 0;color:#94a3b8">Chủ đề:</td><td style="padding:8px 0">{subject}</td></tr>
+  </table>
+  <div style="margin-top:16px;padding:16px;background:#1e293b;border-radius:8px;border-left:4px solid #7c3aed">
+    <div style="color:#94a3b8;font-size:12px;margin-bottom:8px">NỘI DUNG TIN NHẮN</div>
+    <div style="white-space:pre-wrap;line-height:1.6">{message}</div>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:#64748b">Gửi từ trang liên hệ VietVoice</div>
+</div>"""
+            send_email(
+                to_email=admin_dest,
+                subject=f"[VietVoice Liên hệ] {subject} - {name}",
+                html_body=admin_html,
+                text_body=f"Từ: {name} ({email})\nChủ đề: {subject}\n\n{message}"
+            )
+
+        # Gửi email xác nhận đến người dùng
+        confirm_html = f"""
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1b2a;color:#e2e8f0;border-radius:12px">
+  <h2 style="color:#7c3aed;margin-top:0">✅ Chúng tôi đã nhận được tin nhắn của bạn</h2>
+  <p>Xin chào <strong>{name}</strong>,</p>
+  <p>Cảm ơn bạn đã liên hệ với <strong>VietVoice</strong>. Chúng tôi đã nhận được tin nhắn của bạn về chủ đề <em>"{subject}"</em> và sẽ phản hồi trong vòng <strong>24 giờ</strong>.</p>
+  <div style="margin-top:16px;padding:16px;background:#1e293b;border-radius:8px;border-left:4px solid #7c3aed">
+    <div style="color:#94a3b8;font-size:12px;margin-bottom:8px">NỘI DUNG BẠN ĐÃ GỬI</div>
+    <div style="white-space:pre-wrap;line-height:1.6">{message}</div>
+  </div>
+  <p style="margin-top:20px;color:#64748b;font-size:13px">Trân trọng,<br><strong style="color:#7c3aed">Đội ngũ VietVoice</strong></p>
+</div>"""
+        send_email(
+            to_email=email,
+            subject="VietVoice - Chúng tôi đã nhận được tin nhắn của bạn",
+            html_body=confirm_html,
+            text_body=f"Xin chào {name},\n\nChúng tôi đã nhận được tin nhắn của bạn và sẽ phản hồi trong vòng 24 giờ.\n\nTrân trọng,\nVietVoice"
+        )
+
+        print(f"[CONTACT] Email sent — From: {name} ({email}), Subject: {subject}")
         return jsonify({
             'success': True,
             'message': 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong vòng 24 giờ.'

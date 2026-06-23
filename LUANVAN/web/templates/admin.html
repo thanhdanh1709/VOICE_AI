@@ -47,7 +47,10 @@
   /* Table styles */
   .admin-table { width:100%;border-collapse:separate;border-spacing:0; }
   .admin-table th { padding:12px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#958ea0; }
+  .admin-table th.text-right { text-align:right; }
+  .admin-table th.text-center { text-align:center; }
   .admin-table td { padding:12px 16px;font-size:13px;color:#cbc3d7;vertical-align:middle; }
+  .admin-table td.text-center { text-align:center; }
   .admin-table tbody tr:hover td { background:rgba(208,188,255,0.04); }
 
   /* Role select */
@@ -414,13 +417,13 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
+              <th class="hide-mobile" style="width:48px">#</th>
               <th data-i18n="admin.col.fullname">Họ tên</th>
               <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
               <th class="hide-mobile" data-i18n="admin.del.reason">Lý do</th>
               <th class="hide-mobile" data-i18n="admin.del.requested_at">Thời gian gửi</th>
               <th data-i18n="admin.col.status">Trạng thái</th>
-              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
+              <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="deletionsTableBody">
@@ -456,7 +459,7 @@
               <th class="hide-mobile" data-i18n="admin.grace.deactivated_at">Vô hiệu từ</th>
               <th class="hide-mobile" data-i18n="admin.grace.until">Hạn khôi phục</th>
               <th data-i18n="admin.grace.restore_req">Yêu cầu KP</th>
-              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
+              <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="graceAccountsTableBody">
@@ -484,14 +487,14 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
+              <th class="hide-mobile" style="width:48px">ID</th>
               <th data-i18n="admin.col.username">Tên đăng nhập</th>
               <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
               <th class="hide-mobile" data-i18n="admin.col.fullname">Họ tên</th>
               <th data-i18n="admin.col.role">Vai trò</th>
               <th class="hide-mobile" data-i18n="admin.col.status">Trạng thái</th>
               <th class="hide-mobile" data-i18n="admin.col.conversions">Chuyển đổi</th>
-              <th class="text-right" data-i18n="admin.col.actions">Thao tác</th>
+              <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
             </tr>
           </thead>
           <tbody id="usersTableBody">
@@ -535,7 +538,7 @@
               <th data-i18n="admin.col.status">TT</th>
               <th class="hide-mobile" data-i18n="admin.pay.tx_short">Mã GD</th>
               <th class="hide-mobile" data-i18n="admin.pay.time">Thời gian</th>
-              <th class="text-right" data-i18n="admin.pay.approve_col">Duyệt</th>
+              <th class="text-center" data-i18n="admin.pay.approve_col">Duyệt</th>
             </tr>
           </thead>
           <tbody id="paymentsTableBody">

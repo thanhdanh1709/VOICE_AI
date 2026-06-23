@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Admin Dashboard JavaScript
  */
 
@@ -321,16 +321,16 @@ function renderAccountDeletionsTable(requests) {
         return;
     }
 
-    tbody.innerHTML = requests.map((r) => `
+    tbody.innerHTML = requests.map((r, idx) => `
         <tr>
-            <td class="hide-mobile">${r.id}</td>
+            <td class="hide-mobile text-on-surface-variant">${idx + 1}</td>
             <td class="font-medium">${r.full_name || r.username || '—'}</td>
             <td class="hide-mobile">${r.email || '—'}</td>
             <td class="hide-mobile text-xs max-w-[200px] truncate" title="${(r.delete_reason || '').replace(/"/g, '&quot;')}">${r.delete_reason || '—'}</td>
             <td class="hide-mobile text-xs">${r.delete_requested_at || '—'}</td>
             <td><span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">${_t('admin.del.status.pending', 'Đang chờ')}</span></td>
-            <td class="text-right">
-                <div class="flex items-center justify-end gap-1 flex-wrap">
+            <td class="text-center">
+                <div class="flex items-center justify-center gap-1 flex-wrap">
                     <button onclick="openAdminApproveDeletionModal(${r.id})" class="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20">${_t('admin.del.approve.action', 'Duyệt xóa')}</button>
                     <button onclick="openAdminRejectDeletionModal(${r.id})" class="text-xs px-2 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high">${_t('admin.del.reject.btn', 'Từ chối')}</button>
                 </div>
@@ -468,7 +468,7 @@ function renderGraceAccountsTable(accounts) {
             <td class="hide-mobile text-xs">${a.deleted_at || '—'}</td>
             <td class="hide-mobile text-xs">${a.deletion_effective_at || '—'}</td>
             <td>${restoreBadge}</td>
-            <td class="text-right">
+            <td class="text-center">
                 <button onclick="restoreGraceAccount(${a.id})" class="text-xs px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">${_t('admin.grace.restore_btn', 'Khôi phục')}</button>
             </td>
         </tr>`;
@@ -532,9 +532,9 @@ function renderUsersTable(users) {
                 <td><span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">${roleLabel}</span></td>
                 <td class="hide-mobile ${statusClass}">${statusLabel}</td>
                 <td class="hide-mobile">${formatNumber(u.total_conversions)}</td>
-                <td class="text-right">
-                    <div class="flex items-center justify-end gap-1 flex-wrap">
-                        ${u.role !== 'admin' ? `<button onclick="toggleUserRole(${u.id}, 'admin')" class="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20">${_t('admin.role.admin', 'Admin')}</button>` : `<button onclick="toggleUserRole(${u.id}, 'user')" class="text-xs px-2 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high">${_t('admin.role.user', 'User')}</button>`}
+                <td class="text-center">
+                    <div class="flex items-center justify-center gap-1 flex-wrap">
+                        ${u.role !== 'admin' ? `<button onclick="toggleUserRole(${u.id}, 'admin')" class="text-xs px-2 py-1 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high" title="${_t('admin.role.promote', 'Cấp quyền Admin')}">${_t('admin.role.user', 'Người dùng')}</button>` : `<button onclick="toggleUserRole(${u.id}, 'user')" class="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20" title="${_t('admin.role.demote', 'Thu quyền Admin')}">${_t('admin.role.admin', 'Admin')}</button>`}
                         ${u.is_active ? `<button onclick="toggleUserStatus(${u.id}, false)" class="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20">${_t('admin.btn.suspend', 'Khóa')}</button>` : `<button onclick="toggleUserStatus(${u.id}, true)" class="text-xs px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20">${_t('admin.btn.activate', 'Kích hoạt')}</button>`}
                         <button onclick="deleteUser(${u.id})" class="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20">${_t('admin.btn.delete', 'Xóa')}</button>
                     </div>
@@ -640,7 +640,7 @@ function renderPaymentsTable(payments) {
             <td>${paymentStatusBadge(p.payment_status)}</td>
             <td class="hide-mobile text-xs font-mono">${p.transaction_id || '—'}</td>
             <td class="hide-mobile text-xs">${p.created_at || '—'}</td>
-            <td class="text-right">
+            <td class="text-center">
                 ${p.payment_status === 'pending' ? `<button onclick="approvePayment(${p.id})" class="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 font-semibold">${_t('admin.btn.approve', 'Duyệt')}</button>` : '—'}
             </td>
         </tr>`).join('');

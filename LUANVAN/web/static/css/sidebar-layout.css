@@ -1,15 +1,15 @@
 /* Sidebar cố định toàn chiều cao khi scroll */
 .vv-app-shell {
     width: 100%;
-    padding-top: 4rem;
+    padding-top: 0;
 }
 
 .vv-sidebar {
     position: fixed;
     left: 0;
-    top: 4rem;
+    top: 0;
     bottom: 0;
-    height: calc(100vh - 4rem);
+    height: 100vh;
     z-index: 10;
     flex-shrink: 0;
     overflow: hidden;
@@ -23,8 +23,11 @@
     width: auto;
 }
 
+
 .zf-site-footer {
-    width: 100%;
+    margin-left: 240px;
+    max-width: calc(100% - 240px);
+    width: auto;
     flex-shrink: 0;
     position: relative;
     z-index: 20;
@@ -35,5 +38,12 @@
     #content {
         margin-left: 0 !important;
         max-width: 100% !important;
+    }
+    .zf-site-footer {
+        margin-left: 0 !important;
+        max-width: 100% !important;
+    }
+    .vv-sidebar-toggle {
+        display: none;
     }
 }

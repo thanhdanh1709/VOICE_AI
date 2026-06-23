@@ -5,6 +5,26 @@ Secrets duoc doc tu environment variables - KHONG hardcode.
 import os
 from pathlib import Path
 
+# Load env files nếu tồn tại (ưu tiên .env.local, rồi .env)
+def _load_env_file(path):
+    """Đọc file .env thủ công, không ghi đè biến đã có."""
+    try:
+        with open(path, 'r', encoding='utf-8') as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith('#') and '=' in _line:
+                    _k, _v = _line.split('=', 1)
+                    os.environ.setdefault(_k.strip(), _v.strip())
+    except Exception:
+        pass
+
+_base = Path(__file__).resolve().parent
+for _env_name in ('.env.local', '.env'):
+    _env_path = _base / _env_name
+    if _env_path.exists():
+        _load_env_file(_env_path)
+        break
+
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
