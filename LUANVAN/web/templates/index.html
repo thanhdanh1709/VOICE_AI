@@ -462,13 +462,13 @@ tailwind.config = {
 
     <!-- Nav links -->
     <div class="hidden md:flex items-center space-x-1">
-      <a href="{{ url_for('index') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">Workspace</a>
-      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
-      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
-      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">History</a>
-      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      <a href="{{ url_for('index') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline" data-i18n="nav.home">Workspace</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.library">Library</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.voices">Voices</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.history">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.pricing">Pricing</a>
       {% if session.user_role == 'admin' %}
-      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.admin">Admin</a>
       {% endif %}
     </div>
 
@@ -500,7 +500,7 @@ tailwind.config = {
         </div>
         <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
           <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-          <span class="hidden sm:inline">Logout</span>
+          <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
         </a>
       </div>
       <!-- Hamburger button - mobile only -->
@@ -518,61 +518,8 @@ tailwind.config = {
 <div class="vv-app-shell">
 
   <!-- Sidebar -->
-  <aside id="mainSidebar" class="vv-sidebar hidden md:flex flex-col bg-[#051424] pt-6 overflow-hidden shrink-0" style="width:240px">
-    <div class="px-4 mb-4">
-      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
-        </div>
-        <div class="sb-logo-text overflow-hidden">
-          <div class="text-sm font-bold text-white whitespace-nowrap">VietVoice Pro</div>
-          <div class="text-xs text-primary">AI Synthesis Active</div>
-        </div>
-      </div>
-    </div>
-
-    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
-      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('index') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-        <span class="sb-label" data-i18n="side.create_audio">Tạo Audio mới</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
-        <span class="sb-label" data-i18n="side.audio_library">Thư viện Audio</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-        <span class="sb-label" data-i18n="side.my_voices">Giọng của tôi</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">history</span>
-        <span class="sb-label" data-i18n="side.history">Lịch sử chuyển đổi</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
-        <span class="sb-label" data-i18n="side.pricing">Bảng giá</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
-        <span class="sb-label" data-i18n="side.profile">Hồ sơ</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
-        <span class="sb-label" data-i18n="side.contact">Liên hệ</span>
-      </a>
-    </nav>
-
-    <button id="sidebarCollapseBtn" class="mx-3 mb-2 flex items-center justify-center gap-2 py-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white/5 transition-all text-xs font-medium shrink-0">
-      <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
-    </button>
-
-    <div class="px-3 pb-4 sb-upgrade">
-      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
-        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
-      </a>
-    </div>
-  </aside>
+  {%- set sidebar_active = 'index' -%}
+  {%- include 'partials/_workspace_sidebar.html' -%}
 
   <!-- ═══ MAIN CONTENT ═══ -->
     <main id="content" data-spa-page="index" class="flex-grow min-w-0 pt-4 md:pt-8 pb-[76px] md:pb-8 px-4 md:px-8 w-full overflow-hidden">
@@ -804,6 +751,22 @@ window.addEventListener('resize', () => {
     if (inp) inp.addEventListener('keypress', e => { if (e.key === 'Enter') saveName(); });
   });
 })();
+</script>
+
+<script>
+function toggleRvcAccordion() {
+  const body = document.getElementById('rvcAccordionBody');
+  const chevron = document.getElementById('rvcChevron');
+  if (!body) return;
+  const isOpen = !body.classList.contains('hidden');
+  if (isOpen) {
+    body.classList.add('hidden');
+    if (chevron) chevron.style.transform = '';
+  } else {
+    body.classList.remove('hidden');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+}
 </script>
 
 {% include 'partials/mobile_bottom_nav.html' %}

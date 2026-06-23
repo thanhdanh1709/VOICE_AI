@@ -4,8 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
-<script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
-<title>Lịch sử chuyển đổi - VietVoice</title>
+<title>L?ch s? chuy?n d?i - VietVoice</title>
 
 {% include 'partials/vv_theme_head.html' %}
 
@@ -104,7 +103,7 @@
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
-<!-- ═══ TOP NAVBAR ═══ -->
+<!-- --- TOP NAVBAR --- -->
 <nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
@@ -112,27 +111,27 @@
       VietVoice
     </a>
     <div class="hidden md:flex items-center space-x-1">
-      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
-      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
-      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
-      <a href="{{ url_for('history') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">History</a>
-      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Pricing</a>
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.home">Workspace</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.library">Library</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.voices">Voices</a>
+      <a href="{{ url_for('history') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline" data-i18n="nav.history">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.pricing">Pricing</a>
       {% if session.user_role == 'admin' %}
-      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.admin">Admin</a>
       {% endif %}
     </div>
     <div class="flex items-center gap-1.5 md:gap-3">
-      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Kï¿½ t? cï¿½n l?i">
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
       </a>
-      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
+      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="ï¿½?i giao di?n">
         <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
       </button>
-      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
+      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liï¿½n h?">
         <span class="material-symbols-outlined">help_outline</span>
       </a>
       <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
@@ -143,7 +142,7 @@
         </div>
         <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
           <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-          <span class="hidden sm:inline">Logout</span>
+          <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
         </a>
       </div>
       <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all ml-1" onclick="toggleMobileNav()">
@@ -156,86 +155,33 @@
 {% set mob_nav_active = 'history' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
-<!-- ═══ LAYOUT: Sidebar + Main ═══ -->
+<!-- --- LAYOUT: Sidebar + Main --- -->
 <div class="vv-app-shell">
 
   <!-- Sidebar -->
-  <aside id="mainSidebar" class="vv-sidebar hidden md:flex flex-col bg-[#051424] pt-6 overflow-hidden shrink-0" style="width:240px">
-    <div class="px-4 mb-4">
-      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
-        </div>
-        <div class="sb-logo-text overflow-hidden">
-          <div class="text-sm font-bold text-white whitespace-nowrap">VietVoice Pro</div>
-          <div class="text-xs text-primary">AI Synthesis Active</div>
-        </div>
-      </div>
-    </div>
+  {%- set sidebar_active = 'history' -%}
+  {%- include 'partials/_workspace_sidebar.html' -%}
 
-    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
-        <span class="sb-label" data-i18n="side.create_audio">Tạo Audio mới</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
-        <span class="sb-label" data-i18n="side.audio_library">Thư viện Audio</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
-        <span class="sb-label" data-i18n="side.my_voices">Giọng của tôi</span>
-      </a>
-      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('history') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">history</span>
-        <span class="sb-label" data-i18n="side.history">Lịch sử chuyển đổi</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('pricing') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
-        <span class="sb-label" data-i18n="side.pricing">Bảng giá</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
-        <span class="sb-label" data-i18n="side.profile">Hồ sơ</span>
-      </a>
-      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
-        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
-        <span class="sb-label" data-i18n="side.contact">Liên hệ</span>
-      </a>
-    </nav>
-
-    <button id="sidebarCollapseBtn" class="mx-3 mb-2 flex items-center justify-center gap-2 py-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white/5 transition-all text-xs font-medium shrink-0">
-      <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
-    </button>
-
-    <div class="px-3 pb-4 sb-upgrade">
-      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
-        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-        <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
-      </a>
-    </div>
-  </aside>
-
-  <!-- ═══ MAIN CONTENT ═══ -->
+  <!-- --- MAIN CONTENT --- -->
     <main id="content" data-spa-page="history" class="flex-1 min-w-0 p-4 md:p-8 min-h-0 flex flex-col gap-4 md:gap-6 pb-[76px] md:pb-8">
     {% include 'partials/content/history.html' %}
   </main>
 </div>
 
-<!-- ═══ FOOTER ═══ -->
+<!-- --- FOOTER --- -->
 {% include '_footer.html' %}
 
-<!-- ═══ MOBILE BOTTOM NAV ═══ -->
+<!-- --- MOBILE BOTTOM NAV --- -->
 {% include 'partials/mobile_bottom_nav.html' %}
 
-<!-- ═══ SCRIPTS ═══ -->
+<!-- --- SCRIPTS --- -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
 
 <script>
-// ── Theme toggle ──────────────────────────────────────────
-// ── Characters remaining (nav badge) ─────────────────────────
+// -- Theme toggle ------------------------------------------
+// -- Characters remaining (nav badge) -------------------------
 async function loadCharsRemaining() {
   try {
     const r = await fetch('/api/user/characters');
@@ -244,7 +190,7 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' ký tự';
+      if (el) el.textContent = fmt + ' kï¿½ t?';
     }
   } catch(e) {}
 }

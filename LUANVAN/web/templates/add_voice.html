@@ -123,6 +123,7 @@ tailwind.config = {
   .lang-active   { color: #c4b5fd; font-weight: 800; }
   .lang-inactive { color: #475569; font-weight: 600; }
   .lang-sep      { color: rgba(148,163,184,0.3); font-weight: 300; font-size: 0.65rem; margin: 0 1px; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </head>
 
@@ -273,11 +274,23 @@ tailwind.config = {
 
           <!-- Transcript block (shown for zero-shot) -->
           <div id="refTranscriptBlock" class="ml-11" style="display:none">
-            <label for="refTranscript" class="block text-sm font-semibold text-on-surface mb-1.5">
-              <span data-i18n="addv.transcript.label">Transcript</span> <span class="text-red-400">*</span>
-            </label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="refTranscript" class="block text-sm font-semibold text-on-surface">
+                <span data-i18n="addv.transcript.label">Transcript</span> <span class="text-red-400">*</span>
+              </label>
+              <button type="button" id="btnAutoTranscribe"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                style="background:rgba(208,188,255,0.12);color:#d0bcff;border:1px solid rgba(208,188,255,0.25)"
+                onmouseover="this.style.background='rgba(208,188,255,0.22)'"
+                onmouseout="this.style.background='rgba(208,188,255,0.12)'"
+                title="Tự động nhận dạng nội dung file audio mẫu">
+                <span id="autoTranscribeIcon" class="material-symbols-outlined" style="font-size:14px">mic</span>
+                <span id="autoTranscribeLabel" data-i18n="addv.transcript.auto_btn">Phiên âm tự động</span>
+              </button>
+            </div>
             <textarea id="refTranscript" name="ref_transcript" rows="4" data-i18n-placeholder="addv.transcript.placeholder" placeholder="Nhập chính xác nội dung mà người nói đọc trong file audio mẫu..." class="form-input-dark resize-none"></textarea>
-            <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.transcript.hint">Zero-shot cần transcript khớp với audio để clone giọng chính xác.</p>
+            <div id="autoTranscribeStatus" class="hidden mt-1.5 text-xs rounded-lg px-3 py-2"></div>
+            <p class="text-xs text-on-surface-variant mt-1.5" data-i18n="addv.transcript.hint">Zero-shot cần transcript khớp với audio để clone giọng chính xác. Hoặc dùng <strong>Phiên âm tự động</strong> nếu bạn không biết nội dung audio.</p>
           </div>
 
           <!-- viXTTS info (shown for vixtts_clone) -->
@@ -472,6 +485,61 @@ tailwind.config = {
 <script src="{{ url_for('static', filename='js/add-voice.js') }}"></script>
 
 <script>
+// ── Auto-transcribe ───────────────────────────────────────────
+(function setupAutoTranscribe() {
+  const btn = document.getElementById('btnAutoTranscribe');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    // Find the uploaded audio file
+    const audioInput = document.getElementById('audioFile');
+    const statusEl = document.getElementById('autoTranscribeStatus');
+    const icon = document.getElementById('autoTranscribeIcon');
+    const labelEl = document.getElementById('autoTranscribeLabel');
+    const textarea = document.getElementById('refTranscript');
+
+    if (!audioInput || !audioInput.files || audioInput.files.length === 0) {
+      statusEl.className = 'mt-1.5 text-xs rounded-lg px-3 py-2';
+      statusEl.style.cssText = 'background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)';
+      statusEl.textContent = '⚠ Vui lòng tải file audio mẫu lên trước khi phiên âm tự động.';
+      return;
+    }
+
+    // Loading state
+    btn.disabled = true;
+    icon.textContent = 'sync';
+    icon.style.animation = 'spin 1s linear infinite';
+    labelEl.textContent = 'Đang nhận dạng...';
+    statusEl.className = 'mt-1.5 text-xs rounded-lg px-3 py-2';
+    statusEl.style.cssText = 'background:rgba(208,188,255,0.08);color:#d0bcff;border:1px solid rgba(208,188,255,0.2)';
+    statusEl.textContent = '🎙 Đang phiên âm file audio, vui lòng chờ...';
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioInput.files[0]);
+      const resp = await fetch('/api/transcribe-audio', { method: 'POST', body: formData });
+      const data = await resp.json();
+
+      if (data.success) {
+        textarea.value = data.transcript;
+        statusEl.style.cssText = 'background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25)';
+        statusEl.textContent = `✓ Phiên âm thành công (${data.duration}s, ngôn ngữ: ${data.language}). Kiểm tra lại nội dung trước khi lưu.`;
+      } else {
+        statusEl.style.cssText = 'background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)';
+        statusEl.textContent = '✗ ' + (data.error || 'Lỗi phiên âm không xác định.');
+      }
+    } catch (e) {
+      statusEl.style.cssText = 'background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)';
+      statusEl.textContent = '✗ Không thể kết nối tới máy chủ phiên âm.';
+    } finally {
+      btn.disabled = false;
+      icon.textContent = 'mic';
+      icon.style.animation = '';
+      labelEl.textContent = 'Phiên âm tự động';
+    }
+  });
+})();
+
 // ── Characters remaining ──────────────────────────────────────
 async function loadCharsRemaining() {
   try {

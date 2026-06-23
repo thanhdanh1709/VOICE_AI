@@ -1,5 +1,5 @@
 {
-  "vi_hash": "4a9927d3fbf7840b9534ef2ee2539d10c5bc5a03c424833d3cea80d7d915a48f",
+  "vi_hash": "7a462aeb9f2c2e552fd289009486be4cda89d7ebba5c640c1a679337f5e316c1",
   "content": {
     "contact_cards": [
       {
@@ -71,7 +71,7 @@
     "faqs": [
       {
         "question": "How many characters can I use per month?",
-        "answer_html": "The free plan includes a limited number of characters per month. Paid plans offer higher quotas. See details on <a href=\"/pricing\">Pricing</a>."
+        "answer_html": "The free plan includes a limited number of characters per month. Paid plans offer higher quotas. See details on <a href=\"/register\">Pricing</a>."
       },
       {
         "question": "Can I use generated audio for commercial purposes?",

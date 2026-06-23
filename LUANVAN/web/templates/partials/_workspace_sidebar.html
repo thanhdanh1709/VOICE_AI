@@ -1,0 +1,56 @@
+{%- set _sa = sidebar_active | default('') -%}
+{%- macro nav_link(page, href, icon, label_key, label_vi) -%}
+  <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg no-underline text-sm font-medium transition-all
+    {%- if _sa == page %} bg-primary/10 text-primary border-l-4 border-primary font-semibold
+    {%- else %} text-slate-400 hover:bg-white/5 hover:text-white border-l-4 border-transparent{% endif %}"
+    href="{{ href }}">
+    <span class="material-symbols-outlined" style="font-size:18px">{{ icon }}</span>
+    <span class="sb-label" data-i18n="{{ label_key }}">{{ label_vi }}</span>
+  </a>
+{%- endmacro -%}
+
+<aside id="mainSidebar" class="vv-sidebar hidden md:flex flex-col bg-[#051424] pt-6 overflow-hidden shrink-0" style="width:240px">
+
+  <!-- Brand header -->
+  <div class="px-4 mb-4">
+    <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-tertiary" style="font-size:20px">graphic_eq</span>
+      </div>
+      <div class="sb-logo-text overflow-hidden">
+        <div class="text-sm font-bold text-white whitespace-nowrap">VietVoice</div>
+        <div class="text-xs text-primary">AI Synthesis</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav items -->
+  <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+    {{ nav_link('index',         url_for('index'),         'add_circle',        'side.create_audio',  'Tạo Audio mới') }}
+    {{ nav_link('audio_library', url_for('audio_library'), 'library_music',     'side.audio_library', 'Thư viện Audio') }}
+    {{ nav_link('my_voices',     url_for('my_voices'),     'record_voice_over', 'side.my_voices',     'Giọng của tôi') }}
+    {{ nav_link('history',       url_for('history'),       'history',           'side.history',       'Lịch sử chuyển đổi') }}
+    {{ nav_link('pricing',       url_for('pricing'),       'bolt',              'side.pricing',       'Bảng giá') }}
+    {{ nav_link('profile',       url_for('profile'),       'manage_accounts',   'side.profile',       'Hồ sơ') }}
+    {{ nav_link('contact',       url_for('contact'),       'contact_support',   'side.contact',       'Liên hệ') }}
+    {% if session.user_role == 'admin' %}
+    {{ nav_link('admin',         url_for('admin'),         'admin_panel_settings', 'side.admin',      'Admin') }}
+    {% endif %}
+  </nav>
+
+  <!-- Collapse toggle -->
+  <button id="sidebarCollapseBtn"
+    class="mx-3 mb-2 flex items-center justify-center gap-2 py-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white/5 transition-all text-xs font-medium shrink-0">
+    <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
+  </button>
+
+  <!-- Upgrade CTA -->
+  <div class="px-3 pb-4 sb-upgrade">
+    <a href="{{ url_for('pricing') }}"
+      class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+      <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+      <span class="sb-label" data-i18n="side.upgrade">Nâng cấp gói</span>
+    </a>
+  </div>
+
+</aside>

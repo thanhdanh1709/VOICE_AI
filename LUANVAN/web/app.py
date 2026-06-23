@@ -1120,6 +1120,59 @@ def handle_500_error(e):
 # Global TTS instance (khởi tạo một lần, tái sử dụng)
 _tts_instance = None
 
+# Lock để ngăn concurrent TTS inference (model không thread-safe)
+import threading as _threading
+_tts_lock = _threading.Lock()
+
+def split_text_for_tts(text, max_chars=240):
+    """Tách văn bản thành các đoạn nhỏ để tránh vượt context window của TTS model.
+    
+    TTS model (Vieneu/viXTTS) có context window 2048 tokens.
+    Tiếng Việt tokenize ~6-8 tokens/char, nên giới hạn an toàn ~240 chars/chunk.
+    """
+    import re
+    text = text.strip()
+    if len(text) <= max_chars:
+        return [text]
+    
+    chunks = []
+    # Tách theo câu: dấu . ! ? ; và xuống dòng
+    sentences = re.split(r'(?<=[.!?;])\s+|(?<=\n)', text)
+    current = ''
+    for sent in sentences:
+        sent = sent.strip()
+        if not sent:
+            continue
+        if len(current) + len(sent) + 1 <= max_chars:
+            current = (current + ' ' + sent).strip() if current else sent
+        else:
+            if current:
+                chunks.append(current)
+            if len(sent) <= max_chars:
+                current = sent
+            else:
+                # Câu quá dài — tách thêm theo dấu phẩy
+                parts = re.split(r'[,،،،]+', sent)
+                current = ''
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if len(current) + len(part) + 1 <= max_chars:
+                        current = (current + ', ' + part).strip(', ') if current else part
+                    else:
+                        if current:
+                            chunks.append(current)
+                        # Hard split nếu một phần vẫn quá dài
+                        while len(part) > max_chars:
+                            chunks.append(part[:max_chars])
+                            part = part[max_chars:]
+                        current = part
+    if current:
+        chunks.append(current)
+    return [c for c in chunks if c.strip()]
+
+
 def get_tts_instance():
     """Lấy TTS instance (khởi tạo một lần)"""
     global _tts_instance
@@ -2069,7 +2122,8 @@ def convert_text_to_speech():
                     raise Exception(f"Không tìm thấy file audio mẫu của giọng viXTTS Clone: {ref_audio_path}")
                 print(f"[CONVERT viXTTS-Clone] Using voice ref: {ref_audio_path}")
                 output_path.parent.mkdir(parents=True, exist_ok=True)
-                VIXTTS_INSTANCE.synthesize_with_voice(text, ref_audio_path, str(output_path))
+                with _tts_lock:
+                    VIXTTS_INSTANCE.synthesize_with_voice(text, ref_audio_path, str(output_path))
                 import librosa as _librosa
                 _y, _sr = _librosa.load(str(output_path), sr=None)
                 duration_seconds = len(_y) / _sr
@@ -2081,35 +2135,93 @@ def convert_text_to_speech():
                 raise Exception(f"Lỗi tạo âm thanh viXTTS Clone: {str(vixtts_err)}")
         else:
             try:
+                import numpy as np
+                sample_rate = getattr(tts, 'sample_rate', sample_rate)
+
                 # Zero-shot: use ref_audio + ref_text; otherwise preset voice or ref from voice_data
                 use_zero_shot = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'zero_shot'
+
+                # Sau phonemize, tiếng Việt ≈ 6–7 tokens/ký tự gốc.
+                # Với ref_codes overhead ~400-600 tokens, max_chars=100 cho tổng ~1300 tokens < 2048.
+                TTS_MAX_CHARS = 100
+
+                # Zero-shot: encode ref_audio một lần, truncate ref_codes để không vượt context window.
+                # (Tương tự xử lý trong test-voice route — ref_codes dài = vượt 2048 tokens)
+                _zs_ref_codes = None
+                _zs_ref_text  = None
                 if use_zero_shot:
-                    ref_audio_path = resolve_audio_path(custom_voice_data.get('sample_audio_path'))
-                    ref_text_zs = custom_voice_data.get('ref_transcript') or ''
-                    if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
-                        print(f"[CONVERT Zero-shot] ref_audio={ref_audio_path}, ref_text length={len(ref_text_zs)}")
-                        audio = tts.infer(text=text, ref_audio=ref_audio_path, ref_text=ref_text_zs)
+                    _zs_ref_audio_path = resolve_audio_path(custom_voice_data.get('sample_audio_path'))
+                    _zs_ref_text_raw   = (custom_voice_data.get('ref_transcript') or '').strip()
+                    REF_TEXT_MAX_CHARS  = 250
+                    # 200 frames cho đủ thông tin giọng để model giữ nhất quán xuyên chunk.
+                    # Với max_chars=100 mỗi sub-chunk: ref_codes(200) + ref_text(~400) + text(~500) ≈ 1100 < 2048 ✓
+                    REF_CODES_MAX_FRAMES = 200
+                    import re as _re_zs
+                    _transcript_clean = _re_zs.sub(r'[^\w\s]', '', _zs_ref_text_raw, flags=_re_zs.UNICODE).strip()
+                    _transcript_too_short = len(_transcript_clean) < 10
+
+                    if _transcript_too_short:
+                        raise Exception(
+                            'Transcript của giọng zero-shot quá ngắn hoặc chỉ có dấu câu. '
+                            'Vui lòng xóa và tạo lại giọng với transcript đúng nội dung nói trong file mẫu '
+                            '(ít nhất 10 ký tự, ví dụ: "Xin chào, đây là giọng đọc của tôi.").'
+                        )
+
+                    if _zs_ref_audio_path and os.path.exists(_zs_ref_audio_path) and _zs_ref_text_raw:
+                        import numpy as _np_zs
+                        _codes_full = tts.encode_reference(_zs_ref_audio_path)
+                        if hasattr(_codes_full, 'cpu'):
+                            _codes_full = _codes_full.cpu().numpy()
+                        _codes_full = _np_zs.asarray(_codes_full).flatten()
+                        total_frames = len(_codes_full)
+                        kept_frames  = min(total_frames, REF_CODES_MAX_FRAMES)
+                        _zs_ref_codes = _codes_full[:kept_frames].tolist()
+
+                        # Cắt ref_text tỉ lệ với số frames thực dùng.
+                        # Nếu codes chỉ che 60% audio mà ref_text là 100% → model đọc 40% ref_text còn lại.
+                        # Cắt ref_text cùng tỉ lệ để codes ↔ ref_text luôn khớp.
+                        if total_frames > kept_frames:
+                            ratio = kept_frames / total_frames
+                            max_ref_chars = max(15, int(len(_zs_ref_text_raw) * ratio))
+                            _zs_ref_text = _zs_ref_text_raw[:max_ref_chars]
+                            print(f"[CONVERT Zero-shot] frames {total_frames}→{kept_frames} ({ratio:.0%}), "
+                                  f"ref_text {len(_zs_ref_text_raw)}→{len(_zs_ref_text)} chars")
+                        else:
+                            # Codes đủ che toàn bộ audio — chỉ cắt theo REF_TEXT_MAX_CHARS
+                            _zs_ref_text = _zs_ref_text_raw[:REF_TEXT_MAX_CHARS]
+                            print(f"[CONVERT Zero-shot] frames={total_frames} (full), ref_text={len(_zs_ref_text)} chars")
                     else:
-                        print(f"[WARNING] Zero-shot missing ref_audio/ref_text, using default voice")
-                        audio = tts.infer(text=text, voice=voice_data if voice_data else None)
-                else:
-                    audio = tts.infer(text=text, voice=voice_data if voice_data else None)
-                
-                # Calculate duration from audio shape
-                sample_rate = getattr(tts, 'sample_rate', sample_rate)
-                
-                if hasattr(audio, 'shape'):
-                    audio_shape = audio.shape
-                    audio_dtype = audio.dtype
-                    if len(audio_shape) > 0:
-                        duration_seconds = audio_shape[0] / sample_rate
-                        print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}, duration={duration_seconds:.2f}s")
+                        print(f"[WARNING] Zero-shot missing ref_audio/ref_text, falling back to default voice")
+
+                # Gọi tts.infer() MỘT LẦN với max_chars=100.
+                # Vieneu tự chunk nội bộ bằng cùng ref_codes → giọng nhất quán xuyên suốt.
+                # Lock để tránh concurrent calls làm crash TTS model (không thread-safe).
+                # temperature thấp (0.4) cho zero-shot: giảm variance giữa các chunk → giọng nhất quán.
+                with _tts_lock:
+                    if use_zero_shot and _zs_ref_codes and _zs_ref_text:
+                        audio = tts.infer(
+                            text=text,
+                            ref_codes=_zs_ref_codes,
+                            ref_text=_zs_ref_text,
+                            max_chars=TTS_MAX_CHARS,
+                            temperature=0.4,
+                            top_k=20,
+                        )
                     else:
-                        print(f"[CONVERT] Audio generated: shape={audio_shape}, dtype={audio_dtype}")
-                else:
-                    audio_length = len(audio) if hasattr(audio, '__len__') else 'unknown'
-                    print(f"[CONVERT] Text inference completed: audio length={audio_length}")
-                
+                        audio = tts.infer(text=text, voice=voice_data if voice_data else None, max_chars=TTS_MAX_CHARS)
+
+                def _to_numpy(arr):
+                    if hasattr(arr, 'cpu'):
+                        arr = arr.cpu()
+                    if hasattr(arr, 'numpy'):
+                        arr = arr.numpy()
+                    return np.asarray(arr, dtype=np.float32).flatten()
+
+                audio_np = _to_numpy(audio)
+                duration_seconds = len(audio_np) / sample_rate
+                print(f"[CONVERT] Audio generated: samples={len(audio_np)}, duration={duration_seconds:.2f}s")
+                audio = audio_np
+
             except Exception as infer_error:
                 error_trace = traceback.format_exc()
                 print(f"[ERROR] Failed to infer audio: {infer_error}")
@@ -8263,6 +8375,69 @@ def add_voice_page():
     """Page: Add custom voice"""
     return render_template('add_voice.html')
 
+# ── Auto-transcription (faster-whisper) ───────────────────────────────────────
+_asr_model = None
+_asr_lock = _threading.Lock()
+
+def _get_asr_model():
+    """Lazy-load faster-whisper model (medium, int8) on first use."""
+    global _asr_model
+    if _asr_model is None:
+        try:
+            from faster_whisper import WhisperModel
+            _asr_model = WhisperModel("medium", device="cpu", compute_type="int8")
+            print("[ASR] faster-whisper 'medium' model loaded.")
+        except Exception as e:
+            print(f"[ASR ERROR] Cannot load faster-whisper: {e}")
+            _asr_model = None
+    return _asr_model
+
+@app.route('/api/transcribe-audio', methods=['POST'])
+@login_required
+def transcribe_audio():
+    """Auto-transcribe an uploaded audio file using faster-whisper."""
+    if 'audio' not in request.files:
+        return jsonify({'success': False, 'error': 'Không có file audio được gửi lên.'}), 400
+
+    audio_file = request.files['audio']
+    if not audio_file or audio_file.filename == '':
+        return jsonify({'success': False, 'error': 'File audio trống.'}), 400
+
+    # Save to a temp file
+    import tempfile, os as _os
+    suffix = _os.path.splitext(audio_file.filename)[1] or '.wav'
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = tmp.name
+        audio_file.save(tmp_path)
+
+    try:
+        with _asr_lock:
+            model = _get_asr_model()
+            if model is None:
+                return jsonify({'success': False, 'error': 'Mô hình phiên âm chưa sẵn sàng. Vui lòng thử lại sau.'}), 503
+
+            segments, info = model.transcribe(
+                tmp_path,
+                language="vi",
+                beam_size=5,
+                vad_filter=True,
+            )
+            transcript = " ".join(seg.text.strip() for seg in segments).strip()
+
+        if not transcript:
+            return jsonify({'success': False, 'error': 'Không nhận dạng được giọng nói. Hãy kiểm tra chất lượng file audio.'}), 422
+
+        return jsonify({'success': True, 'transcript': transcript, 'language': info.language, 'duration': round(info.duration, 1)})
+    except Exception as e:
+        print(f"[ASR ERROR] transcribe_audio: {e}")
+        return jsonify({'success': False, 'error': f'Lỗi phiên âm: {str(e)}'}), 500
+    finally:
+        try:
+            import os as _os2
+            _os2.remove(tmp_path)
+        except Exception:
+            pass
+
 @app.route('/api/custom-voice/upload', methods=['POST'])
 @login_required
 def upload_custom_voice():
@@ -8302,6 +8477,12 @@ def upload_custom_voice():
         ref_transcript = (request.form.get('ref_transcript') or '').strip()
         if voice_type == 'zero_shot' and not ref_transcript:
             return jsonify({'success': False, 'error': 'Zero-shot cần nhập transcript (nội dung nói) của file mẫu'}), 400
+        # Transcript phải có ít nhất 10 ký tự chữ/số thực sự — chỉ dấu câu hoặc quá ngắn sẽ làm giọng không nhất quán
+        if voice_type == 'zero_shot':
+            import re as _re
+            _transcript_words = _re.sub(r'[^\w\s]', '', ref_transcript, flags=_re.UNICODE).strip()
+            if len(_transcript_words) < 10:
+                return jsonify({'success': False, 'error': 'Transcript quá ngắn. Vui lòng nhập đúng nội dung nói trong file mẫu (ít nhất 10 ký tự). Ví dụ: "Xin chào, đây là giọng đọc của tôi."'}), 400
         if voice_type == 'vixtts_clone' and (not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None):
             return jsonify({'success': False, 'error': 'viXTTS model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
         
@@ -8563,21 +8744,24 @@ def test_custom_voice(voice_id):
                         ref_text_zs = (voice.get('ref_transcript') or '').strip()
                         pitch_adj, speed_adj = 0, 1.0  # no adjustment for zero_shot
                         if ref_audio_path and os.path.exists(ref_audio_path) and ref_text_zs:
-                            # Giới hạn ref_transcript
-                            REF_TEXT_MAX_CHARS = 250
-                            if len(ref_text_zs) > REF_TEXT_MAX_CHARS:
-                                ref_text_zs = ref_text_zs[:REF_TEXT_MAX_CHARS]
-                                print(f"[TEST VOICE Zero-shot] Truncated ref_transcript to {REF_TEXT_MAX_CHARS} chars")
-                            # Mã hóa ref rồi cắt ref_codes để không vượt context 2048 (audio mẫu dài = rất nhiều token)
-                            REF_CODES_MAX_FRAMES = 40
+                            REF_TEXT_MAX_CHARS   = 250
+                            REF_CODES_MAX_FRAMES = 200
                             ref_codes_full = tts.encode_reference(ref_audio_path)
                             import numpy as np
                             if hasattr(ref_codes_full, 'cpu'):
                                 ref_codes_full = ref_codes_full.cpu().numpy()
                             ref_codes_full = np.asarray(ref_codes_full).flatten()
-                            ref_codes_short = ref_codes_full[:REF_CODES_MAX_FRAMES].tolist()
-                            print(f"[TEST VOICE Zero-shot] ref_audio={ref_audio_path}, ref_codes frames: {len(ref_codes_full)} -> {len(ref_codes_short)}")
-                            audio = tts.infer(text=test_text, ref_codes=ref_codes_short, ref_text=ref_text_zs, max_chars=150)
+                            total_frames_tv  = len(ref_codes_full)
+                            kept_frames_tv   = min(total_frames_tv, REF_CODES_MAX_FRAMES)
+                            ref_codes_short  = ref_codes_full[:kept_frames_tv].tolist()
+                            # Cắt ref_text tỉ lệ với frames thực dùng để codes ↔ ref_text khớp nhau
+                            if total_frames_tv > kept_frames_tv:
+                                ratio_tv = kept_frames_tv / total_frames_tv
+                                ref_text_zs = ref_text_zs[:max(15, int(len(ref_text_zs) * ratio_tv))]
+                            else:
+                                ref_text_zs = ref_text_zs[:REF_TEXT_MAX_CHARS]
+                            print(f"[TEST VOICE Zero-shot] frames {total_frames_tv}→{kept_frames_tv}, ref_text={len(ref_text_zs)} chars")
+                            audio = tts.infer(text=test_text, ref_codes=ref_codes_short, ref_text=ref_text_zs, max_chars=100, temperature=0.4, top_k=20)
                         else:
                             return jsonify({'error': 'Zero-shot thiếu ref_audio hoặc ref_transcript'}), 400
                     else:
