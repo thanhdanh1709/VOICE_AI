@@ -448,68 +448,7 @@ tailwind.config = {
 <body class="bg-background text-on-background min-h-screen flex flex-col">
 
 <!-- ═══ TOP NAVBAR ═══ -->
-<nav class="fixed top-0 w-full z-50 border-b border-white/10 bg-[#07111f]/85 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-  <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
-    <!-- Brand -->
-    <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
-      {% if site_settings.logo_url %}
-      <img src="{{ url_for('static', filename=site_settings.logo_url) }}" alt="{{ site_settings.site_name or 'VietVoice' }}" class="h-8 w-auto max-w-[120px] object-contain">
-      {% else %}
-      <span class="material-symbols-outlined text-primary" style="font-size:24px">graphic_eq</span>
-      {% endif %}
-      {{ site_settings.site_name or 'VietVoice' }}
-    </a>
-
-    <!-- Nav links -->
-    <div class="hidden md:flex items-center space-x-1">
-      <a href="{{ url_for('index') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline" data-i18n="nav.home">Workspace</a>
-      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.library">Library</a>
-      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.voices">Voices</a>
-      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.history">History</a>
-      <a href="{{ url_for('pricing') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.pricing">Pricing</a>
-      {% if session.user_role == 'admin' %}
-      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.admin">Admin</a>
-      {% endif %}
-    </div>
-
-    <!-- Right side -->
-    <div class="flex items-center gap-1.5 md:gap-3">
-      <!-- Characters remaining badge -->
-      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Ký tự còn lại">
-        <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
-        <span id="charsNavCount">...</span>
-      </a>
-      <!-- Theme toggle -->
-      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Đổi giao diện">
-        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
-      </button>
-      <!-- Language toggle -->
-      <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language" style="margin:0 2px;">
-        <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
-      </button>
-      <!-- Help: hide on mobile -->
-      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liên hệ">
-        <span class="material-symbols-outlined">help_outline</span>
-      </a>
-      <!-- User info -->
-      <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
-        {% include 'partials/_nav_avatar.html' %}
-        <div class="hidden sm:flex flex-col">
-          <span class="text-xs font-semibold text-on-surface leading-none">{{ session.full_name or session.username }}</span>
-          <span class="text-[10px] text-on-surface-variant">{{ session.user_role or 'user' }}</span>
-        </div>
-        <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
-          <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-          <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
-        </a>
-      </div>
-      <!-- Hamburger button - mobile only -->
-      <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all ml-1" onclick="toggleMobileNav()" title="Menu">
-        <span class="material-symbols-outlined" id="mobileMenuIcon">menu</span>
-      </button>
-    </div>
-  </div>
-</nav>
+{% include 'partials/_topnav.html' %}
 
 {% set mob_nav_active = 'index' %}
 {% include 'partials/mobile_nav_drawer.html' %}
