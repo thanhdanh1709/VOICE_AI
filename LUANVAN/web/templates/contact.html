@@ -179,13 +179,13 @@ tailwind.config = {
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
-<div class="flex flex-1 pt-16 min-h-screen w-full overflow-hidden">
+<div class="vv-app-shell">
 
   <!-- Sidebar -->
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main class="flex-1 min-w-0 px-4 md:px-10 py-6 md:py-10 pb-[76px] md:pb-16 overflow-hidden">
+  <main id="content" data-spa-page="contact" class="px-4 md:px-10 py-6 md:py-10 pb-[76px] md:pb-16 overflow-hidden">
 
     <!-- Page Header -->
     <div class="text-center mb-8 md:mb-12 animate-in">
