@@ -1,4 +1,4 @@
-{%- set _sa = sidebar_active | default('') -%}
+{%- set _sa = sidebar_active | default(request.endpoint) | default('') -%}
 {%- macro nav_link(page, href, icon, label_key, label_vi) -%}
   <a class="flex items-center gap-3 px-4 py-2.5 rounded-lg no-underline text-sm font-medium transition-all
     {%- if _sa == page %} bg-primary/10 text-primary border-l-4 border-primary font-semibold
