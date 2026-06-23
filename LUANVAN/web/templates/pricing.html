@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/saas-animations.css') }}">
-<title>VietVoice - Nï¿½ng c?p gï¿½i d?ch v?</title>
+<script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
+<title>VietVoice - N├óng cß║Ñp g├│i dß╗ïch vß╗Ñ</title>
 
 {% include 'partials/vv_theme_head.html' %}
 
@@ -19,7 +19,7 @@
 
 <style>
   html, body { overflow-x: hidden; max-width: 100%; }
-  body { font-family: 'Manrope', sans-serif; background: #0F172A; color: #F8FAFC; }
+  body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
 
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -28,9 +28,9 @@
   }
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #111827; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #38BDF8; }
+  ::-webkit-scrollbar-track { background: #0d1c2d; }
+  ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
 
   /* Glass cards */
   .glass-card {
@@ -62,12 +62,12 @@
   #qrPaymentModal { display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center; }
   #qrPaymentModal.is-active { display:flex; }
   .modal-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px); }
-  .modal-content { position:relative;z-index:1;background:#111827;border:1px solid rgba(208,188,255,0.15);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.5);margin:16px; }
+  .modal-content { position:relative;z-index:1;background:#0d1c2d;border:1px solid rgba(208,188,255,0.15);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.5);margin:16px; }
   .modal-header { display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid rgba(73,68,84,0.4); }
   .modal-body { padding:24px; }
 
   /* Copyable text */
-  .copyable-text { cursor:pointer;color:#38BDF8;font-weight:600;transition:color 0.15s; }
+  .copyable-text { cursor:pointer;color:#d0bcff;font-weight:600;transition:color 0.15s; }
   .copyable-text:hover { color:#a078ff; }
 
   /* Usage progress */
@@ -81,7 +81,7 @@
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
-<!-- --- TOP NAVBAR --- -->
+<!-- ΓòÉΓòÉΓòÉ TOP NAVBAR ΓòÉΓòÉΓòÉ -->
 <nav class="vv-top-nav fixed top-0 w-full z-50 border-b border-white/10 backdrop-blur-xl">
   <div class="flex justify-between items-center px-3 md:px-6 h-16 max-w-[1360px] mx-auto">
     <a href="{{ url_for('index') }}" class="text-xl font-black tracking-tighter text-white uppercase flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
@@ -89,27 +89,27 @@
       VietVoice
     </a>
     <div class="hidden md:flex items-center space-x-1">
-      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.home">Workspace</a>
-      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.library">Library</a>
-      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.voices">Voices</a>
-      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.history">History</a>
-      <a href="{{ url_for('pricing') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline" data-i18n="nav.pricing">Pricing</a>
+      <a href="{{ url_for('index') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Workspace</a>
+      <a href="{{ url_for('audio_library') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Library</a>
+      <a href="{{ url_for('my_voices') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Voices</a>
+      <a href="{{ url_for('history') }}" class="text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">History</a>
+      <a href="{{ url_for('pricing') }}" class="text-primary border-b-2 border-primary pb-0.5 px-3 py-2 text-sm font-semibold no-underline">Pricing</a>
       {% if session.user_role == 'admin' %}
-      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline" data-i18n="nav.admin">Admin</a>
+      <a href="{{ url_for('admin') }}" class="text-tertiary hover:text-white hover:bg-white/5 transition-all duration-200 px-3 py-2 rounded text-sm font-medium no-underline">Admin</a>
       {% endif %}
     </div>
     <div class="flex items-center gap-1.5 md:gap-3">
-      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="Kï¿½ t? cï¿½n l?i">
+      <a href="{{ url_for('pricing') }}" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors no-underline" id="charsNavBadge" title="K├╜ tß╗▒ c├▓n lß║íi">
         <span class="material-symbols-outlined" style="font-size:14px">bolt</span>
         <span id="charsNavCount">...</span>
       </a>
-      <button id="themeToggleBtn" class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="ï¿½?i giao di?n">
+      <button id="themeToggleBtn" data-vv-theme-toggle class="text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="─Éß╗òi giao diß╗çn">
         <span class="material-symbols-outlined" id="themeIcon" data-vv-theme-icon>dark_mode</span>
       </button>
       <button class="vv-lang-toggle" onclick="VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
       </button>
-      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Liï¿½n h?">
+      <a href="{{ url_for('contact') }}" class="hidden sm:flex text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all" title="Li├¬n hß╗ç">
         <span class="material-symbols-outlined">help_outline</span>
       </a>
       <div class="flex items-center gap-1.5 pl-2 border-l border-white/10">
@@ -120,7 +120,7 @@
         </div>
         <a href="{{ url_for('logout') }}" class="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all no-underline font-medium ml-1">
           <span class="material-symbols-outlined" style="font-size:15px">logout</span>
-          <span class="hidden sm:inline" data-i18n="nav.logout">Logout</span>
+          <span class="hidden sm:inline">Logout</span>
         </a>
       </div>
       <button id="mobileMenuBtn" class="md:hidden text-slate-400 hover:text-white hover:bg-white/5 p-2 rounded-full transition-all ml-1" onclick="toggleMobileNav()">
@@ -133,34 +133,87 @@
 {% set mob_nav_active = 'pricing' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
-<!-- --- LAYOUT --- -->
+<!-- ΓòÉΓòÉΓòÉ LAYOUT ΓòÉΓòÉΓòÉ -->
 <div class="vv-app-shell">
 
   <!-- Sidebar -->
-    {%- set sidebar_active = 'pricing' -%}
-  {%- include 'partials/_workspace_sidebar.html' -%}
+  <aside id="mainSidebar" class="vv-sidebar hidden md:flex flex-col bg-[#051424] pt-6 overflow-hidden shrink-0" style="width:240px">
+    <div class="px-4 mb-4">
+      <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container border border-primary/10">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/30 to-tertiary/20 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-tertiary" style="font-size:20px">auto_awesome</span>
+        </div>
+        <div class="sb-logo-text overflow-hidden">
+          <div class="text-sm font-bold text-white whitespace-nowrap">VietVoice Pro</div>
+          <div class="text-xs text-primary">AI Synthesis Active</div>
+        </div>
+      </div>
+    </div>
 
-  <!-- --- MAIN CONTENT --- -->
+    <nav class="flex flex-col gap-1 px-3 flex-1 overflow-y-auto">
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('index') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">add_circle</span>
+        <span class="sb-label" data-i18n="side.create_audio">Tß║ío Audio mß╗¢i</span>
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('audio_library') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
+        <span class="sb-label" data-i18n="side.audio_library">Th╞░ viß╗çn Audio</span>
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('my_voices') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">record_voice_over</span>
+        <span class="sb-label" data-i18n="side.my_voices">Giß╗ìng cß╗ºa t├┤i</span>
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('history') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">history</span>
+        <span class="sb-label" data-i18n="side.history">Lß╗ïch sß╗¡ chuyß╗ân ─æß╗òi</span>
+      </a>
+      <a class="flex items-center gap-3 bg-primary/10 text-primary rounded-lg px-4 py-2.5 border-l-4 border-primary no-underline text-sm font-semibold" href="{{ url_for('pricing') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">bolt</span>
+        <span class="sb-label" data-i18n="side.pricing">Bß║úng gi├í</span>
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('profile') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">manage_accounts</span>
+        <span class="sb-label" data-i18n="side.profile">Hß╗ô s╞í</span>
+      </a>
+      <a class="flex items-center gap-3 text-slate-400 px-4 py-2.5 hover:bg-white/5 hover:text-white transition-all rounded-lg no-underline text-sm font-medium" href="{{ url_for('contact') }}">
+        <span class="material-symbols-outlined" style="font-size:18px">contact_support</span>
+        <span class="sb-label" data-i18n="side.contact">Li├¬n hß╗ç</span>
+      </a>
+    </nav>
+
+    <button id="sidebarCollapseBtn" class="mx-3 mb-2 flex items-center justify-center gap-2 py-2 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-white/5 transition-all text-xs font-medium shrink-0">
+      <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
+    </button>
+
+    <div class="px-3 pb-4 sb-upgrade">
+      <a href="{{ url_for('pricing') }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors no-underline">
+        <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
+        <span class="sb-label" data-i18n="side.upgrade">N├óng cß║Ñp g├│i</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ΓòÉΓòÉΓòÉ MAIN CONTENT ΓòÉΓòÉΓòÉ -->
   <main id="content" data-spa-page="pricing" class="flex-1 flex flex-col min-w-0 flex-grow py-6 md:py-10 px-4 md:px-6 lg:px-10 max-w-[1300px] mx-auto w-full pb-[76px] md:pb-10 overflow-hidden">
     <script id="pricingPackagesJson" type="application/json">{{ pricing_packages|tojson }}</script>
     {% include 'partials/content/pricing.html' %}
   </main>
 </div>
 
-<!-- --- FOOTER --- -->
+<!-- ΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉ -->
 {% include '_footer.html' %}
 
-<!-- --- MOBILE BOTTOM NAV --- -->
+<!-- ΓòÉΓòÉΓòÉ MOBILE BOTTOM NAV ΓòÉΓòÉΓòÉ -->
 {% include 'partials/mobile_bottom_nav.html' %}
 
-<!-- --- QR PAYMENT MODAL --- -->
+<!-- ΓòÉΓòÉΓòÉ QR PAYMENT MODAL ΓòÉΓòÉΓòÉ -->
 <div id="qrPaymentModal">
   <div class="modal-overlay"></div>
   <div class="modal-content">
     <div class="modal-header">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">qr_code</span>
-        <h2 class="text-base font-bold text-on-surface" data-i18n="price.qr_modal.title">Thanh toï¿½n qua QR Code</h2>
+        <h2 class="text-base font-bold text-on-surface" data-i18n="price.qr_modal.title">Thanh to├ín qua QR Code</h2>
       </div>
       <button class="close-qr text-on-surface-variant hover:text-on-surface p-1.5 rounded-lg hover:bg-white/5 transition-colors">
         <span class="material-symbols-outlined" style="font-size:20px">close</span>
@@ -169,13 +222,13 @@
     <div class="modal-body">
       <!-- Instructions -->
       <div class="bg-surface-container rounded-xl p-4 mb-5 text-sm text-on-surface-variant space-y-1.5">
-        <p class="font-semibold text-on-surface mb-2" data-i18n="price.qr_modal.guide_title">Hu?ng d?n thanh toï¿½n:</p>
-        <p data-i18n="price.qr_modal.step1">1. M? app ngï¿½n hï¿½ng (TPBank, Vietcombank, BIDV, v.v.)</p>
-        <p data-i18n="price.qr_modal.step2">2. Ch?n "Quï¿½t QR" ho?c "Chuy?n kho?n"</p>
-        <p data-i18n="price.qr_modal.step3">3. Quï¿½t QR code bï¿½n du?i</p>
-        <p data-i18n="price.qr_modal.step4">4. Ki?m tra thï¿½ng tin: S? tï¿½i kho?n, s? ti?n, n?i dung</p>
-        <p data-i18n="price.qr_modal.step5">5. Xï¿½c nh?n thanh toï¿½n trong app ngï¿½n hï¿½ng</p>
-        <p data-i18n="price.qr_modal.step6">6. H? th?ng t? d?ng xï¿½c nh?n ï¿½ khï¿½ng c?n nh?p mï¿½</p>
+        <p class="font-semibold text-on-surface mb-2" data-i18n="price.qr_modal.guide_title">H╞░ß╗¢ng dß║½n thanh to├ín:</p>
+        <p data-i18n="price.qr_modal.step1">1. Mß╗ƒ app ng├ón h├áng (TPBank, Vietcombank, BIDV, v.v.)</p>
+        <p data-i18n="price.qr_modal.step2">2. Chß╗ìn "Qu├⌐t QR" hoß║╖c "Chuyß╗ân khoß║ún"</p>
+        <p data-i18n="price.qr_modal.step3">3. Qu├⌐t QR code b├¬n d╞░ß╗¢i</p>
+        <p data-i18n="price.qr_modal.step4">4. Kiß╗âm tra th├┤ng tin: Sß╗æ t├ái khoß║ún, sß╗æ tiß╗ün, nß╗Öi dung</p>
+        <p data-i18n="price.qr_modal.step5">5. X├íc nhß║¡n thanh to├ín trong app ng├ón h├áng</p>
+        <p data-i18n="price.qr_modal.step6">6. Hß╗ç thß╗æng tß╗▒ ─æß╗Öng x├íc nhß║¡n ΓÇö kh├┤ng cß║ºn nhß║¡p m├ú</p>
       </div>
 
       <!-- QR Code display -->
@@ -184,63 +237,63 @@
              class="max-w-[280px] w-full rounded-lg"
              style="display:none;max-height:280px;object-fit:contain"/>
         <div id="qrLoading" class="flex flex-col items-center gap-3 py-8 text-on-surface-variant">
-          <div style="width:28px;height:28px;border:3px solid rgba(208,188,255,0.15);border-top-color:#38BDF8;border-radius:50%;animation:spin 0.8s linear infinite"></div>
-          <p class="text-sm" data-i18n="price.qr_modal.generating">ï¿½ang t?o QR code...</p>
+          <div style="width:28px;height:28px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+          <p class="text-sm" data-i18n="price.qr_modal.generating">─Éang tß║ío QR code...</p>
         </div>
         <div id="qrDebugInfo" style="display:none" class="text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded-lg"></div>
       </div>
 
       <!-- Bank Info -->
       <div id="bankInfo" style="display:none" class="bg-surface-container rounded-xl p-4 mb-5 space-y-2.5 text-sm">
-        <p class="font-semibold text-on-surface mb-3" data-i18n="price.qr_modal.bank_title">Thï¿½ng tin chuy?n kho?n:</p>
+        <p class="font-semibold text-on-surface mb-3" data-i18n="price.qr_modal.bank_title">Th├┤ng tin chuyß╗ân khoß║ún:</p>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.bank">Ngï¿½n hï¿½ng:</span>
-          <span id="bankName" class="text-on-surface font-medium">ï¿½</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.bank">Ng├ón h├áng:</span>
+          <span id="bankName" class="text-on-surface font-medium">ΓÇö</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account">S? tï¿½i kho?n:</span>
-          <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">ï¿½</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account">Sß╗æ t├ái khoß║ún:</span>
+          <span id="accountNumber" class="copyable-text" onclick="copyToClipboard(this)">ΓÇö</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account_name">Ch? tï¿½i kho?n:</span>
-          <span id="accountName" class="text-on-surface font-medium">ï¿½</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.account_name">Chß╗º t├ái khoß║ún:</span>
+          <span id="accountName" class="text-on-surface font-medium">ΓÇö</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.amount">S? ti?n:</span>
-          <span id="amount" class="text-tertiary font-bold">ï¿½</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.amount">Sß╗æ tiß╗ün:</span>
+          <span id="amount" class="text-tertiary font-bold">ΓÇö</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-on-surface-variant" data-i18n="price.qr_modal.content">N?i dung:</span>
-          <span id="qrTransferContent" class="copyable-text" onclick="copyToClipboard(this)">ï¿½</span>
+          <span class="text-on-surface-variant" data-i18n="price.qr_modal.content">Nß╗Öi dung:</span>
+          <span id="qrTransferContent" class="copyable-text" onclick="copyToClipboard(this)">ΓÇö</span>
         </div>
-        <p class="text-[11px] text-on-surface-variant pt-1" data-i18n="price.qr_modal.copy_hint">(Click vï¿½o s? tï¿½i kho?n / n?i dung d? copy)</p>
+        <p class="text-[11px] text-on-surface-variant pt-1" data-i18n="price.qr_modal.copy_hint">(Click v├áo sß╗æ t├ái khoß║ún / nß╗Öi dung ─æß╗â copy)</p>
       </div>
 
       <!-- Auto-Verify Section -->
       <div id="verifySection" style="display:none;background:rgba(208,188,255,0.06);border:1px solid rgba(208,188,255,0.15)" class="rounded-xl p-4">
 
-        <!-- Tr?ng thï¿½i dang ch? -->
+        <!-- Trß║íng th├íi ─æang chß╗¥ -->
         <div id="verifyWaiting">
           <div class="flex items-center gap-3 mb-3">
-            <div id="verifySpinner" style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.2);border-top-color:#38BDF8;border-radius:50%;animation:spin 0.9s linear infinite;flex-shrink:0"></div>
-            <p class="text-sm font-semibold text-on-surface" data-i18n="price.qr_modal.waiting">ï¿½ang ch? xï¿½c nh?n thanh toï¿½n...</p>
+            <div id="verifySpinner" style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.2);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.9s linear infinite;flex-shrink:0"></div>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="price.qr_modal.waiting">─Éang chß╗¥ x├íc nhß║¡n thanh to├ín...</p>
           </div>
           <p class="text-xs text-on-surface-variant mb-3 ml-8" data-i18n="price.qr_modal.waiting_desc">
-            H? th?ng t? d?ng ki?m tra m?i 5 giï¿½y. Sau khi chuy?n kho?n thï¿½nh cï¿½ng, gï¿½i s? du?c kï¿½ch ho?t ngay l?p t?c.
+            Hß╗ç thß╗æng tß╗▒ ─æß╗Öng kiß╗âm tra mß╗ùi 5 gi├óy. Sau khi chuyß╗ân khoß║ún th├ánh c├┤ng, g├│i sß║╜ ─æ╞░ß╗úc k├¡ch hoß║ít ngay lß║¡p tß╗⌐c.
           </p>
           <button id="verifyBtn"
             class="ml-8 flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
-            style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.25);color:#38BDF8">
+            style="background:rgba(208,188,255,0.1);border:1px solid rgba(208,188,255,0.25);color:#d0bcff">
             <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
-            <span data-i18n="price.qr_modal.verify_now">Ki?m tra ngay</span>
+            <span data-i18n="price.qr_modal.verify_now">Kiß╗âm tra ngay</span>
           </button>
         </div>
 
-        <!-- Tr?ng thï¿½i thï¿½nh cï¿½ng (?n, hi?n khi xï¿½c nh?n) -->
+        <!-- Trß║íng th├íi th├ánh c├┤ng (ß║⌐n, hiß╗çn khi x├íc nhß║¡n) -->
         <div id="verifySuccess" style="display:none" class="flex items-center gap-3">
-          <span class="text-2xl">??</span>
+          <span class="text-2xl">≡ƒÄë</span>
           <div>
-            <p class="text-sm font-bold" style="color:#6ee7b7" data-i18n="price.qr_modal.success">Thanh toï¿½n thï¿½nh cï¿½ng!</p>
+            <p class="text-sm font-bold" style="color:#6ee7b7" data-i18n="price.qr_modal.success">Thanh to├ín th├ánh c├┤ng!</p>
             <p id="verifySuccessMsg" class="text-xs text-on-surface-variant mt-0.5"></p>
           </div>
         </div>
@@ -250,12 +303,12 @@
   </div>
 </div>
 
-<!-- --- SCRIPTS --- -->
+<!-- ΓòÉΓòÉΓòÉ SCRIPTS ΓòÉΓòÉΓòÉ -->
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 <script>
-// -- Characters remaining (nav badge) -------------------------
+// ΓöÇΓöÇ Characters remaining (nav badge) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function loadCharsRemaining() {
   try {
     const r = await fetch('/api/user/characters');
@@ -264,13 +317,13 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
-      if (el) el.textContent = fmt + ' ' + ((window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.chars') : 'kï¿½ t?');
+      if (el) el.textContent = fmt + ' ' + ((window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.chars') : 'k├╜ tß╗▒');
     }
   } catch(e) {}
 }
 loadCharsRemaining();
 
-// -- Theme toggle ----------------------------------------------
+// ΓöÇΓöÇ Theme toggle ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 
 function toggleMobileNav() {
@@ -293,12 +346,12 @@ function copyToClipboard(element) {
   const text = element.textContent.trim();
   navigator.clipboard.writeText(text).then(() => {
     const orig = element.textContent;
-    const copied = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copied') : 'ï¿½ï¿½ copy!';
+    const copied = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copied') : '─É├ú copy!';
     element.textContent = copied;
     element.style.color = '#2fd9f4';
     setTimeout(() => { element.textContent = orig; element.style.color = ''; }, 2000);
   }).catch(() => {
-    const msg = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copy_fail') : 'Khï¿½ng th? copy';
+    const msg = (window.VVi18n && window.VVi18n.t) ? window.VVi18n.t('common.copy_fail') : 'Kh├┤ng thß╗â copy';
     alert(msg + ': ' + text);
   });
 }
