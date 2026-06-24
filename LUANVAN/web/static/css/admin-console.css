@@ -263,9 +263,13 @@ html, body.ac-body { overflow-x: hidden; max-width: 100%; }
   flex-direction: column;
   max-width: 100%;
   overflow-x: hidden;
+  --admin-header-height: 3.5rem;
 }
 @media (min-width: 768px) {
-  .admin-main-shell { margin-left: 16rem; }
+  .admin-main-shell {
+    margin-left: 16rem;
+    --admin-header-height: 4rem;
+  }
 }
 .admin-unified-header {
   position: fixed;
@@ -286,15 +290,16 @@ html, body.ac-body { overflow-x: hidden; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  height: 3.5rem;
-  padding: 0 0.75rem;
+  min-height: 3.5rem;
+  height: auto;
+  padding: 0.5rem 0.75rem;
   max-width: 100%;
   box-sizing: border-box;
 }
 @media (min-width: 768px) {
   .admin-unified-header-inner {
-    height: 4rem;
-    padding: 0 1.5rem;
+    min-height: 4rem;
+    padding: 0.65rem 1.5rem;
     gap: 1rem;
   }
 }
@@ -429,10 +434,20 @@ html, body.ac-body { overflow-x: hidden; max-width: 100%; }
   font-size: 17px;
 }
 .admin-main-with-header {
-  padding-top: 4.5rem;
+  padding-top: calc(var(--admin-header-height) + 1rem);
 }
 @media (min-width: 768px) {
-  .admin-main-with-header { padding-top: 5.5rem; }
+  .admin-main-with-header {
+    padding-top: calc(var(--admin-header-height) + 1.25rem);
+  }
+}
+.ac-main-padded.admin-main-with-header {
+  padding-top: calc(var(--admin-header-height) + 1rem);
+}
+@media (min-width: 768px) {
+  .ac-main-padded.admin-main-with-header {
+    padding-top: calc(var(--admin-header-height) + 1.25rem);
+  }
 }
 
 .ac-header {

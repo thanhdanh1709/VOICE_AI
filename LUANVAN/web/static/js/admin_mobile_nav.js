@@ -44,5 +44,25 @@
     document.querySelectorAll('#adminMobileDrawer .admin-nav-link').forEach((link) => {
       link.addEventListener('click', () => closeAdminMobileNav());
     });
+    initStudioHeaderOffset();
   });
+
+  function initStudioHeaderOffset() {
+    const shell = document.querySelector('.als-page-shell');
+    const header = document.getElementById('adminUnifiedHeader');
+    if (!shell || !header) return;
+
+    const apply = () => {
+      shell.style.setProperty('--admin-header-height', `${header.offsetHeight}px`);
+    };
+
+    apply();
+    window.addEventListener('resize', apply, { passive: true });
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(apply).observe(header);
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(apply);
+    }
+  }
 })();

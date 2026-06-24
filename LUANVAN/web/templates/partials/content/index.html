@@ -53,14 +53,81 @@
 
         <!-- Tab: File Upload -->
         <div class="tab-content hidden" id="fileTab">
-          <div class="mb-5">
-            <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden">
-            <label for="fileInput" class="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
-              <span class="material-symbols-outlined text-5xl text-on-surface-variant mb-3 opacity-50">upload_file</span>
-              <p class="text-sm font-medium text-on-surface mb-1" data-i18n="file.drop">Kéo thả file hoặc click để chọn</p>
-              <p class="text-xs text-on-surface-variant" data-i18n="file.support">Hỗ trợ: TXT, PDF, DOCX (tối đa 10MB)</p>
-            </label>
-            <div id="fileName" class="mt-3 text-sm font-medium text-primary"></div>
+          <div class="fu-root" id="fileUploadRoot">
+            <!-- Empty: dropzone -->
+            <div class="fu-empty" id="fuEmpty">
+              <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden">
+              <div class="fu-dropzone" id="fuDropzone" role="button" tabindex="0" aria-label="Upload file">
+                <span class="material-symbols-outlined fu-dropzone__icon">upload_file</span>
+                <p class="fu-dropzone__title" data-i18n="file.drop.title">Kéo thả file hoặc click để chọn</p>
+                <p class="fu-dropzone__hint" data-i18n="file.drop.hint">TXT, PDF, DOCX — tối đa 10MB</p>
+                <div class="fu-format-chips" aria-hidden="true">
+                  <span class="fu-format-chip">TXT</span>
+                  <span class="fu-format-chip">PDF</span>
+                  <span class="fu-format-chip">DOCX</span>
+                </div>
+              </div>
+              <p class="fu-scan-warning">
+                <span class="material-symbols-outlined" style="font-size:14px">info</span>
+                <span data-i18n="file.pdf_scan_warning">PDF cần có lớp văn bản (không hỗ trợ file scan/ảnh).</span>
+              </p>
+            </div>
+
+            <!-- Loaded: file card + preview -->
+            <div class="fu-loaded hidden" id="fuLoaded">
+              <div class="fu-file-card" id="fuFileCard">
+                <div class="fu-file-card__icon" id="fuFileIcon">
+                  <span class="material-symbols-outlined">description</span>
+                </div>
+                <div class="fu-file-card__body">
+                  <div class="fu-file-card__row">
+                    <span class="fu-file-card__name" id="fuFileName">—</span>
+                    <button type="button" class="fu-file-card__remove" id="fuRemoveBtn" title="Remove">
+                      <span class="material-symbols-outlined">close</span>
+                    </button>
+                  </div>
+                  <div class="fu-file-card__meta" id="fuFileMeta">—</div>
+                  <div class="fu-progress hidden" id="fuProgress">
+                    <div class="fu-progress__track">
+                      <div class="fu-progress__fill" id="fuProgressFill"></div>
+                    </div>
+                    <span class="fu-progress__label" id="fuProgressLabel" data-i18n="file.status.processing">Đang trích xuất văn bản…</span>
+                    <span class="fu-progress__pct" id="fuProgressPct">0%</span>
+                  </div>
+                  <div class="fu-status fu-status--ready hidden" id="fuStatusReady">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span id="fuStatusReadyText" data-i18n="file.success.extracted">Đã trích xuất văn bản</span>
+                  </div>
+                  <div class="fu-status fu-status--error hidden" id="fuStatusError">
+                    <span class="material-symbols-outlined">error</span>
+                    <span id="fuStatusErrorText"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="fu-preview-wrap hidden" id="fuPreviewWrap">
+                <textarea id="fileTextPreview" class="fu-preview" readonly
+                  data-i18n-placeholder="file.preview.placeholder"
+                  placeholder="Nội dung trích xuất sẽ hiển thị tại đây…"></textarea>
+                <div id="fuLangWarning" class="hidden mt-2 text-xs text-amber-400/90 px-1" data-i18n="ws.lang_warning">
+                  Hệ thống được tối ưu cho văn bản tiếng Việt. Kết quả với ngôn ngữ khác có thể không chính xác.
+                </div>
+                <div class="fu-preview-footer">
+                  <span><span id="fileCharCount">0</span> <span data-i18n="ws.chars">ký tự</span></span>
+                </div>
+              </div>
+
+              <div class="fu-actions hidden" id="fuActions">
+                <button type="button" class="fu-btn fu-btn--ghost" id="fuEditBtn">
+                  <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+                  <span data-i18n="file.btn.edit">Chỉnh sửa</span>
+                </button>
+                <button type="button" class="fu-btn fu-btn--ghost" id="fuChangeBtn">
+                  <span class="material-symbols-outlined" style="font-size:16px">folder_open</span>
+                  <span data-i18n="file.btn.change">Đổi file</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

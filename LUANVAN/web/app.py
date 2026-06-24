@@ -3242,6 +3242,392 @@ def get_all_users():
     finally:
         conn.close()
 
+@app.route('/api/admin/users/<int:user_id>', methods=['GET'])
+def admin_get_user_detail(user_id):
+    """Chi tiết người dùng cho admin drawer."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, username, email, full_name, role, is_active, created_at, updated_at,
+                       status, delete_status
+                FROM users WHERE id = %s
+                """,
+                (user_id,),
+            )
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            cursor.execute(
+                """
+                SELECT us.id, us.characters_limit, us.characters_used, us.start_date, us.end_date,
+                       us.is_active, sp.package_name, sp.id AS package_id
+                FROM user_subscriptions us
+                LEFT JOIN subscription_packages sp ON us.package_id = sp.id
+                WHERE us.user_id = %s AND us.is_active = 1
+                ORDER BY us.end_date DESC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            subscription = cursor.fetchone()
+
+            cursor.execute(
+                """
+                SELECT p.id, p.amount_vnd, p.payment_status, p.transaction_id, p.created_at,
+                       sp.package_name
+                FROM payments p
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE p.user_id = %s
+                ORDER BY p.created_at DESC
+                LIMIT 5
+                """,
+                (user_id,),
+            )
+            payments = cursor.fetchall()
+
+            cursor.execute(
+                """
+                SELECT id, voice_id, voice_name, text_length, status, duration_seconds, created_at
+                FROM conversions
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT 10
+                """,
+                (user_id,),
+            )
+            conversions = cursor.fetchall()
+
+            cursor.execute("SELECT COUNT(*) AS total FROM conversions WHERE user_id = %s", (user_id,))
+            total_conversions = cursor.fetchone()['total'] or 0
+
+            custom_voice_count = 0
+            try:
+                cursor.execute("SELECT COUNT(*) AS total FROM custom_voices WHERE user_id = %s", (user_id,))
+                custom_voice_count = cursor.fetchone()['total'] or 0
+            except Exception:
+                pass
+
+            def _dt(v):
+                if not v:
+                    return None
+                return v.isoformat() if hasattr(v, 'isoformat') else str(v)
+
+            sub_out = None
+            if subscription:
+                limit = subscription['characters_limit'] or 0
+                used = subscription['characters_used'] or 0
+                sub_out = {
+                    'id': subscription['id'],
+                    'characters_limit': limit,
+                    'characters_used': used,
+                    'characters_remaining': max(0, limit - used),
+                    'start_date': _dt(subscription['start_date']),
+                    'end_date': _dt(subscription['end_date']),
+                    'package_id': subscription['package_id'],
+                    'package_name': subscription['package_name'] or '—',
+                    'is_active': bool(subscription['is_active']),
+                }
+
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'full_name': user['full_name'] or '',
+                    'role': user['role'],
+                    'is_active': bool(user['is_active']),
+                    'status': user.get('status') or 'active',
+                    'delete_status': user.get('delete_status') or 'none',
+                    'created_at': _dt(user['created_at']),
+                    'total_conversions': total_conversions,
+                    'custom_voice_count': custom_voice_count,
+                },
+                'subscription': sub_out,
+                'recent_payments': [
+                    {
+                        'id': p['id'],
+                        'amount_vnd': p['amount_vnd'],
+                        'payment_status': p['payment_status'],
+                        'transaction_id': p['transaction_id'],
+                        'package_name': p['package_name'],
+                        'created_at': _dt(p['created_at']),
+                    }
+                    for p in payments
+                ],
+                'recent_conversions': [
+                    {
+                        'id': c['id'],
+                        'voice_id': c.get('voice_id'),
+                        'voice_name': c.get('voice_name'),
+                        'text_length': c.get('text_length'),
+                        'status': c.get('status'),
+                        'duration_seconds': c.get('duration_seconds'),
+                        'created_at': _dt(c['created_at']),
+                    }
+                    for c in conversions
+                ],
+            })
+    except Exception as e:
+        print(f"[ERROR] admin_get_user_detail: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/subscription', methods=['PUT'])
+def admin_manage_user_subscription(user_id):
+    """Admin chỉnh hạn mức / gia hạn / gán gói."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json() or {}
+    action = (data.get('action') or '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+            if not cursor.fetchone():
+                return jsonify({'success': False, 'message': 'Người dùng không tồn tại'}), 404
+
+            if action == 'apply_package':
+                package_id = int(data.get('package_id') or 0)
+                if not package_id:
+                    return jsonify({'success': False, 'message': 'Chọn gói cước'}), 400
+                cursor.execute(
+                    "SELECT characters_limit, duration_days FROM subscription_packages WHERE id = %s",
+                    (package_id,),
+                )
+                pkg = cursor.fetchone()
+                if not pkg:
+                    return jsonify({'success': False, 'message': 'Gói không tồn tại'}), 404
+                ok = update_user_subscription(
+                    user_id, pkg['characters_limit'], pkg['duration_days'], package_id
+                )
+                if not ok:
+                    return jsonify({'success': False, 'message': 'Không thể cập nhật gói'}), 500
+                return jsonify({'success': True, 'message': 'Đã áp dụng gói cước'})
+
+            cursor.execute(
+                """
+                SELECT * FROM user_subscriptions
+                WHERE user_id = %s AND is_active = 1
+                ORDER BY end_date DESC LIMIT 1
+                """,
+                (user_id,),
+            )
+            sub = cursor.fetchone()
+
+            if action == 'add_chars':
+                amount = int(data.get('amount') or 0)
+                if amount <= 0:
+                    return jsonify({'success': False, 'message': 'Số ký tự không hợp lệ'}), 400
+                if not sub:
+                    start_date = datetime.now().date()
+                    end_date = start_date + timedelta(days=30)
+                    cursor.execute(
+                        """
+                        INSERT INTO user_subscriptions
+                        (user_id, characters_limit, characters_used, start_date, end_date, is_active)
+                        VALUES (%s, %s, 0, %s, %s, 1)
+                        """,
+                        (user_id, amount, start_date, end_date),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE user_subscriptions SET characters_limit = characters_limit + %s WHERE id = %s",
+                        (amount, sub['id']),
+                    )
+                conn.commit()
+                return jsonify({'success': True, 'message': f'Đã cộng {amount:,} ký tự'})
+
+            if action == 'reset_used':
+                if not sub:
+                    return jsonify({'success': False, 'message': 'Chưa có gói đăng ký'}), 400
+                cursor.execute(
+                    "UPDATE user_subscriptions SET characters_used = 0 WHERE id = %s",
+                    (sub['id'],),
+                )
+                conn.commit()
+                return jsonify({'success': True, 'message': 'Đã reset ký tự đã dùng'})
+
+            if action == 'extend_days':
+                days = int(data.get('days') or 30)
+                if days <= 0:
+                    return jsonify({'success': False, 'message': 'Số ngày không hợp lệ'}), 400
+                if not sub:
+                    return jsonify({'success': False, 'message': 'Chưa có gói đăng ký'}), 400
+                end = sub['end_date']
+                if isinstance(end, datetime):
+                    end = end.date()
+                today = datetime.now().date()
+                base = end if end and end >= today else today
+                new_end = base + timedelta(days=days)
+                cursor.execute(
+                    "UPDATE user_subscriptions SET end_date = %s WHERE id = %s",
+                    (new_end, sub['id']),
+                )
+                conn.commit()
+                return jsonify({'success': True, 'message': f'Đã gia hạn {days} ngày'})
+
+            return jsonify({'success': False, 'message': 'Hành động không hợp lệ'}), 400
+    except Exception as e:
+        conn.rollback()
+        print(f"[ERROR] admin_manage_user_subscription: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/conversions', methods=['GET'])
+def admin_get_conversions():
+    """Log chuyển đổi toàn hệ thống."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    page = max(request.args.get('page', 1, type=int), 1)
+    per_page = min(max(request.args.get('per_page', 20, type=int), 5), 100)
+    user_id = request.args.get('user_id', type=int)
+    status = (request.args.get('status') or '').strip()
+    search = (request.args.get('search') or '').strip()
+    date_from = (request.args.get('from') or '').strip()
+    date_to = (request.args.get('to') or '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            where = ["1=1"]
+            params = []
+            if user_id:
+                where.append("c.user_id = %s")
+                params.append(user_id)
+            if status:
+                where.append("c.status = %s")
+                params.append(status)
+            if search:
+                where.append("(c.text_input LIKE %s OR u.username LIKE %s OR c.voice_name LIKE %s)")
+                params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
+            if date_from:
+                where.append("DATE(c.created_at) >= %s")
+                params.append(date_from)
+            if date_to:
+                where.append("DATE(c.created_at) <= %s")
+                params.append(date_to)
+
+            where_sql = " AND ".join(where)
+            cursor.execute(
+                f"SELECT COUNT(*) AS total FROM conversions c LEFT JOIN users u ON c.user_id = u.id WHERE {where_sql}",
+                params,
+            )
+            total = cursor.fetchone()['total'] or 0
+            total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
+            if page > total_pages and total > 0:
+                page = total_pages
+            offset = (page - 1) * per_page
+
+            cursor.execute(
+                f"""
+                SELECT c.id, c.user_id, u.username, c.voice_id, c.voice_name, c.text_length,
+                       c.status, c.duration_seconds, c.created_at,
+                       LEFT(c.text_input, 120) AS text_preview
+                FROM conversions c
+                LEFT JOIN users u ON c.user_id = u.id
+                WHERE {where_sql}
+                ORDER BY c.created_at DESC
+                LIMIT %s OFFSET %s
+                """,
+                params + [per_page, offset],
+            )
+            rows = cursor.fetchall()
+
+            items = []
+            for r in rows:
+                items.append({
+                    'id': r['id'],
+                    'user_id': r['user_id'],
+                    'username': r['username'],
+                    'voice_id': r.get('voice_id'),
+                    'voice_name': r.get('voice_name'),
+                    'text_length': r.get('text_length'),
+                    'status': r.get('status'),
+                    'duration_seconds': r.get('duration_seconds'),
+                    'text_preview': r.get('text_preview') or '',
+                    'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r.get('created_at') else None,
+                })
+
+            return jsonify({
+                'success': True,
+                'conversions': items,
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': total_pages,
+            })
+    except Exception as e:
+        print(f"[ERROR] admin_get_conversions: {e}")
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/conversions/recent', methods=['GET'])
+def admin_get_recent_conversions():
+    """Hoạt động gần đây cho dashboard."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    limit = min(max(request.args.get('limit', 10, type=int), 1), 30)
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT c.id, c.user_id, u.username, c.voice_name, c.text_length, c.status, c.created_at
+                FROM conversions c
+                LEFT JOIN users u ON c.user_id = u.id
+                ORDER BY c.created_at DESC
+                LIMIT %s
+                """,
+                (limit,),
+            )
+            rows = cursor.fetchall()
+            items = [
+                {
+                    'id': r['id'],
+                    'user_id': r['user_id'],
+                    'username': r['username'],
+                    'voice_name': r.get('voice_name'),
+                    'text_length': r.get('text_length'),
+                    'status': r.get('status'),
+                    'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M') if r.get('created_at') else None,
+                }
+                for r in rows
+            ]
+            return jsonify({'success': True, 'items': items})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
 @app.route('/api/admin/users/<int:user_id>/role', methods=['PUT'])
 def update_user_role(user_id):
     """Cập nhật vai trò của người dùng (chỉ admin)"""
@@ -4495,6 +4881,10 @@ def api_admin_get_settings():
     settings = load_site_settings()
     settings['smtp_from_env'] = SMTP_FROM or ''
     settings['smtp_host_env'] = SMTP_HOST or ''
+    if settings.get('logo_url'):
+        settings['logo_src'] = url_for('static', filename=settings['logo_url'])
+    else:
+        settings['logo_src'] = ''
     return jsonify({'success': True, 'settings': settings})
 
 @app.route('/api/admin/settings', methods=['POST'])
@@ -4775,9 +5165,32 @@ def admin_landing_save():
         if not data:
             return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
         save_landing_content(data)
+        session.pop('landing_preview', None)
         return jsonify({'success': True, 'message': 'Đã lưu nội dung landing page thành công!'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/admin/landing/preview', methods=['POST'])
+def admin_landing_preview_api():
+    """Lưu bản draft landing vào session để xem trước (chưa lưu file)"""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+    session['landing_preview'] = data
+    session.modified = True
+    return jsonify({'success': True})
+
+
+@app.route('/admin/landing/preview')
+def admin_landing_preview_page():
+    """Trang landing render từ session preview — chỉ admin, dùng trong iframe Studio"""
+    if not is_logged_in() or not is_admin():
+        return redirect(url_for('login'))
+    content = session.get('landing_preview') or load_landing_content()
+    return render_template('landing.html', lp=content, preview_mode=True)
 
 # SePay.vn Integration Functions
 def create_sepay_payment(amount, transaction_id, description, user_name):
@@ -7825,13 +8238,16 @@ def get_user_subscription_status():
 
 @app.route('/api/admin/payments', methods=['GET'])
 def admin_get_payments():
-    """Admin xem danh sách payments (có phân trang)"""
+    """Admin xem danh sách payments (có phân trang, lọc)"""
     if not is_logged_in() or not is_admin():
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
     page = max(request.args.get('page', 1, type=int), 1)
     per_page = request.args.get('per_page', 15, type=int)
     per_page = min(max(per_page, 5), 100)
+    status = (request.args.get('status') or '').strip()
+    date_from = (request.args.get('from') or '').strip()
+    date_to = (request.args.get('to') or '').strip()
 
     conn = get_db_connection()
     if not conn:
@@ -7839,7 +8255,20 @@ def admin_get_payments():
 
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT COUNT(*) AS total FROM payments")
+            where = ["1=1"]
+            params = []
+            if status and status != 'all':
+                where.append("p.payment_status = %s")
+                params.append(status)
+            if date_from:
+                where.append("DATE(p.created_at) >= %s")
+                params.append(date_from)
+            if date_to:
+                where.append("DATE(p.created_at) <= %s")
+                params.append(date_to)
+            where_sql = " AND ".join(where)
+
+            cursor.execute(f"SELECT COUNT(*) AS total FROM payments p WHERE {where_sql}", params)
             total_row = cursor.fetchone()
             total = total_row['total'] if total_row else 0
             total_pages = max(1, (total + per_page - 1) // per_page) if total > 0 else 1
@@ -7848,14 +8277,18 @@ def admin_get_payments():
                 page = total_pages
 
             offset = (page - 1) * per_page
-            cursor.execute("""
+            cursor.execute(
+                f"""
                 SELECT p.*, u.username, sp.package_name
                 FROM payments p
                 LEFT JOIN users u ON p.user_id = u.id
                 LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE {where_sql}
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
-            """, (per_page, offset))
+                """,
+                params + [per_page, offset],
+            )
             payments = cursor.fetchall()
 
             for payment in payments:
@@ -7880,6 +8313,112 @@ def admin_get_payments():
         return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
     finally:
         conn.close()
+
+
+@app.route('/api/admin/payments/export', methods=['GET'])
+def admin_export_payments():
+    """Xuất CSV giao dịch."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    status = (request.args.get('status') or '').strip()
+    date_from = (request.args.get('from') or '').strip()
+    date_to = (request.args.get('to') or '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            where = ["1=1"]
+            params = []
+            if status and status != 'all':
+                where.append("p.payment_status = %s")
+                params.append(status)
+            if date_from:
+                where.append("DATE(p.created_at) >= %s")
+                params.append(date_from)
+            if date_to:
+                where.append("DATE(p.created_at) <= %s")
+                params.append(date_to)
+            where_sql = " AND ".join(where)
+
+            cursor.execute(
+                f"""
+                SELECT p.id, p.transaction_id, u.username, sp.package_name,
+                       p.amount_vnd, p.payment_method, p.payment_status,
+                       p.created_at, p.completed_at
+                FROM payments p
+                LEFT JOIN users u ON p.user_id = u.id
+                LEFT JOIN subscription_packages sp ON p.package_id = sp.id
+                WHERE {where_sql}
+                ORDER BY p.created_at DESC
+                LIMIT 5000
+                """,
+                params,
+            )
+            rows = cursor.fetchall()
+
+        import csv
+        import io
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['ID', 'Transaction', 'User', 'Package', 'Amount VND', 'Method', 'Status', 'Created', 'Completed'])
+        for r in rows:
+            writer.writerow([
+                r['id'],
+                r.get('transaction_id') or '',
+                r.get('username') or '',
+                r.get('package_name') or '',
+                r.get('amount_vnd') or 0,
+                r.get('payment_method') or '',
+                r.get('payment_status') or '',
+                r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r.get('created_at') else '',
+                r['completed_at'].strftime('%Y-%m-%d %H:%M:%S') if r.get('completed_at') else '',
+            ])
+
+        from flask import Response
+        resp = Response(output.getvalue(), mimetype='text/csv; charset=utf-8')
+        resp.headers['Content-Disposition'] = 'attachment; filename=vietvoice-payments.csv'
+        return resp
+    except Exception as e:
+        print(f"[ERROR] admin_export_payments: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/reports/export', methods=['GET'])
+def admin_export_report():
+    """Xuất báo cáo admin (PDF, Word, CSV)."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    report_type = (request.args.get('type') or 'overview').strip()
+    fmt = (request.args.get('format') or 'pdf').strip()
+    period = (request.args.get('period') or 'week').strip()
+    date_from = (request.args.get('from') or '').strip()
+    date_to = (request.args.get('to') or '').strip()
+    status = (request.args.get('status') or '').strip()
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        from admin_reports import render_admin_report, ReportExportError
+        return render_admin_report(conn, report_type, fmt, period, date_from, date_to, status)
+    except ReportExportError as e:
+        return jsonify({'success': False, 'message': str(e)}), e.status_code
+    except Exception as e:
+        print(f"[ERROR] admin_export_report: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+    finally:
+        conn.close()
+
 
 @app.route('/api/admin/auto-approve', methods=['POST'])
 def admin_bulk_auto_approve():

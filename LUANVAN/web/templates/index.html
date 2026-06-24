@@ -4,6 +4,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/voice-picker.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/file-upload.css') }}">
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
 <title>VietVoice AI - Workspace</title>
 
@@ -111,87 +113,6 @@ tailwind.config = {
     background: #d0bcff;
     cursor: pointer;
     box-shadow: 0 0 6px rgba(208,188,255,0.4);
-  }
-
-  /* Voice gallery card */
-  .voice-card {
-    background: #1c2b3c;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-    transition: all 0.2s;
-  }
-  .voice-card:hover {
-    border-color: rgba(208,188,255,0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  }
-  .voice-card h3 { color: #d4e4fa; font-size: 0.9rem; font-weight: 600; margin: 0.4rem 0 0.2rem; }
-  .voice-card .voice-desc { color: #cbc3d7; font-size: 0.75rem; margin-bottom: 0.2rem; }
-  .voice-card .voice-region { color: #958ea0; font-size: 0.7rem; margin-bottom: 0.6rem; }
-  .voice-card .voice-avatar { font-size: 2rem; }
-  .voice-card button {
-    display: block;
-    width: 100%;
-    margin-top: 0.4rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    border: none;
-  }
-  .voice-card .preview-btn {
-    background: rgba(208,188,255,0.1);
-    color: #d0bcff;
-    border: 1px solid rgba(208,188,255,0.2) !important;
-  }
-  .voice-card .preview-btn:hover { background: rgba(208,188,255,0.2); }
-  .voice-card .select-btn {
-    background: linear-gradient(135deg, #7c3aed, #3b82f6);
-    color: white;
-    margin-top: 0.5rem;
-  }
-  .voice-card .select-btn:hover { opacity: 0.9; }
-
-  /* Modal */
-  .vv-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
-  }
-  .vv-modal.is-active { display: flex; }
-  .vv-modal-content {
-    background: #122131;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 680px;
-    max-height: 85vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-  }
-  .vv-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-  .vv-modal-body {
-    overflow-y: auto;
-    padding: 1.5rem;
-    flex: 1;
   }
 
   /* Tab active */
@@ -505,48 +426,6 @@ document.querySelectorAll('.tab-btn-new').forEach(btn => {
   });
 });
 
-// ── Voice Gallery Modal (new modal classes) ────────────────────
-function openVoiceGalleryModal() {
-  document.getElementById('voiceGalleryModal').classList.add('is-active');
-}
-function closeVoiceGalleryModal() {
-  document.getElementById('voiceGalleryModal').classList.remove('is-active');
-}
-
-document.querySelector('.close-voice-gallery').addEventListener('click', closeVoiceGalleryModal);
-document.getElementById('voiceGalleryModal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeVoiceGalleryModal();
-});
-
-// Override the voiceGalleryBtn to use new modal
-const voiceGalleryBtn = document.getElementById('voiceGalleryBtn');
-if (voiceGalleryBtn) {
-  voiceGalleryBtn.addEventListener('click', () => {
-    openVoiceGalleryModal();
-    // Populate grid using existing openVoiceGallery logic
-    const grid = document.getElementById('voiceGalleryGrid');
-    if (typeof voices !== 'undefined' && voices.length > 0) {
-      grid.innerHTML = voices.map(voice => {
-        const genderIcon = voice.gender === 'male' ? '👨' : '👩';
-        const hasSample = voice.has_sample;
-        return `
-          <div class="voice-card" data-voice="${voice.voice_id}">
-            <div class="voice-avatar">${genderIcon}</div>
-            <h3>${voice.voice_name}</h3>
-            <p class="voice-desc">${voice.description || ''}</p>
-            <p class="voice-region">${voice.region || ''}</p>
-            ${hasSample ? `
-              <audio id="sample_${voice.voice_id}" src="${voice.sample_url}" preload="none"></audio>
-              <button class="preview-btn" onclick="togglePreview('${voice.voice_id}')">🔊 Nghe thử</button>
-            ` : `<button disabled style="opacity:0.4;background:#1c2b3c;color:#cbc3d7;border:1px solid rgba(255,255,255,0.08)">⚠️ Chưa có mẫu</button>`}
-            <button class="select-btn" onclick="selectVoice('${voice.voice_id}', '${voice.voice_name}');closeVoiceGalleryModal();">Chọn giọng này</button>
-          </div>
-        `;
-      }).join('');
-    }
-  });
-}
-
 // ── Characters remaining (nav + stats) ────────────────────────
 async function loadCharsRemaining() {
   try {
@@ -614,6 +493,8 @@ window.addEventListener('resize', () => {
 </script>
 
 <script src="{{ url_for('static', filename='js/sidebar-collapse.js') }}"></script>
+<script src="{{ url_for('static', filename='js/voice-picker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/file-upload.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 
 <!-- ═══ WORKSPACE: Quick Name Feature ═══ -->

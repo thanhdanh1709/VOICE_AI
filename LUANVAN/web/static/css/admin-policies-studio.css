@@ -1,0 +1,358 @@
+/* Policy Studio — legal (4 pages) + support sub-tabs */
+
+.apol-form-panel {
+  color-scheme: dark;
+}
+
+.apol-inline-input,
+.apol-section-card input[type="text"],
+.apol-section-card input[type="email"],
+.apol-section-card textarea,
+.apol-section-card select,
+.apol-form-panel .guide-md-source {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: #d4e4fa !important;
+  background-color: rgba(13, 28, 45, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-text-fill-color: #d4e4fa;
+}
+
+.apol-inline-input:focus,
+.apol-section-card input:focus,
+.apol-section-card textarea:focus,
+.apol-section-card select:focus,
+.apol-form-panel .guide-md-source:focus {
+  outline: none;
+  border-color: rgba(208, 188, 255, 0.45) !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+.apol-inline-input::placeholder,
+.apol-section-card input::placeholder,
+.apol-section-card textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1;
+}
+
+.apol-top-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem 0.65rem;
+  margin: 0.5rem 0.75rem 0;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .apol-top-tabs {
+    padding: 0.65rem 1rem 0.75rem;
+    margin: 0.65rem 1rem 0;
+    gap: 0.5rem;
+  }
+}
+
+.apol-top-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.apol-top-tab .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.apol-top-tab:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+
+.apol-top-tab.is-active {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(208, 188, 255, 0.35);
+  color: #d0bcff;
+}
+
+.apol-tab-panel {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  padding: 0 0.75rem 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .apol-tab-panel {
+    padding: 0 1rem 1rem;
+  }
+}
+
+.apol-tab-panel.is-active {
+  display: flex;
+}
+
+.apol-form-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.apol-form-panel.glass-panel {
+  padding: 0;
+}
+
+.apol-form-panel .als-form-scroll {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.apol-file-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+}
+
+.apol-file-note .material-symbols-outlined {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.apol-legal-tabs,
+.apol-support-tabs {
+  margin-bottom: 1rem;
+}
+
+.apol-section-card {
+  background: rgba(8, 18, 32, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.apol-section-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.apol-section-card__num {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #958ea0;
+  flex-shrink: 0;
+}
+
+.apol-section-card__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.apol-section-card__title-wrap input {
+  width: 100%;
+}
+
+.apol-section-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.apol-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.apol-icon-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+.apol-icon-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.apol-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.apol-preview-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.apol-preview-links a {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a78bfa;
+  text-decoration: none;
+}
+
+.apol-preview-links a:hover {
+  color: #d0bcff;
+  text-decoration: underline;
+}
+
+.apol-support-block {
+  display: none;
+}
+
+.apol-support-block.is-active {
+  display: block;
+}
+
+.apol-support-block__head {
+  margin-bottom: 1rem;
+}
+
+.apol-support-block__head h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #d4e4fa;
+  margin: 0 0 0.25rem;
+}
+
+.apol-support-block__head p {
+  font-size: 0.8125rem;
+  color: #958ea0;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.apol-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .apol-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.apol-form-panel .quill-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.apol-form-panel .quill-wrap .ql-toolbar.ql-snow {
+  background: #122131 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px 10px 0 0;
+}
+
+.apol-form-panel .quill-wrap .ql-container.ql-snow {
+  background: #0d1c2d !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 0 0 10px 10px;
+  min-height: 140px;
+  font-size: 14px;
+}
+
+.apol-form-panel .quill-wrap .ql-editor {
+  color: #e8edf5;
+  min-height: 120px;
+}
+
+.apol-form-panel .quill-wrap .ql-editor.ql-blank::before {
+  color: #64748b !important;
+  font-style: normal;
+}
+
+.apol-form-panel .quill-wrap .ql-editor .highlight-box {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.apol-form-panel .quill-wrap .ql-editor .warning-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.apol-form-panel .als-field select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 18, 32, 0.65);
+  color: #d4e4fa;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+}
+
+.apol-form-panel .als-field textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 18, 32, 0.65);
+  color: #d4e4fa;
+  font-size: 0.875rem;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+.apol-tab-panel,
+.apol-form-panel .als-form-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(10, 18, 32, 0.9);
+}

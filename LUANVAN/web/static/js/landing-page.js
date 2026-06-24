@@ -42,6 +42,15 @@
         });
     }
 
+    window.addEventListener('message', (e) => {
+        if (e.origin !== window.location.origin) return;
+        const data = e.data;
+        if (!data || data.type !== 'als-preview-update' || !data.lp) return;
+        applyLp(data.lp);
+        const jsonEl = document.getElementById('landing-lp-vi');
+        if (jsonEl) jsonEl.textContent = JSON.stringify(data.lp);
+    });
+
     function resetDemoConvertBtn() {
         const btn = document.getElementById('demo-convert-btn');
         if (!btn) return;

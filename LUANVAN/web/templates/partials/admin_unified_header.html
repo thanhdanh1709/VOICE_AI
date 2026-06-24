@@ -24,6 +24,10 @@
 
     <div class="admin-unified-spacer" aria-hidden="true"></div>
 
+    {% if ac_header_actions_include %}
+    {% include ac_header_actions_include %}
+    {% endif %}
+
     <div class="admin-unified-actions">
       <button type="button" class="vv-lang-toggle admin-lang-toggle" onclick="VVi18n && VVi18n.toggle()" aria-label="Switch language">
         <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>

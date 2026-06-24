@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-console.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-shell.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
 
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -228,21 +230,27 @@
   {% include 'partials/admin_unified_header.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main class="admin-main flex-1 min-w-0 w-full p-3 sm:p-4 md:p-6 admin-main-with-header max-w-full mx-auto overflow-x-hidden box-border">
+  <main class="admin-main flex-1 min-w-0 w-full px-3 pb-3 sm:px-4 sm:pb-4 md:px-6 md:pb-6 admin-main-with-header max-w-full mx-auto overflow-x-hidden box-border">
 
-    <!-- Page Header -->
+    <!-- Page Header (dynamic per module) -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-7 gap-3 md:gap-4 max-w-full">
       <div>
-        <h2 class="text-2xl font-bold text-on-surface mb-1" data-i18n="admin.overview">Tổng quan hệ thống</h2>
-        <p class="text-sm text-on-surface-variant" data-i18n="admin.overview.sub">Thống kê và hoạt động gần đây của VietVoice AI.</p>
+        <h2 class="text-2xl font-bold text-on-surface mb-1" id="adminViewTitle" data-i18n="admin.overview">Tổng quan hệ thống</h2>
+        <p class="text-sm text-on-surface-variant" id="adminViewSubtitle" data-i18n="admin.overview.sub">Thống kê và hoạt động gần đây của VietVoice AI.</p>
+        <p class="text-xs text-on-surface-variant mt-1 hidden" id="adminLastUpdated"></p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="{{ url_for('admin_landing') }}"
+        <a href="{{ url_for('admin_landing') }}" id="adminLandingBtn"
            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors no-underline">
           <span class="material-symbols-outlined" style="font-size:16px">palette</span>
           <span data-i18n="admin.edit_landing">Chỉnh sửa Landing</span>
         </a>
-        <button id="refreshUsersBtn"
+        <button type="button" id="adminExportReportBtn"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-sm font-medium hover:bg-surface-container-high transition-colors">
+          <span class="material-symbols-outlined" style="font-size:16px">download</span>
+          <span data-i18n="admin.report.btn">Xuất báo cáo</span>
+        </button>
+        <button type="button" id="adminRefreshBtn"
           class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors">
           <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
           <span data-i18n="admin.refresh">Làm mới</span>
@@ -250,244 +258,368 @@
       </div>
     </div>
 
-    <!-- ═══ STATS GRID ═══ -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-5 mb-4 md:mb-7 animate-in max-w-full">
+    <!-- ═══ VIEW: Dashboard ═══ -->
+    <div id="adminView-dashboard" class="admin-view is-active ac-dash">
 
-      <div class="glass-panel rounded-xl p-5 admin-stat-panel relative overflow-hidden hover:border-primary/40 transition-colors">
-        <div class="absolute top-3 right-3 opacity-10 text-primary">
-          <span class="material-symbols-outlined" style="font-size:48px">group</span>
-        </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.users">Tổng người dùng</p>
-        <h3 class="text-2xl sm:text-3xl font-extrabold text-on-surface admin-stat-value" id="totalUsers">—</h3>
-        <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
-          <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
-          <span id="activeUsers">—</span>
-        </p>
-      </div>
-
-      <div class="glass-panel rounded-xl p-5 admin-stat-panel relative overflow-hidden hover:border-primary/40 transition-colors">
-        <div class="absolute top-3 right-3 opacity-10 text-tertiary">
-          <span class="material-symbols-outlined" style="font-size:48px">swap_calls</span>
-        </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.conversions">Tổng chuyển đổi</p>
-        <h3 class="text-2xl sm:text-3xl font-extrabold text-on-surface admin-stat-value" id="totalConversions">—</h3>
-        <p class="text-xs text-tertiary mt-1 flex items-center gap-1">
-          <span class="material-symbols-outlined" style="font-size:13px">trending_up</span>
-          <span id="successRate">—</span>
-        </p>
-      </div>
-
-      <div class="glass-panel rounded-xl p-5 admin-stat-panel relative overflow-hidden hover:border-primary/40 transition-colors">
-        <div class="absolute top-3 right-3 opacity-10 text-primary">
-          <span class="material-symbols-outlined" style="font-size:48px">mic</span>
-        </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.voices">Số giọng đọc</p>
-        <h3 class="text-2xl sm:text-3xl font-extrabold text-on-surface admin-stat-value" id="totalVoices">—</h3>
-        <p class="text-xs text-on-surface-variant mt-1" data-i18n="admin.stat.active">Hoạt động</p>
-      </div>
-
-      <div class="glass-panel rounded-xl p-5 admin-stat-panel relative overflow-hidden hover:border-primary/40 transition-colors">
-        <div class="absolute top-3 right-3 opacity-10 text-primary">
-          <span class="material-symbols-outlined" style="font-size:48px">text_fields</span>
-        </div>
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2" data-i18n="admin.stat.chars_month">Tổng ký tự (tháng)</p>
-        <h3 class="text-2xl sm:text-3xl font-extrabold text-on-surface admin-stat-value" id="totalCharacters">—</h3>
-        <p class="text-xs text-on-surface-variant mt-1" id="avgTextLength">TB: —</p>
-      </div>
-    </div>
-
-    <!-- ═══ TIME STATS ═══ -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.05s">
-      <div class="glass-panel rounded-xl p-5 admin-period-card">
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-tertiary" style="font-size:14px">today</span>
-          <span data-i18n="admin.stat.today">Hôm nay</span>
-        </p>
-        <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
-          <strong class="text-on-surface" id="todayConversions">—</strong>
-        </div>
-        <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
-          <strong class="text-primary" id="todayCharacters">—</strong>
-        </div>
-      </div>
-      <div class="glass-panel rounded-xl p-5 admin-period-card">
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-primary" style="font-size:14px">date_range</span>
-          <span data-i18n="admin.stat.week">Tuần này</span>
-        </p>
-        <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
-          <strong class="text-on-surface" id="weekConversions">—</strong>
-        </div>
-        <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
-          <strong class="text-primary" id="weekCharacters">—</strong>
-        </div>
-      </div>
-      <div class="glass-panel rounded-xl p-5 admin-period-card">
-        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-tertiary" style="font-size:14px">calendar_month</span>
-          <span data-i18n="admin.stat.month">Tháng này</span>
-        </p>
-        <div class="admin-period-row text-sm">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.conv">Chuyển đổi:</span>
-          <strong class="text-on-surface" id="monthConversions">—</strong>
-        </div>
-        <div class="admin-period-row text-sm mt-1.5">
-          <span class="text-on-surface-variant" data-i18n="admin.stat.chars">Ký tự:</span>
-          <strong class="text-primary" id="monthCharacters">—</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ CHARTS ═══ -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.08s">
-      <!-- Trend Chart -->
-      <div class="glass-panel rounded-xl p-4 sm:p-6 lg:col-span-2 chart-panel">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 mb-4">
-          <h3 class="text-sm sm:text-base font-bold text-on-surface" data-i18n="admin.chart.trend">Xu hướng 7 ngày qua</h3>
-          <div class="hidden sm:flex gap-1.5 shrink-0">
-            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold" data-i18n="admin.filter.week">Tuần</button>
-            <button type="button" class="px-2.5 py-1 rounded-md bg-primary/20 text-primary text-xs font-semibold border border-primary/25" data-i18n="admin.filter.month">Tháng</button>
-            <button type="button" class="px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-xs font-semibold" data-i18n="admin.filter.year">Năm</button>
+    <!-- KPI cards + period -->
+    <div class="ac-dash-hero glass-panel rounded-xl animate-in">
+      <div class="ac-dash-kpi-grid">
+        <div class="ac-dash-kpi ac-dash-kpi--users">
+          <div class="ac-dash-kpi__icon"><span class="material-symbols-outlined">group</span></div>
+          <div class="ac-dash-kpi__body">
+            <span class="ac-dash-kpi__label" data-i18n="admin.stat.users">Tổng người dùng</span>
+            <span class="ac-dash-kpi__value" id="totalUsers">—</span>
+            <span class="ac-dash-kpi__sub" id="activeUsers">—</span>
           </div>
         </div>
-        <div class="chart-box chart-box--line">
-          <canvas id="trendChart"></canvas>
+        <div class="ac-dash-kpi ac-dash-kpi--conv">
+          <div class="ac-dash-kpi__icon"><span class="material-symbols-outlined">swap_calls</span></div>
+          <div class="ac-dash-kpi__body">
+            <span class="ac-dash-kpi__label" data-i18n="admin.stat.conversions">Tổng chuyển đổi</span>
+            <span class="ac-dash-kpi__value" id="totalConversions">—</span>
+            <span class="ac-dash-kpi__sub" id="successRate">—</span>
+          </div>
+        </div>
+        <div class="ac-dash-kpi ac-dash-kpi--voices">
+          <div class="ac-dash-kpi__icon"><span class="material-symbols-outlined">record_voice_over</span></div>
+          <div class="ac-dash-kpi__body">
+            <span class="ac-dash-kpi__label" data-i18n="admin.stat.voices">Số giọng đọc</span>
+            <span class="ac-dash-kpi__value" id="totalVoices">—</span>
+            <span class="ac-dash-kpi__sub" data-i18n="admin.stat.active">Hoạt động</span>
+          </div>
+        </div>
+        <div class="ac-dash-kpi ac-dash-kpi--chars">
+          <div class="ac-dash-kpi__icon"><span class="material-symbols-outlined">text_fields</span></div>
+          <div class="ac-dash-kpi__body">
+            <span class="ac-dash-kpi__label" data-i18n="admin.stat.chars_month">Tổng ký tự (tháng)</span>
+            <span class="ac-dash-kpi__value" id="totalCharacters">—</span>
+            <span class="ac-dash-kpi__sub" id="avgTextLength">TB: —</span>
+          </div>
         </div>
       </div>
 
-      <!-- Voice Distribution Chart -->
-      <div class="glass-panel rounded-xl p-4 sm:p-6 chart-panel">
-        <h3 class="text-sm sm:text-base font-bold text-on-surface mb-4" data-i18n="admin.chart.voice_dist">Phân bổ giọng đọc</h3>
-        <div class="chart-box chart-box--donut">
-          <canvas id="voiceDistributionChart"></canvas>
+      <div class="ac-dash-period-bar">
+        <div class="ac-dash-period__chips" id="dashPeriodChips">
+          <button type="button" class="ac-dash-period-chip" data-dash-period="today" data-i18n="admin.stat.today">Hôm nay</button>
+          <button type="button" class="ac-dash-period-chip is-active" data-dash-period="week" data-i18n="admin.stat.week">Tuần này</button>
+          <button type="button" class="ac-dash-period-chip" data-dash-period="month" data-i18n="admin.stat.month">Tháng này</button>
+        </div>
+        <div class="ac-dash-period__stats">
+          <div class="ac-dash-period-stat">
+            <span class="ac-dash-period-stat__label" data-i18n="admin.stat.conv">Chuyển đổi</span>
+            <strong class="ac-dash-period-stat__value" id="dashPeriodConvLabel">—</strong>
+          </div>
+          <div class="ac-dash-period-stat ac-dash-period-stat--accent">
+            <span class="ac-dash-period-stat__label" data-i18n="admin.stat.chars">Ký tự</span>
+            <strong class="ac-dash-period-stat__value" id="dashPeriodCharLabel">—</strong>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ═══ TOP RANKINGS ═══ -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-5 mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.1s" id="section-voices">
+    <!-- Quick actions -->
+    <div class="ac-dash-quick animate-in" style="animation-delay:0.03s">
+      <a href="#payments" class="ac-dash-quick-card" data-admin-view="payments">
+        <span class="ac-dash-quick-card__icon ac-dash-quick-card__icon--pay"><span class="material-symbols-outlined">payments</span></span>
+        <span class="ac-dash-quick-card__text">
+          <span class="ac-dash-quick-card__title" data-i18n="admin.dash.quick.pay">Duyệt thanh toán</span>
+          <span class="ac-dash-quick-card__sub" data-i18n="admin.dash.quick.pay_sub">Giao dịch chờ xử lý</span>
+        </span>
+        <span class="ac-dash-quick-badge" id="dashQuickPayments" hidden>0</span>
+        <span class="material-symbols-outlined ac-dash-quick-card__arrow">chevron_right</span>
+      </a>
+      <a href="#lifecycle" class="ac-dash-quick-card" data-admin-view="lifecycle">
+        <span class="ac-dash-quick-card__icon ac-dash-quick-card__icon--life"><span class="material-symbols-outlined">person_off</span></span>
+        <span class="ac-dash-quick-card__text">
+          <span class="ac-dash-quick-card__title" data-i18n="admin.dash.quick.lifecycle">Vòng đời tài khoản</span>
+          <span class="ac-dash-quick-card__sub" data-i18n="admin.dash.quick.lifecycle_sub">Yêu cầu xóa chờ duyệt</span>
+        </span>
+        <span class="ac-dash-quick-badge ac-dash-quick-badge--warn" id="dashQuickDeletions" hidden>0</span>
+        <span class="material-symbols-outlined ac-dash-quick-card__arrow">chevron_right</span>
+      </a>
+      <a href="#users" class="ac-dash-quick-card" data-admin-view="users">
+        <span class="ac-dash-quick-card__icon ac-dash-quick-card__icon--users"><span class="material-symbols-outlined">manage_accounts</span></span>
+        <span class="ac-dash-quick-card__text">
+          <span class="ac-dash-quick-card__title" data-i18n="admin.dash.quick.users">Quản lý người dùng</span>
+          <span class="ac-dash-quick-card__sub" data-i18n="admin.dash.quick.users_sub">Vai trò & trạng thái</span>
+        </span>
+        <span class="material-symbols-outlined ac-dash-quick-card__arrow">chevron_right</span>
+      </a>
+      <a href="#voices" class="ac-dash-quick-card" data-admin-view="voices">
+        <span class="ac-dash-quick-card__icon ac-dash-quick-card__icon--voice"><span class="material-symbols-outlined">mic</span></span>
+        <span class="ac-dash-quick-card__text">
+          <span class="ac-dash-quick-card__title" data-i18n="admin.dash.quick.voices">Giọng & mẫu nghe</span>
+          <span class="ac-dash-quick-card__sub" data-i18n="admin.dash.quick.voices_sub">Tạo file preview</span>
+        </span>
+        <span class="material-symbols-outlined ac-dash-quick-card__arrow">chevron_right</span>
+      </a>
+    </div>
 
-      <!-- Top Users -->
-      <div class="glass-panel rounded-xl p-6 admin-rank-card">
-        <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
-          <span data-i18n="admin.top_users">Top 5 Người dùng</span>
-          <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
-            <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
-            <span data-i18n="admin.refresh">Làm mới</span>
-          </button>
-        </h3>
-        <div id="topUsersList">
-          <p class="loading-text" data-i18n="admin.loading">Đang tải...</p>
+    <!-- Analytics panel -->
+    <div class="glass-panel rounded-xl ac-dash-panel ac-dash-analytics animate-in" style="animation-delay:0.04s">
+      <div class="ac-dash-analytics__charts">
+        <div class="ac-dash-analytics__main">
+          <div class="ac-dash-panel__head ac-dash-panel__head--rich ac-dash-analytics__head">
+            <div class="ac-dash-panel__head-icon ac-dash-panel__head-icon--trend"><span class="material-symbols-outlined">show_chart</span></div>
+            <div>
+              <h3 data-i18n="admin.chart.trend">Xu hướng 7 ngày qua</h3>
+              <p class="ac-dash-panel__head-sub" data-i18n="admin.dash.chart_trend_sub">Lượt chuyển đổi theo ngày</p>
+            </div>
+          </div>
+          <div class="chart-box chart-box--line ac-dash-chart-wrap ac-dash-chart--analytics">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+        <div class="ac-dash-analytics__side">
+          <div class="ac-dash-panel__head ac-dash-panel__head--rich ac-dash-analytics__head">
+            <div class="ac-dash-panel__head-icon ac-dash-panel__head-icon--voice"><span class="material-symbols-outlined">equalizer</span></div>
+            <div>
+              <h3 data-i18n="admin.chart.voice_dist">Top giọng đọc</h3>
+              <p class="ac-dash-panel__head-sub" data-i18n="admin.dash.chart_voice_sub">Phân bổ lượt sử dụng</p>
+            </div>
+          </div>
+          <div class="chart-box chart-box--bar-h ac-dash-chart-wrap ac-dash-chart--analytics">
+            <canvas id="voiceDistributionChart"></canvas>
+          </div>
         </div>
       </div>
-
-      <!-- Top Voices -->
-      <div class="glass-panel rounded-xl p-6 admin-rank-card">
-        <h3 class="text-base font-bold text-on-surface mb-4 flex items-center justify-between">
-          <span data-i18n="admin.top_voices">Top 5 Giọng đọc</span>
-          <button onclick="loadTopRankings()" class="text-primary hover:text-primary/80 text-xs font-semibold flex items-center gap-1 transition-colors">
-            <span class="material-symbols-outlined" style="font-size:14px">refresh</span>
-            <span data-i18n="admin.refresh">Làm mới</span>
-          </button>
-        </h3>
-        <div id="topVoicesList">
-          <p class="loading-text" data-i18n="admin.loading">Đang tải...</p>
+      <div class="ac-dash-activity-strip">
+        <div class="ac-dash-activity-strip__head">
+          <div class="ac-dash-activity-strip__title">
+            <span class="material-symbols-outlined">bolt</span>
+            <span data-i18n="admin.dash.activity">Hoạt động gần đây</span>
+            <span class="ac-dash-activity-strip__badge" data-i18n="admin.dash.activity_preview">3 mới nhất</span>
+          </div>
+          <a href="#conversions" class="ac-dash-activity-strip__link no-underline" data-admin-view="conversions" data-i18n="admin.dash.view_all">Xem tất cả</a>
+        </div>
+        <div id="dashActivityList" class="ac-dash-activity-strip__grid">
+          <p class="ac-dash-empty ac-dash-empty--compact" data-i18n="admin.loading">Đang tải...</p>
         </div>
       </div>
     </div>
 
-    <!-- ═══ ACCOUNT DELETION REQUESTS ═══ -->
-    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.11s" id="section-account-deletions">
-      <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
-          <span class="material-symbols-outlined text-red-400" style="font-size:18px">person_off</span>
-          <span data-i18n="admin.section.deletions">Yêu cầu xóa tài khoản</span>
-        </h3>
-        <button id="refreshDeletionsBtn"
-          class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
-          <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
+    <!-- Leaderboard panel -->
+    <div class="glass-panel rounded-xl ac-dash-panel ac-dash-leaders animate-in" style="animation-delay:0.08s" id="section-top-rankings">
+      <div class="ac-dash-panel__head ac-dash-panel__head--row">
+        <div class="ac-dash-panel__head--rich ac-dash-panel__head--inline">
+          <div class="ac-dash-panel__head-icon ac-dash-panel__head-icon--rank"><span class="material-symbols-outlined">leaderboard</span></div>
+          <div>
+            <h3 data-i18n="admin.dash.leaders">Bảng xếp hạng</h3>
+            <p class="ac-dash-panel__head-sub" data-i18n="admin.dash.leaders_sub">Top người dùng và giọng đọc</p>
+          </div>
+        </div>
+        <button type="button" id="dashRankingsRefreshBtn" class="ac-dash-refresh-btn" aria-label="Làm mới">
+          <span class="material-symbols-outlined">refresh</span>
           <span data-i18n="admin.refresh">Làm mới</span>
         </button>
+      </div>
+      <div class="ac-dash-leaders__grid">
+        <div class="ac-dash-leader-col">
+          <div class="ac-dash-leader-head">
+            <h4 data-i18n="admin.top_users">Top 5 Người dùng</h4>
+            <span class="ac-dash-leader-head__meta" data-i18n="admin.dash.by_conversions">Theo chuyển đổi</span>
+          </div>
+          <div id="topUsersList" class="ac-dash-leader-table">
+            <p class="ac-dash-empty" data-i18n="admin.loading">Đang tải...</p>
+          </div>
+        </div>
+        <div class="ac-dash-leader-col">
+          <div class="ac-dash-leader-head">
+            <h4 data-i18n="admin.top_voices">Top 5 Giọng đọc</h4>
+            <span class="ac-dash-leader-head__meta" data-i18n="admin.dash.by_usage">Theo lượt dùng</span>
+          </div>
+          <div id="topVoicesList" class="ac-dash-leader-table">
+            <p class="ac-dash-empty" data-i18n="admin.loading">Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /adminView-dashboard -->
+
+    <!-- ═══ VIEW: Account lifecycle ═══ -->
+    <div id="adminView-lifecycle" class="admin-view hidden">
+
+    <div class="ac-workflow mb-4" aria-label="Account deletion workflow">
+      <div class="ac-workflow__step">
+        <span class="ac-workflow__dot"><span class="material-symbols-outlined">mail</span></span>
+        <span class="ac-workflow__label" data-i18n="admin.lifecycle.step1">Yêu cầu xóa</span>
+      </div>
+      <div class="ac-workflow__connector"></div>
+      <div class="ac-workflow__step">
+        <span class="ac-workflow__dot"><span class="material-symbols-outlined">gavel</span></span>
+        <span class="ac-workflow__label" data-i18n="admin.lifecycle.step2">Admin duyệt</span>
+      </div>
+      <div class="ac-workflow__connector"></div>
+      <div class="ac-workflow__step">
+        <span class="ac-workflow__dot"><span class="material-symbols-outlined">hourglass_top</span></span>
+        <span class="ac-workflow__label" data-i18n="admin.lifecycle.step3">Vô hiệu 30 ngày</span>
+      </div>
+      <div class="ac-workflow__connector"></div>
+      <div class="ac-workflow__step">
+        <span class="ac-workflow__dot"><span class="material-symbols-outlined">delete_forever</span></span>
+        <span class="ac-workflow__label" data-i18n="admin.lifecycle.step4">Xóa vĩnh viễn</span>
+      </div>
+    </div>
+
+    <div class="ac-summary-grid mb-4" id="lifecycleSummaryGrid">
+      <button type="button" class="ac-summary-card ac-summary-card--icon ac-summary-card--pending ac-summary-card--clickable" data-lifecycle-jump="deletions">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">person_off</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.lifecycle.pending">Chờ duyệt xóa</div>
+        </div>
+        <div class="ac-summary-card__value" id="lifecyclePendingCount">—</div>
+      </button>
+      <button type="button" class="ac-summary-card ac-summary-card--icon ac-summary-card--clickable" data-lifecycle-jump="grace">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">hourglass_top</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.lifecycle.grace">Trong thời gian chờ</div>
+        </div>
+        <div class="ac-summary-card__value" id="lifecycleGraceCount">—</div>
+      </button>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--success">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">restore</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.lifecycle.restore_req">Yêu cầu khôi phục</div>
+        </div>
+        <div class="ac-summary-card__value" id="lifecycleRestoreCount">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">schedule</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.lifecycle.window">Thời gian chờ</div>
+        </div>
+        <div class="ac-summary-card__value ac-summary-card__value--sm" data-i18n="admin.lifecycle.days">30 ngày</div>
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 ac-module-panel" id="section-lifecycle-panel">
+      <div class="ac-subtabs" id="lifecycleSubtabs">
+        <button type="button" class="ac-subtab is-active" data-lifecycle-tab="deletions">
+          <span class="material-symbols-outlined" style="font-size:16px">person_off</span>
+          <span data-i18n="admin.section.deletions">Yêu cầu xóa</span>
+          <span class="ac-subtab__badge" id="lifecycleDeletionsBadge">0</span>
+        </button>
+        <button type="button" class="ac-subtab" data-lifecycle-tab="grace">
+          <span class="material-symbols-outlined" style="font-size:16px">hourglass_top</span>
+          <span data-i18n="admin.section.grace">Vô hiệu 30 ngày</span>
+          <span class="ac-subtab__badge" id="lifecycleGraceBadge">0</span>
+        </button>
+      </div>
+
+      <div id="lifecyclePanel-deletions" class="ac-lifecycle-panel">
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="hide-mobile" style="width:48px">#</th>
+                <th data-i18n="admin.col.fullname">Họ tên</th>
+                <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
+                <th class="hide-mobile" data-i18n="admin.del.reason">Lý do</th>
+                <th class="hide-mobile" data-i18n="admin.del.requested_at">Thời gian gửi</th>
+                <th data-i18n="admin.col.status">Trạng thái</th>
+                <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="deletionsTableBody">
+              <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="lifecyclePanel-grace" class="ac-lifecycle-panel hidden">
+        <p class="ac-panel-hint px-5 pt-4 pb-2 text-xs text-on-surface-variant" data-i18n="admin.grace.hint">
+          Tài khoản đã được admin duyệt xóa, vô hiệu hóa trong 30 ngày. Có thể khôi phục khi có yêu cầu.
+        </p>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th class="hide-mobile" style="width:48px">#</th>
+                <th data-i18n="admin.col.fullname">Họ tên</th>
+                <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
+                <th class="hide-mobile" data-i18n="admin.grace.deactivated_at">Vô hiệu từ</th>
+                <th class="hide-mobile" data-i18n="admin.grace.until">Hạn khôi phục</th>
+                <th data-i18n="admin.grace.restore_req">Yêu cầu KP</th>
+                <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="graceAccountsTableBody">
+              <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ac-table-footer" id="lifecycleTableMeta"></div>
+    </div>
+
+    </div><!-- /adminView-lifecycle -->
+
+    <!-- ═══ VIEW: Users ═══ -->
+    <div id="adminView-users" class="admin-view hidden">
+
+    <div class="ac-summary-grid mb-4" id="usersSummaryGrid">
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">group</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.users.total">Tổng người dùng</div>
+        </div>
+        <div class="ac-summary-card__value" id="usersSummaryTotal">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--success">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">check_circle</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.users.active">Đang hoạt động</div>
+        </div>
+        <div class="ac-summary-card__value" id="usersSummaryActive">—</div>
+        <div class="ac-summary-card__bar" id="usersSummaryActiveBar" hidden><span></span></div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">admin_panel_settings</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.users.admins">Quản trị viên</div>
+        </div>
+        <div class="ac-summary-card__value" id="usersSummaryAdmins">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--pending">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">lock</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.users.locked">Đã khóa</div>
+        </div>
+        <div class="ac-summary-card__value" id="usersSummaryLocked">—</div>
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 ac-module-panel" id="section-users">
+      <div class="ac-module-head">
+        <div>
+          <h3 class="ac-module-head__title">
+            <span class="material-symbols-outlined text-primary">manage_accounts</span>
+            <span data-i18n="admin.section.users">Quản lý người dùng</span>
+          </h3>
+          <p class="ac-module-head__sub" data-i18n="admin.users.sub">Tìm kiếm, khóa và quản lý vai trò người dùng.</p>
+        </div>
+      </div>
+      <div class="ac-toolbar">
+        <div class="ac-toolbar__search">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" id="usersSearchInput" data-i18n-placeholder="admin.search_users" placeholder="Tìm kiếm người dùng..." autocomplete="off"/>
+        </div>
+        <div class="ac-filter-chips ac-filter-chips--toolbar" id="usersFilterChips">
+          <button type="button" class="ac-filter-chip is-active" data-user-filter="all" data-i18n="admin.filter.all">Tất cả</button>
+          <button type="button" class="ac-filter-chip" data-user-filter="admin" data-i18n="admin.role.admin">Admin</button>
+          <button type="button" class="ac-filter-chip" data-user-filter="user" data-i18n="admin.role.user">Người dùng</button>
+          <button type="button" class="ac-filter-chip" data-user-filter="active" data-i18n="admin.status.active">Hoạt động</button>
+          <button type="button" class="ac-filter-chip" data-user-filter="suspended" data-i18n="admin.status.suspended">Đã khóa</button>
+        </div>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
             <tr>
               <th class="hide-mobile" style="width:48px">#</th>
-              <th data-i18n="admin.col.fullname">Họ tên</th>
-              <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
-              <th class="hide-mobile" data-i18n="admin.del.reason">Lý do</th>
-              <th class="hide-mobile" data-i18n="admin.del.requested_at">Thời gian gửi</th>
-              <th data-i18n="admin.col.status">Trạng thái</th>
-              <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="deletionsTableBody">
-            <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ═══ GRACE PERIOD ACCOUNTS (30 days) ═══ -->
-    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.115s" id="section-grace-accounts">
-      <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
-          <span class="material-symbols-outlined text-amber-400" style="font-size:18px">hourglass_top</span>
-          <span data-i18n="admin.section.grace">Tài khoản vô hiệu hóa (30 ngày)</span>
-        </h3>
-        <button id="refreshGraceBtn"
-          class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
-          <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
-          <span data-i18n="admin.refresh">Làm mới</span>
-        </button>
-      </div>
-      <p class="px-5 pb-3 text-xs text-on-surface-variant" data-i18n="admin.grace.hint">
-        Tài khoản đã được admin duyệt xóa, vô hiệu hóa trong 30 ngày. Có thể khôi phục khi có yêu cầu.
-      </p>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th class="hide-mobile" data-i18n="admin.col.id">ID</th>
-              <th data-i18n="admin.col.fullname">Họ tên</th>
-              <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
-              <th class="hide-mobile" data-i18n="admin.grace.deactivated_at">Vô hiệu từ</th>
-              <th class="hide-mobile" data-i18n="admin.grace.until">Hạn khôi phục</th>
-              <th data-i18n="admin.grace.restore_req">Yêu cầu KP</th>
-              <th class="text-center" data-i18n="admin.col.actions">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="graceAccountsTableBody">
-            <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ═══ USERS TABLE ═══ -->
-    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.12s" id="section-users">
-      <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary" style="font-size:18px">group</span>
-          <span data-i18n="admin.section.users">Quản lý người dùng</span>
-        </h3>
-        <div class="relative">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:16px">search</span>
-          <input type="text" data-i18n-placeholder="admin.search_users" placeholder="Tìm kiếm người dùng..."
-            class="bg-surface-container-highest border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all w-full sm:w-56 max-w-full placeholder-on-surface-variant/50"
-            oninput="filterUsersTable(this.value)"/>
-        </div>
-      </div>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th class="hide-mobile" style="width:48px">ID</th>
               <th data-i18n="admin.col.username">Tên đăng nhập</th>
               <th class="hide-mobile" data-i18n="admin.col.email">Email</th>
               <th class="hide-mobile" data-i18n="admin.col.fullname">Họ tên</th>
@@ -502,28 +634,211 @@
           </tbody>
         </table>
       </div>
+      <div class="ac-table-footer" id="usersTableMeta"></div>
+    </div>
+
+    </div><!-- /adminView-users -->
+
+    <!-- ═══ VIEW: Conversions log ═══ -->
+    <div id="adminView-conversions" class="admin-view hidden">
+      <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 ac-module-panel">
+        <div class="ac-module-head">
+          <h3 class="ac-module-head__title">
+            <span class="material-symbols-outlined text-primary">history</span>
+            <span data-i18n="admin.section.conversions">Log chuyển đổi</span>
+          </h3>
+          <p class="ac-module-head__sub" data-i18n="admin.conv.sub">Theo dõi mọi lượt TTS trên hệ thống</p>
+        </div>
+        <div class="ac-toolbar">
+          <div class="ac-toolbar__search">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="convSearchInput" data-i18n-placeholder="admin.conv.search" placeholder="Tìm user, giọng, nội dung..." autocomplete="off"/>
+          </div>
+          <div class="ac-filter-chips ac-filter-chips--toolbar" id="convStatusChips">
+            <button type="button" class="ac-filter-chip is-active" data-conv-status="all" data-i18n="admin.filter.all">Tất cả</button>
+            <button type="button" class="ac-filter-chip" data-conv-status="completed" data-i18n="admin.conv.status.completed">Thành công</button>
+            <button type="button" class="ac-filter-chip" data-conv-status="failed" data-i18n="admin.conv.status.failed">Thất bại</button>
+            <button type="button" class="ac-filter-chip" data-conv-status="processing" data-i18n="admin.conv.status.processing">Đang xử lý</button>
+          </div>
+        </div>
+        <div class="ac-dash-filters ac-date-filter-row">
+          <label data-i18n="admin.filter.from">Từ</label>
+          <input type="date" id="convDateFrom" class="ac-date-input"/>
+          <label data-i18n="admin.filter.to">Đến</label>
+          <input type="date" id="convDateTo" class="ac-date-input"/>
+          <button type="button" id="convFilterApplyBtn" class="ac-dash-refresh-btn" data-i18n="admin.filter.apply">Áp dụng</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th data-i18n="admin.col.id">ID</th>
+                <th data-i18n="admin.pay.user">Người dùng</th>
+                <th class="hide-mobile" data-i18n="admin.conv.voice">Giọng</th>
+                <th class="hide-mobile" data-i18n="admin.conv.preview">Nội dung</th>
+                <th data-i18n="admin.stat.chars">Ký tự</th>
+                <th data-i18n="admin.col.status">TT</th>
+                <th class="hide-mobile" data-i18n="admin.pay.time">Thời gian</th>
+              </tr>
+            </thead>
+            <tbody id="conversionsTableBody">
+              <tr><td colspan="7" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="adminConvPaginationWrap" style="display:none" class="px-5 py-3 border-t border-white/5 flex items-center justify-between gap-4 flex-wrap">
+          <span id="adminConvPaginationInfo" class="text-xs text-on-surface-variant"></span>
+          <div id="adminConvPagination" class="flex items-center gap-1.5"></div>
+        </div>
+        <div class="ac-table-footer" id="conversionsTableMeta"></div>
+      </div>
+    </div><!-- /adminView-conversions -->
+
+    <!-- ═══ VIEW: Voices ═══ -->
+    <div id="adminView-voices" class="admin-view hidden">
+
+    <div class="ac-summary-grid mb-4" id="voicesSummaryGrid">
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">record_voice_over</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.voices.total">Tổng giọng</div>
+        </div>
+        <div class="ac-summary-card__value" id="voicesSummaryTotal">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--success">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">audio_file</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.voices.with_sample">Có mẫu nghe</div>
+        </div>
+        <div class="ac-summary-card__value" id="voicesSummaryWithSample">—</div>
+        <div class="ac-summary-card__bar" id="voicesSampleBar"><span></span></div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--pending">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">volume_off</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.voices.without_sample">Chưa có mẫu</div>
+        </div>
+        <div class="ac-summary-card__value" id="voicesSummaryWithoutSample">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">headphones</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.voices.preview">Nghe thử</div>
+        </div>
+        <div class="ac-summary-card__value ac-summary-card__value--sm" data-i18n="admin.voices.workspace">Workspace</div>
+      </div>
+    </div>
+
+      <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 ac-module-panel" id="section-voices-mgmt">
+        <div class="admin-section-head p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary" style="font-size:18px">record_voice_over</span>
+              <span data-i18n="admin.voices.system_title">Giọng hệ thống</span>
+            </h3>
+            <p class="text-xs text-on-surface-variant mt-1" data-i18n="admin.voices.system_hint">Quản lý giọng TTS và file mẫu nghe thử.</p>
+          </div>
+          <button type="button" id="generateAllSamplesBtn"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors">
+            <span class="material-symbols-outlined" style="font-size:15px">audio_file</span>
+            <span data-i18n="admin.voices.generate_all">Tạo tất cả mẫu</span>
+          </button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th data-i18n="admin.col.id">ID</th>
+                <th data-i18n="admin.voices.col.name">Tên giọng</th>
+                <th class="hide-mobile" data-i18n="admin.voices.col.desc">Mô tả</th>
+                <th data-i18n="admin.voices.col.sample">Mẫu</th>
+                <th class="hide-mobile" data-i18n="admin.col.status">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="adminVoicesTableBody">
+              <tr><td colspan="5" class="loading-text" data-i18n="admin.loading">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ac-table-footer" id="voicesTableMeta"></div>
+      </div>
+    </div><!-- /adminView-voices -->
+
+    <!-- ═══ VIEW: Payments ═══ -->
+    <div id="adminView-payments" class="admin-view hidden">
+
+    <div class="ac-summary-grid mb-4" id="paymentsSummaryGrid">
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--revenue">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">payments</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.pay.summary.revenue">Doanh thu (đã TT)</div>
+        </div>
+        <div class="ac-summary-card__value" id="paySummaryRevenue">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">receipt_long</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.pay.summary.total">Tổng giao dịch</div>
+        </div>
+        <div class="ac-summary-card__value" id="paySummaryTotal">—</div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--success">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">check_circle</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.pay.summary.completed">Đã thanh toán</div>
+        </div>
+        <div class="ac-summary-card__value" id="paySummaryCompleted">—</div>
+        <div class="ac-summary-card__bar" id="paySummaryCompletedBar"><span></span></div>
+      </div>
+      <div class="ac-summary-card ac-summary-card--icon ac-summary-card--pending">
+        <div class="ac-summary-card__row">
+          <span class="ac-summary-card__icon"><span class="material-symbols-outlined">pending</span></span>
+          <div class="ac-summary-card__label" data-i18n="admin.pay.summary.pending">Chờ duyệt</div>
+        </div>
+        <div class="ac-summary-card__value" id="paySummaryPending">—</div>
+      </div>
     </div>
 
     <!-- ═══ PAYMENTS TABLE ═══ -->
-    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 animate-in max-w-full" style="animation-delay:0.14s" id="section-payments">
-      <div class="admin-section-head p-5 flex flex-col gap-3">
-        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
-          <span class="material-symbols-outlined text-tertiary" style="font-size:18px">payments</span>
-          <span data-i18n="admin.section.payments">Quản lý thanh toán</span>
-        </h3>
-        <div class="flex flex-wrap items-center gap-2">
-          <button id="refreshPaymentsBtn"
-            class="admin-btn-compact flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface text-xs font-semibold hover:bg-surface-container-high transition-colors">
-            <span class="material-symbols-outlined" style="font-size:15px">refresh</span>
-            <span data-i18n="admin.refresh">Làm mới</span>
-          </button>
-          <button id="autoApproveBtn"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors">
-            <span class="material-symbols-outlined" style="font-size:15px">bolt</span>
-            <span class="hidden sm:inline" data-i18n="admin.auto_approve">Duyệt tự động (≥5 phút)</span>
-            <span class="sm:hidden" data-i18n="admin.auto_approve_short">Auto duyệt</span>
-          </button>
-          <span id="paymentsCount" class="text-xs text-on-surface-variant w-full sm:w-auto"></span>
+    <div class="glass-panel rounded-xl overflow-hidden mb-5 md:mb-7 ac-module-panel" style="animation-delay:0.14s" id="section-payments">
+      <div class="ac-module-head ac-module-head--payments">
+        <div>
+          <h3 class="ac-module-head__title">
+            <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+            <span data-i18n="admin.section.payments">Quản lý thanh toán</span>
+          </h3>
+          <p class="ac-module-head__sub" data-i18n="admin.payments.sub">Theo dõi giao dịch và duyệt thanh toán.</p>
+        </div>
+      </div>
+      <div class="ac-toolbar ac-toolbar--payments">
+        <div class="ac-toolbar__search ac-toolbar__search--wide">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" id="paymentsSearchInput" data-i18n-placeholder="admin.pay.search" placeholder="Tìm mã GD, người dùng..." autocomplete="off"/>
+        </div>
+        <button type="button" id="autoApproveBtn"
+          class="ac-toolbar__action flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors shrink-0">
+          <span class="material-symbols-outlined" style="font-size:15px">bolt</span>
+          <span class="hidden sm:inline" data-i18n="admin.auto_approve">Duyệt tự động (≥5 phút)</span>
+          <span class="sm:hidden" data-i18n="admin.auto_approve_short">Auto duyệt</span>
+        </button>
+        <button type="button" id="paymentsExportBtn" class="ac-dash-refresh-btn shrink-0">
+          <span class="material-symbols-outlined">download</span>
+          <span data-i18n="admin.export.csv">Xuất CSV</span>
+        </button>
+      </div>
+      <div class="ac-dash-filters ac-date-filter-row">
+        <label data-i18n="admin.filter.from">Từ</label>
+        <input type="date" id="paymentsDateFrom" class="ac-date-input"/>
+        <label data-i18n="admin.filter.to">Đến</label>
+        <input type="date" id="paymentsDateTo" class="ac-date-input"/>
+        <button type="button" id="paymentsFilterApplyBtn" class="ac-dash-refresh-btn" data-i18n="admin.filter.apply">Áp dụng</button>
+      </div>
+      <div class="px-5 pb-3">
+        <div class="ac-filter-chips" id="paymentFilterChips">
+          <button type="button" class="ac-filter-chip is-active" data-pay-filter="all" data-i18n="admin.filter.all">Tất cả</button>
+          <button type="button" class="ac-filter-chip" data-pay-filter="completed" data-i18n="admin.pay.status.completed">Đã thanh toán</button>
+          <button type="button" class="ac-filter-chip" data-pay-filter="pending" data-i18n="admin.pay.status.pending">Đang chờ</button>
+          <button type="button" class="ac-filter-chip" data-pay-filter="failed" data-i18n="admin.pay.status.failed">Thất bại</button>
         </div>
       </div>
       <div class="admin-table-wrap">
@@ -550,7 +865,10 @@
         <span id="adminPaymentsPaginationInfo" class="text-xs text-on-surface-variant"></span>
         <div id="adminPaymentsPagination" class="flex items-center gap-1.5"></div>
       </div>
+      <div class="ac-table-footer" id="paymentsTableMeta"></div>
     </div>
+
+    </div><!-- /adminView-payments -->
 
   </main>
 
@@ -567,6 +885,28 @@
       </div>
     </div>
   </footer>
+</div>
+
+<!-- Floating action menu -->
+<div id="adminActionMenu" class="hidden" role="menu" aria-hidden="true"></div>
+
+<!-- User detail drawer -->
+<div id="adminUserDrawer" class="ac-drawer hidden" aria-hidden="true">
+  <div class="ac-drawer__backdrop" id="adminUserDrawerBackdrop"></div>
+  <aside class="ac-drawer__panel" role="dialog" aria-labelledby="adminUserDrawerTitle">
+    <div class="ac-drawer__head">
+      <div>
+        <h2 id="adminUserDrawerTitle" class="ac-drawer__title">—</h2>
+        <p id="adminUserDrawerEmail" class="ac-drawer__sub">—</p>
+      </div>
+      <button type="button" class="ac-drawer__close" id="adminUserDrawerClose" aria-label="Đóng">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="ac-drawer__body" id="adminUserDrawerBody">
+      <p class="ac-dash-empty" data-i18n="admin.loading">Đang tải...</p>
+    </div>
+  </aside>
 </div>
 
 <!-- Modal: Admin duyệt xóa tài khoản -->
@@ -596,25 +936,118 @@
   </div>
 </div>
 
+<!-- Modal: Xuất báo cáo -->
+<div id="adminReportModal" class="ac-report-modal hidden" aria-hidden="true">
+  <div class="ac-report-modal__backdrop" id="adminReportModalBackdrop"></div>
+  <div class="ac-report-modal__panel" role="dialog" aria-labelledby="adminReportModalTitle">
+    <div class="ac-report-modal__head">
+      <div class="ac-report-modal__head-icon"><span class="material-symbols-outlined">description</span></div>
+      <div>
+        <h3 id="adminReportModalTitle" data-i18n="admin.report.title">Xuất báo cáo</h3>
+        <p class="ac-report-modal__sub" data-i18n="admin.report.sub">Chọn loại báo cáo, khoảng thời gian và định dạng file</p>
+      </div>
+      <button type="button" class="ac-report-modal__close" id="adminReportModalClose" aria-label="Đóng">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="ac-report-modal__body">
+      <div class="ac-report-field">
+        <span class="ac-report-label" data-i18n="admin.report.type_label">Loại báo cáo</span>
+        <div class="ac-report-type-grid" id="adminReportTypeGrid">
+          <label class="ac-report-type-card">
+            <input type="radio" name="reportType" value="overview" checked/>
+            <span class="ac-report-type-card__icon ac-report-type-card__icon--overview"><span class="material-symbols-outlined">dashboard</span></span>
+            <span class="ac-report-type-card__text">
+              <strong data-i18n="admin.report.type.overview">Tổng quan</strong>
+              <small data-i18n="admin.report.type.overview_sub">KPI, xu hướng, top rankings</small>
+            </span>
+          </label>
+          <label class="ac-report-type-card">
+            <input type="radio" name="reportType" value="users"/>
+            <span class="ac-report-type-card__icon ac-report-type-card__icon--users"><span class="material-symbols-outlined">group</span></span>
+            <span class="ac-report-type-card__text">
+              <strong data-i18n="admin.report.type.users">Người dùng</strong>
+              <small data-i18n="admin.report.type.users_sub">Danh sách & gói dịch vụ</small>
+            </span>
+          </label>
+          <label class="ac-report-type-card">
+            <input type="radio" name="reportType" value="conversions"/>
+            <span class="ac-report-type-card__icon ac-report-type-card__icon--conv"><span class="material-symbols-outlined">history</span></span>
+            <span class="ac-report-type-card__text">
+              <strong data-i18n="admin.report.type.conversions">Chuyển đổi</strong>
+              <small data-i18n="admin.report.type.conversions_sub">Log TTS chi tiết</small>
+            </span>
+          </label>
+          <label class="ac-report-type-card">
+            <input type="radio" name="reportType" value="payments"/>
+            <span class="ac-report-type-card__icon ac-report-type-card__icon--pay"><span class="material-symbols-outlined">payments</span></span>
+            <span class="ac-report-type-card__text">
+              <strong data-i18n="admin.report.type.payments">Thanh toán</strong>
+              <small data-i18n="admin.report.type.payments_sub">Giao dịch & trạng thái</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="ac-report-field" id="adminReportPeriodField">
+        <span class="ac-report-label" data-i18n="admin.report.period_label">Khoảng thời gian</span>
+        <div class="ac-report-period-chips" id="adminReportPeriodChips">
+          <button type="button" class="ac-report-period-chip" data-report-period="today" data-i18n="admin.stat.today">Hôm nay</button>
+          <button type="button" class="ac-report-period-chip is-active" data-report-period="week" data-i18n="admin.stat.week">Tuần này</button>
+          <button type="button" class="ac-report-period-chip" data-report-period="month" data-i18n="admin.stat.month">Tháng này</button>
+          <button type="button" class="ac-report-period-chip" data-report-period="custom" data-i18n="admin.report.period.custom">Tùy chọn</button>
+        </div>
+        <div class="ac-report-custom-dates hidden" id="adminReportCustomDates">
+          <label data-i18n="admin.filter.from">Từ</label>
+          <input type="date" id="adminReportDateFrom" class="ac-date-input"/>
+          <label data-i18n="admin.filter.to">Đến</label>
+          <input type="date" id="adminReportDateTo" class="ac-date-input"/>
+        </div>
+      </div>
+      <div class="ac-report-field">
+        <span class="ac-report-label" data-i18n="admin.report.format_label">Định dạng file</span>
+        <div class="ac-report-format-grid" id="adminReportFormatGrid">
+          <button type="button" class="ac-report-format-chip is-active" data-report-format="pdf">
+            <span class="material-symbols-outlined">picture_as_pdf</span>
+            <span data-i18n="admin.report.format.pdf">PDF</span>
+          </button>
+          <button type="button" class="ac-report-format-chip" data-report-format="docx">
+            <span class="material-symbols-outlined">article</span>
+            <span data-i18n="admin.report.format.docx">Word</span>
+          </button>
+          <button type="button" class="ac-report-format-chip" data-report-format="csv">
+            <span class="material-symbols-outlined">table</span>
+            <span data-i18n="admin.report.format.csv">CSV</span>
+          </button>
+        </div>
+        <p class="ac-report-hint" id="adminReportFormatHint" data-i18n="admin.report.hint.overview">PDF/Word: báo cáo trình bày đẹp. CSV: dữ liệu thô (tối đa 5.000 dòng).</p>
+      </div>
+    </div>
+    <div class="ac-report-modal__foot">
+      <button type="button" class="ac-report-btn ac-report-btn--ghost" id="adminReportCancelBtn" data-i18n="admin.del.cancel">Hủy</button>
+      <button type="button" class="ac-report-btn ac-report-btn--primary" id="adminReportDownloadBtn">
+        <span class="material-symbols-outlined">download</span>
+        <span data-i18n="admin.report.download">Tải xuống</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ SCRIPTS ═══ -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-// Inline user table search filter
-function filterUsersTable(query) {
-  const rows = document.querySelectorAll('#usersTableBody tr');
-  const q = query.toLowerCase();
-  rows.forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-}
+// Legacy — users search/filter handled in admin.js
+function filterUsersTable() {}
 </script>
 
 <script src="{{ url_for('static', filename='js/admin_mobile_nav.js') }}"></script>
 <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-phase1.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-reports.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-shell.js') }}"></script>
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>

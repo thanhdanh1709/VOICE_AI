@@ -1,0 +1,340 @@
+{% set default_about_cards = [{"icon":"visibility","title":"Tầm Nhìn","desc":""},{"icon":"flag","title":"Sứ Mệnh","desc":""},{"icon":"handshake","title":"Cam Kết","desc":""}] %}
+{% set about_cards = content.get('about_new', {}).get('cards', default_about_cards) %}
+
+<div id="alsFormRoot">
+
+  <div id="als-panel-hero" class="als-panel is-active">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.hero">Hero Section</h2>
+      <p data-i18n="admin.lp.hero_sub">Tiêu đề chính, CTA và ghi chú miễn phí trên landing.</p>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.tag">Tag nhỏ phía trên tiêu đề</label>
+        <input type="text" id="hero_tag" value="{{ content.get('hero', {}).get('tag', '') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.cta_primary">Nút CTA chính</label>
+        <input type="text" id="hero_btn_primary" value="{{ content.get('hero', {}).get('btn_primary', 'Bắt đầu ngay') }}"/>
+      </div>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.title_line1">Dòng tiêu đề 1</label>
+        <input type="text" id="hero_title_line1" value="{{ content.get('hero', {}).get('title_line1', '') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.title_grad">Dòng gradient (tím–xanh)</label>
+        <input type="text" id="hero_title_grad" value="{{ content.get('hero', {}).get('title_grad', '') }}"/>
+      </div>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.title_line3">Dòng tiêu đề 3</label>
+        <input type="text" id="hero_title_line2" value="{{ content.get('hero', {}).get('title_line2', '') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.free_note">Ghi chú miễn phí dưới nút</label>
+        <input type="text" id="hero_free_note" value="{{ content.get('hero', {}).get('free_note', '') }}"/>
+      </div>
+    </div>
+  </div>
+
+  <div id="als-panel-company" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.company">Thông tin Công ty (Hero Card)</h2>
+      <p data-i18n="admin.lp.company_sub">Hiển thị trên thẻ công ty cạnh hero.</p>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.company_name">Tên công ty</label>
+      <input type="text" id="company_name" value="{{ content.get('company', {}).get('name', '') }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.company_desc">Mô tả công ty</label>
+      <textarea id="company_desc">{{ content.get('company', {}).get('desc', '') }}</textarea>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.mst">Mã số thuế (MST)</label>
+        <input type="text" id="company_mst" value="{{ content.get('company', {}).get('mst', '') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.representative">Người đại diện</label>
+        <input type="text" id="company_representative" value="{{ content.get('company', {}).get('representative', '') }}"/>
+      </div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.address">Địa chỉ</label>
+      <input type="text" id="company_address" value="{{ content.get('company', {}).get('address', '') }}"/>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.hotline">Hotline</label>
+        <input type="text" id="company_phone" value="{{ content.get('company', {}).get('phone', '') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.since">Hoạt động từ</label>
+        <input type="text" id="company_since" value="{{ content.get('company', {}).get('since', '') }}"/>
+      </div>
+    </div>
+  </div>
+
+  <div id="als-panel-about_new" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.about_new">Section Về VietVoice AI</h2>
+      <p data-i18n="admin.lp.about_new_sub">Tầm nhìn, sứ mệnh và cam kết — 3 thẻ.</p>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
+      <input type="text" id="about_new_title" value="{{ content.get('about_new', {}).get('title', 'Về VietVoice AI') }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
+      <textarea id="about_new_desc">{{ content.get('about_new', {}).get('desc', '') }}</textarea>
+    </div>
+    {% for card in about_cards %}
+    <div class="als-repeat-card">
+      <div class="als-repeat-card__label">Card {{ loop.index }}: {{ card.title }}</div>
+      <div class="als-row">
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.icon_material">Icon</label>
+          <input type="text" id="about_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
+          <div class="als-icon-picker" data-target="about_card_{{ loop.index0 }}_icon"></div>
+        </div>
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.title">Tiêu đề</label>
+          <input type="text" id="about_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
+        </div>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.desc">Mô tả</label>
+        <textarea id="about_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="als-panel-trusted" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.trusted">Dải Được tin dùng bởi</h2>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.trusted_label">Label</label>
+      <input type="text" id="trusted_label" value="{{ content.trusted.label }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.trusted_items">Các nhóm (mỗi dòng một nhóm)</label>
+      <textarea id="trusted_items" style="min-height:90px">{{ content.trusted['items'] | join('\n') }}</textarea>
+    </div>
+  </div>
+
+  <div id="als-panel-features" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.features">Tính năng nổi bật</h2>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
+      <input type="text" id="feat_label" value="{{ content.features.label }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
+      <input type="text" id="feat_title" value="{{ content.features.title }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
+      <textarea id="feat_subtitle">{{ content.features.subtitle }}</textarea>
+    </div>
+    {% for card in content.features.cards %}
+    <div class="als-repeat-card">
+      <div class="als-repeat-card__label">Card {{ loop.index }}</div>
+      <div class="als-row">
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
+          <input type="text" id="feat_card_{{ loop.index0 }}_icon" value="{{ card.icon }}"/>
+        </div>
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.card_title">Tiêu đề card</label>
+          <input type="text" id="feat_card_{{ loop.index0 }}_title" value="{{ card.title }}"/>
+        </div>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.desc">Mô tả</label>
+        <textarea id="feat_card_{{ loop.index0 }}_desc">{{ card.desc }}</textarea>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="als-panel-steps" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.steps">Hướng dẫn 3 bước</h2>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
+      <input type="text" id="steps_label" value="{{ content.steps.label }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_title">Tiêu đề section</label>
+      <input type="text" id="steps_title" value="{{ content.steps.title }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.section_desc">Mô tả section</label>
+      <textarea id="steps_subtitle">{{ content.steps.subtitle }}</textarea>
+    </div>
+    {% for step in content.steps['items'] %}
+    <div class="als-repeat-card">
+      <div class="als-repeat-card__label">Bước {{ loop.index }}</div>
+      <div class="als-row">
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
+          <input type="text" id="step_{{ loop.index0 }}_icon" value="{{ step.icon }}"/>
+        </div>
+        <div class="als-field">
+          <label data-i18n="admin.lp.label.step_title">Tiêu đề bước</label>
+          <input type="text" id="step_{{ loop.index0 }}_title" value="{{ step.title }}"/>
+        </div>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.desc">Mô tả</label>
+        <textarea id="step_{{ loop.index0 }}_desc">{{ step.desc }}</textarea>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="als-panel-showcase" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.showcase">Showcase Section</h2>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.icon_emoji">Icon (emoji)</label>
+        <input type="text" id="showcase_icon" value="{{ content.showcase.icon }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.cta_btn">Nút CTA</label>
+        <input type="text" id="showcase_btn" value="{{ content.showcase.btn }}"/>
+      </div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.title">Tiêu đề</label>
+      <input type="text" id="showcase_title" value="{{ content.showcase.title }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.desc">Mô tả</label>
+      <textarea id="showcase_desc">{{ content.showcase.desc }}</textarea>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.badges">Các badge (mỗi dòng một badge)</label>
+      <textarea id="showcase_badges" style="min-height:100px">{{ content.showcase.badges | join('\n') }}</textarea>
+    </div>
+  </div>
+
+  <div id="als-panel-final_cta" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.final_cta">Final CTA</h2>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.title">Tiêu đề</label>
+      <input type="text" id="fcta_title" value="{{ content.final_cta.title }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.desc">Mô tả</label>
+      <input type="text" id="fcta_subtitle" value="{{ content.final_cta.subtitle }}"/>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.btn_primary">Nút chính</label>
+        <input type="text" id="fcta_btn_primary" value="{{ content.final_cta.btn_primary }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.btn_secondary">Nút phụ</label>
+        <input type="text" id="fcta_btn_secondary" value="{{ content.final_cta.btn_secondary }}"/>
+      </div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.small_note">Ghi chú nhỏ dưới nút</label>
+      <input type="text" id="fcta_note" value="{{ content.final_cta.note }}"/>
+    </div>
+  </div>
+
+  <div id="als-panel-about" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.about">Về chúng tôi</h2>
+      <p data-i18n="admin.lp.about_legacy_sub">Section legacy — giữ đồng bộ với thông tin công ty nếu vẫn hiển thị trên landing.</p>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.small_label">Label nhỏ</label>
+        <input type="text" id="about_label" value="{{ content.about.label }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.cta_btn">Nút CTA</label>
+        <input type="text" id="about_btn" value="{{ content.about.btn }}"/>
+      </div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.title">Tiêu đề</label>
+      <input type="text" id="about_title" value="{{ content.about.title }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.company_desc">Mô tả công ty</label>
+      <textarea id="about_company_desc">{{ content.about.company_desc }}</textarea>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.info_row1">Thông tin dòng 1 (MST · Đại diện)</label>
+      <input type="text" id="about_info1" value="{{ content.about.info_row1 }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.info_row2">Thông tin dòng 2 (Địa chỉ)</label>
+      <input type="text" id="about_info2" value="{{ content.about.info_row2 }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.info_row3">Thông tin dòng 3 (SĐT · Ngày)</label>
+      <input type="text" id="about_info3" value="{{ content.about.info_row3 }}"/>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.small_note">Ghi chú nhỏ</label>
+      <input type="text" id="about_note" value="{{ content.about.note }}"/>
+    </div>
+  </div>
+
+  <div id="als-panel-footer" class="als-panel">
+    <div class="als-panel-head">
+      <h2 data-i18n="admin.lp.section.footer">Footer</h2>
+      <p data-i18n="admin.lp.footer_sub">Mô tả thương hiệu, cột liên kết và copyright.</p>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.brand_desc">Mô tả thương hiệu (cột trái)</label>
+      <textarea id="footer_brand_desc" style="min-height:70px">{{ content.get('footer', {}).get('brand_desc', '') }}</textarea>
+    </div>
+    <div class="als-row">
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.footer_col1">Tiêu đề cột 1</label>
+        <input type="text" id="footer_col1_title" value="{{ content.get('footer', {}).get('col1_title', 'TÍNH NĂNG') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.footer_col2">Tiêu đề cột 2</label>
+        <input type="text" id="footer_col2_title" value="{{ content.get('footer', {}).get('col2_title', 'HỖ TRỢ') }}"/>
+      </div>
+      <div class="als-field">
+        <label data-i18n="admin.lp.label.footer_col3">Tiêu đề cột 3</label>
+        <input type="text" id="footer_col3_title" value="{{ content.get('footer', {}).get('col3_title', 'TÀI KHOẢN') }}"/>
+      </div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.col1_links">Links cột 1 — Tính năng</label>
+      <p class="als-field-hint" data-i18n="admin.lp.link_hint">Nhãn hiển thị và đường dẫn URL cho mỗi liên kết.</p>
+      <div id="footerCol1LinkManager" class="als-link-manager"></div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.col2_links">Links cột 2 — Hỗ trợ</label>
+      <div id="footerCol2LinkManager" class="als-link-manager"></div>
+    </div>
+    <div class="als-field">
+      <label data-i18n="admin.lp.label.copyright">Copyright</label>
+      <input type="text" id="footer_copyright" value="{{ content.get('footer', {}).get('copyright', '') }}"/>
+    </div>
+  </div>
+
+</div>

@@ -4,6 +4,7 @@
  */
 
 let voices = [];
+let customVoices = [];
 let currentAudioFilename = null;
 let ffmpegAvailable = true;
 
@@ -114,14 +115,16 @@ function isLikelyNonVietnameseInput(text) {
 }
 
 function updateVietnameseInputWarning(text) {
-    const el = document.getElementById('wsLangWarning');
-    if (!el) return;
-    if (isLikelyNonVietnameseInput(text)) {
-        el.classList.remove('hidden');
-    } else {
-        el.classList.add('hidden');
-    }
+    const show = isLikelyNonVietnameseInput(text);
+    ['wsLangWarning', 'fuLangWarning'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (show) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
 }
+
+window.updateVietnameseInputWarning = updateVietnameseInputWarning;
 
 function setCurrentAudio(filename) {
     currentAudioFilename = filename || null;
@@ -224,6 +227,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const count = textInput.value.length;
             charCount.textContent = count.toLocaleString();
             updateVietnameseInputWarning(textInput.value);
+            const filePreview = document.getElementById('fileTextPreview');
+            const fileCharCount = document.getElementById('fileCharCount');
+            if (filePreview && filePreview.value !== textInput.value) {
+                filePreview.value = textInput.value;
+                if (fileCharCount) fileCharCount.textContent = count.toLocaleString();
+            }
         });
     }
     
@@ -237,131 +246,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     
-    // Voice gallery modal
-    const voiceGalleryBtn = document.getElementById('voiceGalleryBtn');
-    const voiceGalleryModal = document.getElementById('voiceGalleryModal');
-    const closeVoiceGallery = document.querySelector('.close-voice-gallery');
-    
-    if (voiceGalleryBtn) {
-        voiceGalleryBtn.addEventListener('click', openVoiceGallery);
-    }
-    
-    if (closeVoiceGallery) {
-        closeVoiceGallery.addEventListener('click', () => {
-            voiceGalleryModal.style.display = 'none';
-            voiceGalleryModal.classList.remove('is-active');
-        });
-    }
-    
-    // Close modal on overlay click
-    const modalOverlay = document.querySelector('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', () => {
-            voiceGalleryModal.style.display = 'none';
-            voiceGalleryModal.classList.remove('is-active');
-        });
-    }
-    
-    // Legacy: close on modal click (for old style)
-    window.addEventListener('click', (e) => {
-        if (e.target === voiceGalleryModal) {
-            voiceGalleryModal.style.display = 'none';
-            voiceGalleryModal.classList.remove('is-active');
-        }
-    });
-    
-    // Tab switching (support both old and new styles)
-    const tabButtons = document.querySelectorAll('.tab-btn, .tab-btn-modern');
+    // Voice gallery — handled by voice-picker.js (VoicePicker)
+    // File upload tab — handled by file-upload.js (FileUpload)
+
     const convertBtn = document.getElementById('convertBtn');
     const convertEmotionalBtn = document.getElementById('convertEmotionalBtn');
-    
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            
-            // Update active tab button
-            tabButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Update active tab content (hide all, show selected)
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-                content.classList.remove('active');
-            });
-            const targetTab = document.getElementById(tab + 'Tab');
-            if (targetTab) {
-                targetTab.style.display = 'block';
-                targetTab.classList.add('active');
-            }
-            
-            // Show/hide appropriate convert button
-            if (tab === 'emotional') {
-                if (convertBtn) convertBtn.style.display = 'none';
-                if (convertEmotionalBtn) convertEmotionalBtn.style.display = 'block';
-            } else {
-                if (convertBtn) convertBtn.style.display = 'block';
-                if (convertEmotionalBtn) convertEmotionalBtn.style.display = 'none';
-            }
-        });
-    });
-    
-    // File input handler
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const fileName = document.getElementById('fileName');
-            fileName.textContent = `📄 ${file.name} (Đang xử lý...)`;
-            
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            
-            // For .txt files, read directly
-            if (fileExt === 'txt') {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('textInput').value = e.target.result;
-                    const emotionalInput = document.getElementById('emotionalTextInput');
-                    if (emotionalInput) emotionalInput.value = e.target.result;
-                    fileName.textContent = `📄 ${file.name}`;
-                };
-                reader.onerror = () => {
-                    fileName.textContent = `❌ Lỗi đọc file ${file.name}`;
-                };
-                reader.readAsText(file, 'UTF-8');
-            } 
-            // For .pdf and .docx files, upload to server to extract text
-            else if (fileExt === 'pdf' || fileExt === 'docx') {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const response = await fetch('/api/upload/extract', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        document.getElementById('textInput').value = data.text;
-                        const emotionalInput = document.getElementById('emotionalTextInput');
-                        if (emotionalInput) emotionalInput.value = data.text;
-                        fileName.textContent = `📄 ${file.name}`;
-                    } else {
-                        fileName.textContent = `❌ ${data.message || 'Lỗi xử lý file'}`;
-                    }
-                } catch (error) {
-                    console.error('Error uploading file:', error);
-                    fileName.textContent = `❌ Lỗi: ${error.message}`;
-                }
-            } else {
-                fileName.textContent = `❌ Định dạng file không được hỗ trợ`;
-            }
-        });
-    }
-    
+
     // Convert button handlers
     if (convertBtn) {
         convertBtn.addEventListener('click', handleConvert);
@@ -382,7 +272,6 @@ async function loadVoices() {
         const systemData = await systemResponse.json();
         
         // Load custom voices
-        let customVoices = [];
         try {
             const customResponse = await fetch('/api/custom-voices/list');
             const customData = await customResponse.json();
@@ -395,6 +284,9 @@ async function loadVoices() {
         
         if (systemData.success) {
             voices = systemData.voices;
+            window.voices = voices;
+            window.customVoices = customVoices;
+            if (window.VoicePicker) window.VoicePicker.setData(voices, customVoices);
             const select = document.getElementById('voiceSelect');
             
             // Build HTML with optgroups
@@ -581,130 +473,6 @@ async function handleConvert() {
         errorMessage.textContent = errorMsg;
         errorMessage.style.display = 'block';
     }
-}
-
-// Voice Gallery Modal Functions
-function openVoiceGallery() {
-    const modal = document.getElementById('voiceGalleryModal');
-    const grid = document.getElementById('voiceGalleryGrid');
-    
-    modal.style.display = 'block';
-    
-    // Render voice cards
-    if (voices.length > 0) {
-        grid.innerHTML = voices.map(voice => createVoiceCard(voice)).join('');
-    } else {
-        grid.innerHTML = '<div class="loading-text">Đang tải giọng đọc...</div>';
-    }
-}
-
-function createVoiceCard(voice) {
-    const genderIcon = voice.gender === 'male' ? '👨' : '👩';
-    const hasSample = voice.has_sample;
-    
-    return `
-        <div class="voice-card" data-voice="${voice.voice_id}">
-            <div class="voice-avatar">${genderIcon}</div>
-            <h3>${voice.voice_name}</h3>
-            <p class="voice-desc">${voice.description || ''}</p>
-            <p class="voice-region">${voice.region || ''}</p>
-            ${hasSample ? `
-                <audio id="sample_${voice.voice_id}" src="${voice.sample_url}" preload="none"></audio>
-                <button class="btn btn-sm btn-secondary preview-btn" onclick="togglePreview('${voice.voice_id}')">
-                    <span class="play-icon">🔊</span> Nghe thử
-                </button>
-            ` : `
-                <button class="btn btn-sm btn-secondary" disabled style="opacity: 0.5;">
-                    ⚠️ Chưa có mẫu
-                </button>
-            `}
-            <button class="btn btn-sm btn-primary" onclick="selectVoice('${voice.voice_id}', '${voice.voice_name}')">
-                Chọn giọng này
-            </button>
-        </div>
-    `;
-}
-
-let currentPlayingVoice = null;
-
-function togglePreview(voiceId) {
-    const audio = document.getElementById(`sample_${voiceId}`);
-    const allAudios = document.querySelectorAll('[id^="sample_"]');
-    const btn = event.target.closest('.preview-btn');
-    
-    if (!audio) return;
-    
-    // Stop other audios
-    allAudios.forEach(a => {
-        if (a !== audio && !a.paused) {
-            a.pause();
-            a.currentTime = 0;
-        }
-    });
-    
-    // Reset all buttons
-    document.querySelectorAll('.preview-btn').forEach(b => {
-        b.innerHTML = '<span class="play-icon">🔊</span> Nghe thử';
-    });
-    
-    // Toggle current audio
-    if (audio.paused) {
-        audio.play();
-        btn.innerHTML = '<span class="play-icon">⏸️</span> Dừng';
-        currentPlayingVoice = voiceId;
-        
-        // Reset button when audio ends
-        audio.onended = () => {
-            btn.innerHTML = '<span class="play-icon">🔊</span> Nghe thử';
-            currentPlayingVoice = null;
-        };
-    } else {
-        audio.pause();
-        audio.currentTime = 0;
-        btn.innerHTML = '<span class="play-icon">🔊</span> Nghe thử';
-        currentPlayingVoice = null;
-    }
-}
-
-function selectVoice(voiceId, voiceName) {
-    const select = document.getElementById('voiceSelect');
-    select.value = voiceId;
-    
-    // Close modal
-    document.getElementById('voiceGalleryModal').style.display = 'none';
-    
-    // Stop any playing audio
-    if (currentPlayingVoice) {
-        const audio = document.getElementById(`sample_${currentPlayingVoice}`);
-        if (audio) {
-            audio.pause();
-            audio.currentTime = 0;
-        }
-        currentPlayingVoice = null;
-    }
-    
-    // Show notification
-    const notification = document.createElement('div');
-    notification.className = 'notification success';
-    notification.textContent = `✓ Đã chọn giọng: ${voiceName}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: #28a745;
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 2000);
 }
 
 /* ========================================
