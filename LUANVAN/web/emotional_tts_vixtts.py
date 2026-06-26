@@ -54,8 +54,8 @@ class ViXTTSEmotionalTTS:
     """
     TTS Engine với emotion control dùng viXTTS
     - 100% TIẾNG VIỆT
-    - Voice cloning từ base_voice.wav
-    - Emotion transfer từ refs
+    - Giọng cố định từ base_voice / clone (latents tính một lần)
+    - Cảm xúc chỉnh qua tham số inference (tốc độ, nhiệt độ) — không clone giọng từ ref cảm xúc
     """
     
     def __init__(self, base_dir=None):
@@ -98,7 +98,80 @@ class ViXTTSEmotionalTTS:
             print(f"[viXTTS] ⚠️ Missing emotion refs:")
             for m in missing:
                 print(f"   - {m}")
-    
+
+    def _resolve_emotion_ref(self, emotion: str) -> Path:
+        """Map emotion id → WAV mẫu (fallback neutral/base nếu thiếu file)."""
+        ref = self.emotion_refs.get(emotion, self.emotion_refs["neutral"])
+        if emotion == "sad":
+            sad_path = self.base_dir / "sad_ref.wav"
+            if sad_path.exists():
+                ref = sad_path
+        if not ref.exists():
+            print(f"[viXTTS] Emotion ref missing for {emotion}: {ref} — using neutral")
+            ref = self.emotion_refs["neutral"]
+        return ref
+
+    # Cảm xúc chỉnh qua tham số inference — KHÔNG đổi file ref/latent giữa các chunk
+    EMOTION_INFERENCE_PARAMS = {
+        "cheerful": {"temperature": 0.75, "length_penalty": 0.92, "speed": 1.05},
+        "excited": {"temperature": 0.85, "length_penalty": 0.88, "speed": 1.10},
+        "calm": {"temperature": 0.55, "length_penalty": 1.12, "speed": 0.92},
+        "sad": {"temperature": 0.58, "length_penalty": 1.08, "speed": 0.95},
+        "neutral": {"temperature": 0.70, "length_penalty": 1.00, "speed": 1.00},
+    }
+
+    def _get_identity_latents(self, identity_path=None, cache=None):
+        """
+        Tính (gpt_cond_latent, speaker_embedding) MỘT LẦN từ giọng identity.
+        File tham chiếu chỉ xác định giọng nói — không đổi theo từng chunk/cảm xúc.
+        """
+        if cache is None:
+            cache = {}
+        identity = Path(identity_path or self.base_voice).resolve()
+        id_key = str(identity)
+        if id_key in cache:
+            return cache[id_key]
+
+        gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
+            audio_path=[id_key],
+            gpt_cond_len=30,
+            gpt_cond_chunk_len=4,
+            max_ref_length=120,
+        )
+        cache[id_key] = (gpt_cond_latent, speaker_embedding)
+        return gpt_cond_latent, speaker_embedding
+
+    def _emotion_inference_params(self, emotion):
+        return self.EMOTION_INFERENCE_PARAMS.get(
+            emotion, self.EMOTION_INFERENCE_PARAMS["neutral"]
+        )
+
+    def _apply_emotion_speed(self, wav, speed):
+        if abs(speed - 1.0) < 0.01:
+            return wav
+        try:
+            import librosa
+            return librosa.effects.time_stretch(wav, rate=speed)
+        except Exception as e:
+            print(f"[viXTTS] Warning: emotion speed adjust skipped: {e}")
+            return wav
+
+    def _infer_chunk(self, text, gpt_cond_latent, speaker_embedding, emotion="neutral"):
+        params = self._emotion_inference_params(emotion)
+        out = self.model.inference(
+            text=text,
+            language="vi",
+            gpt_cond_latent=gpt_cond_latent,
+            speaker_embedding=speaker_embedding,
+            temperature=params["temperature"],
+            length_penalty=params["length_penalty"],
+            repetition_penalty=5.0,
+            top_k=50,
+            top_p=0.85,
+        )
+        out["wav"] = self._apply_emotion_speed(out["wav"], params["speed"])
+        return out
+
     def load_model(self):
         """Load viXTTS model from HuggingFace"""
         if self.model is not None:
@@ -162,7 +235,7 @@ class ViXTTSEmotionalTTS:
     def detect_emotion(self, text):
         """Phát hiện emotion từ Vietnamese tags"""
         text_lower = text.lower()
-        
+
         if any(kw in text_lower for kw in ['tươi sáng', 'vui', 'nụ cười', 'haha', 'vui vẻ', 'cười']):
             return 'cheerful'
         if any(kw in text_lower for kw in ['hào hứng', 'phấn khích', 'wow', 'tuyệt vời']):
@@ -171,59 +244,51 @@ class ViXTTSEmotionalTTS:
             return 'calm'
         if any(kw in text_lower for kw in ['buồn', 'tiếc', 'đau', 'thương']):
             return 'sad'
-        
+
         return 'neutral'
-    
+
     def clean_text(self, text):
         """Xóa emotion tags và normalize text"""
-        # Xóa tags trong ngoặc
         text = re.sub(r'\([^)]*\)', '', text)
-        # Xóa whitespace thừa
         text = re.sub(r'\s+', ' ', text).strip()
-        # Normalize Vietnamese text using enhanced normalizer
         try:
             text = self.text_normalizer.normalize(text)
         except (UnicodeEncodeError, Exception) as e:
             print(f"[viXTTS] Warning: Text normalization skipped due to: {e}")
-            pass
         return text
-    
+
     def split_by_emotion(self, text):
         """Chia text thành chunks theo emotion"""
         chunks = []
         lines = text.split('\n')
         current_text = ""
         current_emotion = 'neutral'
-        
+
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            
-            # Nếu có emotion tag
+
             if '(' in line:
-                # Lưu chunk trước đó
                 if current_text.strip():
                     chunks.append({
                         'text': self.clean_text(current_text),
                         'emotion': current_emotion
                     })
-                
-                # Detect emotion mới
+
                 current_emotion = self.detect_emotion(line)
                 current_text = line
             else:
                 current_text += " " + line
-        
-        # Lưu chunk cuối
+
         if current_text.strip():
             chunks.append({
                 'text': self.clean_text(current_text),
                 'emotion': current_emotion
             })
-        
+
         return chunks
-    
+
     def synthesize_with_voice(self, text, voice_audio_path, output_file="output.wav"):
         """
         Generate speech using a custom voice reference (viXTTS clone)
@@ -355,29 +420,28 @@ class ViXTTSEmotionalTTS:
             if not chunks:
                 raise Exception("No text to process")
 
-            # Compute speaker latents ONCE from the user's voice reference
-            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
-                audio_path=[str(voice_audio_path)],
-                gpt_cond_len=30,
-                gpt_cond_chunk_len=4,
-                max_ref_length=120
+            latent_cache = {}
+            gpt_cond_latent, speaker_embedding = self._get_identity_latents(
+                voice_audio_path, cache=latent_cache
+            )
+            print(
+                f"[viXTTS-Emotional-Clone] Identity latents from: "
+                f"{Path(voice_audio_path).name} (fixed for all chunks)"
             )
 
             temp_files = []
             for i, chunk in enumerate(chunks):
-                print(f"[viXTTS-Emotional-Clone] Chunk {i+1}/{len(chunks)}: [{chunk['emotion']}] {chunk['text'][:50]}...")
+                emotion = chunk["emotion"]
+                params = self._emotion_inference_params(emotion)
+                print(
+                    f"[viXTTS-Emotional-Clone] Chunk {i+1}/{len(chunks)}: [{emotion}] "
+                    f"temp={params['temperature']} speed={params['speed']}x — "
+                    f"{chunk['text'][:50]}..."
+                )
                 try:
                     temp_file = f"temp_vixtts_emoclone_{i}_{os.getpid()}.wav"
-                    out = self.model.inference(
-                        text=chunk['text'],
-                        language="vi",
-                        gpt_cond_latent=gpt_cond_latent,
-                        speaker_embedding=speaker_embedding,
-                        temperature=0.7,
-                        length_penalty=1.0,
-                        repetition_penalty=5.0,
-                        top_k=50,
-                        top_p=0.85,
+                    out = self._infer_chunk(
+                        chunk["text"], gpt_cond_latent, speaker_embedding, emotion
                     )
                     import soundfile as sf
                     sf.write(temp_file, out["wav"], 24000)
@@ -441,42 +505,30 @@ class ViXTTSEmotionalTTS:
             
             if not chunks:
                 raise Exception("No text to process")
-            
-            # Generate audio cho mỗi chunk
+
+            latent_cache = {}
+            gpt_cond_latent, speaker_embedding = self._get_identity_latents(
+                self.base_voice, cache=latent_cache
+            )
+            print(
+                f"[viXTTS] Identity latents from: {self.base_voice.name} "
+                f"(fixed for all chunks; emotion via inference params only)"
+            )
+
             temp_files = []
             for i, chunk in enumerate(chunks):
-                emotion_ref = self.emotion_refs.get(chunk['emotion'], self.emotion_refs['neutral'])
-                
-                if not emotion_ref.exists():
-                    print(f"[viXTTS] ⚠️  Emotion ref not found: {emotion_ref}, using neutral")
-                    emotion_ref = self.emotion_refs['neutral']
-                
-                print(f"[viXTTS] Chunk {i+1}/{len(chunks)}: [{chunk['emotion']}] {chunk['text'][:50]}...")
-                
+                emotion = chunk["emotion"]
+                params = self._emotion_inference_params(emotion)
+                print(
+                    f"[viXTTS] Chunk {i+1}/{len(chunks)}: [{emotion}] "
+                    f"temp={params['temperature']} speed={params['speed']}x — "
+                    f"{chunk['text'][:50]}..."
+                )
+
                 try:
-                    # Tạo temp file
                     temp_file = f"temp_vixtts_{i}_{os.getpid()}.wav"
-                    
-                    # Generate với viXTTS
-                    # Compute speaker latents (voice cloning từ base_voice)
-                    gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
-                        audio_path=[str(self.base_voice)],
-                        gpt_cond_len=30,
-                        gpt_cond_chunk_len=4,
-                        max_ref_length=60
-                    )
-                    
-                    # Generate với emotion style từ ref
-                    out = self.model.inference(
-                        text=chunk['text'],
-                        language="vi",
-                        gpt_cond_latent=gpt_cond_latent,
-                        speaker_embedding=speaker_embedding,
-                        temperature=0.7,
-                        length_penalty=1.0,
-                        repetition_penalty=5.0,
-                        top_k=50,
-                        top_p=0.85,
+                    out = self._infer_chunk(
+                        chunk["text"], gpt_cond_latent, speaker_embedding, emotion
                     )
                     
                     # Save temp file

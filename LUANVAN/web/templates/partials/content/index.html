@@ -1,3 +1,12 @@
+{% macro ws_upload_toolbar() %}
+<div class="ws-input-toolbar">
+  <button type="button" class="ws-upload-btn" data-fu-trigger>
+    <span class="material-symbols-outlined">upload_file</span>
+    <span data-i18n="file.btn.upload">Tải file</span>
+  </button>
+  <span class="ws-upload-hint" data-i18n="file.drop.hint">TXT, PDF, DOCX — tối đa 10MB</span>
+</div>
+{% endmacro %}
 <!-- Hero -->
   <section class="mb-6 md:mb-8 text-center">
     <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-on-background mb-2 md:mb-3 tracking-tight" data-i18n="ws.title">
@@ -9,37 +18,84 @@
   </section>
 
   <!-- Bento Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 ws-workspace-grid">
 
     <!-- ═══ LEFT COLUMN: Input ═══ -->
-    <div class="lg:col-span-8 flex flex-col gap-6">
+    <div class="lg:col-span-8 flex flex-col ws-workspace-grid__input">
 
       <!-- Input Card -->
-      <div class="bg-surface-container/80 backdrop-blur-md border border-primary/20 rounded-xl p-6 shadow-[0_4px_24px_rgba(208,188,255,0.06)] relative overflow-hidden">
+      <div class="ws-input-card bg-surface-container/80 backdrop-blur-md border border-primary/20 rounded-xl p-6 shadow-[0_4px_24px_rgba(208,188,255,0.06)] relative overflow-hidden">
         <!-- Top accent bar -->
         <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-tertiary via-primary to-inverse-primary"></div>
 
         <h2 class="text-xl font-bold text-on-surface mb-5" data-i18n="ws.input.title">Nội dung chuyển đổi</h2>
 
         <!-- Tabs -->
-        <div class="flex space-x-1 mb-5 border-b border-white/5 pb-0">
-          <button class="tab-btn-new active px-4 py-2.5 text-sm font-semibold text-on-surface-variant border-b-2 border-transparent -mb-px transition-colors" data-tab="text" data-i18n="ws.tab.text">
-            Nhập văn bản
-          </button>
-          <button class="tab-btn-new px-4 py-2.5 text-sm font-semibold text-on-surface-variant border-b-2 border-transparent -mb-px transition-colors hover:text-on-surface" data-tab="file" data-i18n="ws.tab.file">
-            Tải file lên
-          </button>
-          <button class="tab-btn-new px-4 py-2.5 text-sm font-semibold text-on-surface-variant border-b-2 border-transparent -mb-px transition-colors hover:text-on-surface flex items-center gap-1.5" data-tab="emotional">
-            <span data-i18n="ws.tab.emotional">Emotional TTS</span>
-            <span class="px-1.5 py-0.5 rounded text-[10px] bg-tertiary/20 text-tertiary font-bold uppercase tracking-wide">Mới</span>
-          </button>
+        <div class="ws-mode-tabs" role="tablist" aria-label="Chế độ chuyển đổi">
+          <div class="ws-mode-tabs__scroll">
+            <button type="button" class="ws-mode-tab tab-btn-new active" data-tab="text" data-i18n="ws.tab.text">
+              Nhập văn bản
+            </button>
+            <button type="button" class="ws-mode-tab tab-btn-new" data-tab="emotional">
+              <span data-i18n="ws.tab.emotional">Emotional TTS</span>
+              <span class="ws-mode-tab__badge ws-mode-tab__badge--new">Mới</span>
+            </button>
+            <button type="button" class="ws-mode-tab tab-btn-new" data-tab="omnivoice">
+              <span>OmniVoice</span>
+              <span class="ws-mode-tab__badge ws-mode-tab__badge--pro">600+</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Nội dung theo tab -->
+        <div class="ws-tab-panels mt-3" id="fileUploadRoot">
+
+        <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden">
+
+        <!-- Trạng thái file đã tải (hiện trên mọi tab) -->
+        <div id="fuStatusStrip" class="fu-status-strip hidden">
+          <div class="fu-file-card fu-file-card--strip" id="fuFileCard">
+            <div class="fu-file-card__icon" id="fuFileIcon">
+              <span class="material-symbols-outlined">description</span>
+            </div>
+            <div class="fu-file-card__body">
+              <div class="fu-file-card__row">
+                <span class="fu-file-card__name" id="fuFileName">—</span>
+                <div class="fu-strip-actions">
+                  <button type="button" class="fu-btn fu-btn--ghost fu-btn--xs" id="fuChangeBtn" title="Đổi file">
+                    <span class="material-symbols-outlined" style="font-size:16px">folder_open</span>
+                  </button>
+                  <button type="button" class="fu-file-card__remove" id="fuRemoveBtn" title="Xóa file">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              </div>
+              <div class="fu-file-card__meta" id="fuFileMeta">—</div>
+              <div class="fu-progress hidden" id="fuProgress">
+                <div class="fu-progress__track">
+                  <div class="fu-progress__fill" id="fuProgressFill"></div>
+                </div>
+                <span class="fu-progress__label" id="fuProgressLabel" data-i18n="file.status.processing">Đang trích xuất văn bản…</span>
+                <span class="fu-progress__pct" id="fuProgressPct">0%</span>
+              </div>
+              <div class="fu-status fu-status--ready hidden" id="fuStatusReady">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span id="fuStatusReadyText" data-i18n="file.success.extracted">Đã trích xuất văn bản</span>
+              </div>
+              <div class="fu-status fu-status--error hidden" id="fuStatusError">
+                <span class="material-symbols-outlined">error</span>
+                <span id="fuStatusErrorText"></span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab: Text Input -->
         <div class="tab-content" id="textTab">
-            <div class="relative mb-5">
+          {{ ws_upload_toolbar() }}
+          <div class="relative mb-0 ws-text-drop-target">
             <textarea id="textInput"
-              class="w-full h-60 bg-surface-container-lowest border border-white/5 rounded-xl p-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/30 resize-none placeholder-on-surface-variant/40 transition-all"
+              class="w-full h-52 md:h-60 bg-surface-container-lowest border border-white/5 rounded-xl p-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/30 resize-none placeholder-on-surface-variant/40 transition-all"
               data-i18n-placeholder="ws.placeholder"
               placeholder="Nhập hoặc dán văn bản của bạn vào đây...&#10;&#10;Ví dụ: Xin chào! Đây là hệ thống chuyển văn bản thành giọng nói bằng AI."></textarea>
             <div id="wsLangWarning" class="hidden mt-2 text-xs text-amber-400/90 px-1" data-i18n="ws.lang_warning">
@@ -51,158 +107,162 @@
           </div>
         </div>
 
-        <!-- Tab: File Upload -->
-        <div class="tab-content hidden" id="fileTab">
-          <div class="fu-root" id="fileUploadRoot">
-            <!-- Empty: dropzone -->
-            <div class="fu-empty" id="fuEmpty">
-              <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden">
-              <div class="fu-dropzone" id="fuDropzone" role="button" tabindex="0" aria-label="Upload file">
-                <span class="material-symbols-outlined fu-dropzone__icon">upload_file</span>
-                <p class="fu-dropzone__title" data-i18n="file.drop.title">Kéo thả file hoặc click để chọn</p>
-                <p class="fu-dropzone__hint" data-i18n="file.drop.hint">TXT, PDF, DOCX — tối đa 10MB</p>
-                <div class="fu-format-chips" aria-hidden="true">
-                  <span class="fu-format-chip">TXT</span>
-                  <span class="fu-format-chip">PDF</span>
-                  <span class="fu-format-chip">DOCX</span>
-                </div>
-              </div>
-              <p class="fu-scan-warning">
-                <span class="material-symbols-outlined" style="font-size:14px">info</span>
-                <span data-i18n="file.pdf_scan_warning">PDF cần có lớp văn bản (không hỗ trợ file scan/ảnh).</span>
-              </p>
-            </div>
-
-            <!-- Loaded: file card + preview -->
-            <div class="fu-loaded hidden" id="fuLoaded">
-              <div class="fu-file-card" id="fuFileCard">
-                <div class="fu-file-card__icon" id="fuFileIcon">
-                  <span class="material-symbols-outlined">description</span>
-                </div>
-                <div class="fu-file-card__body">
-                  <div class="fu-file-card__row">
-                    <span class="fu-file-card__name" id="fuFileName">—</span>
-                    <button type="button" class="fu-file-card__remove" id="fuRemoveBtn" title="Remove">
-                      <span class="material-symbols-outlined">close</span>
-                    </button>
-                  </div>
-                  <div class="fu-file-card__meta" id="fuFileMeta">—</div>
-                  <div class="fu-progress hidden" id="fuProgress">
-                    <div class="fu-progress__track">
-                      <div class="fu-progress__fill" id="fuProgressFill"></div>
-                    </div>
-                    <span class="fu-progress__label" id="fuProgressLabel" data-i18n="file.status.processing">Đang trích xuất văn bản…</span>
-                    <span class="fu-progress__pct" id="fuProgressPct">0%</span>
-                  </div>
-                  <div class="fu-status fu-status--ready hidden" id="fuStatusReady">
-                    <span class="material-symbols-outlined">check_circle</span>
-                    <span id="fuStatusReadyText" data-i18n="file.success.extracted">Đã trích xuất văn bản</span>
-                  </div>
-                  <div class="fu-status fu-status--error hidden" id="fuStatusError">
-                    <span class="material-symbols-outlined">error</span>
-                    <span id="fuStatusErrorText"></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="fu-preview-wrap hidden" id="fuPreviewWrap">
-                <textarea id="fileTextPreview" class="fu-preview" readonly
-                  data-i18n-placeholder="file.preview.placeholder"
-                  placeholder="Nội dung trích xuất sẽ hiển thị tại đây…"></textarea>
-                <div id="fuLangWarning" class="hidden mt-2 text-xs text-amber-400/90 px-1" data-i18n="ws.lang_warning">
-                  Hệ thống được tối ưu cho văn bản tiếng Việt. Kết quả với ngôn ngữ khác có thể không chính xác.
-                </div>
-                <div class="fu-preview-footer">
-                  <span><span id="fileCharCount">0</span> <span data-i18n="ws.chars">ký tự</span></span>
-                </div>
-              </div>
-
-              <div class="fu-actions hidden" id="fuActions">
-                <button type="button" class="fu-btn fu-btn--ghost" id="fuEditBtn">
-                  <span class="material-symbols-outlined" style="font-size:16px">edit</span>
-                  <span data-i18n="file.btn.edit">Chỉnh sửa</span>
-                </button>
-                <button type="button" class="fu-btn fu-btn--ghost" id="fuChangeBtn">
-                  <span class="material-symbols-outlined" style="font-size:16px">folder_open</span>
-                  <span data-i18n="file.btn.change">Đổi file</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Tab: Emotional TTS -->
         <div class="tab-content hidden" id="emotionalTab">
-          <!-- Info banner -->
-          <div class="flex items-start gap-3 p-4 rounded-xl bg-tertiary/10 border border-tertiary/20 mb-4">
-            <span class="material-symbols-outlined text-tertiary" style="font-size:22px;flex-shrink:0">sentiment_very_satisfied</span>
-            <div>
-              <p class="text-sm font-semibold text-tertiary" data-i18n="em.banner.title">Emotional TTS — AI đọc với cảm xúc tự nhiên!</p>
-              <p class="text-xs text-on-surface-variant mt-0.5" data-i18n="em.banner.sub">Giọng của bạn + cảm xúc tự động thay đổi theo nội dung văn bản</p>
-            </div>
-          </div>
           <!-- Emotional voice selector -->
           <div class="mb-4">
             <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2" data-i18n="em.voice.label">Giọng đọc (Emotional)</label>
-            <div class="relative">
-              <select id="emotionalVoiceSelect" class="w-full appearance-none bg-surface-container-highest border border-white/10 rounded-lg py-2.5 px-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
+            <div class="ov-select-wrap ws-emotional-select-wrap">
+              <select id="emotionalVoiceSelect" class="ov-select ws-voice-select w-full appearance-none bg-surface-container-highest border border-white/10 rounded-lg py-2.5 px-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
                 <option value="">⭐ Mặc định (base_voice.wav)</option>
               </select>
-              <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-on-surface-variant material-symbols-outlined" style="font-size:18px">expand_more</span>
+              <span class="material-symbols-outlined ov-chevron">expand_more</span>
             </div>
-            <p class="text-xs text-on-surface-variant mt-1">Chỉ hỗ trợ giọng <strong class="text-primary">viXTTS Clone</strong>. Thêm giọng tại <a href="{{ url_for('add_voice_page') }}" class="text-tertiary underline-offset-2 hover:underline">Thêm giọng mới</a>.</p>
           </div>
-          <div class="relative mb-4">
+          {{ ws_upload_toolbar() }}
+          <div class="relative mb-4 ws-text-drop-target">
             <textarea id="emotionalTextInput"
               class="w-full h-52 bg-surface-container-lowest border border-white/5 rounded-xl p-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-tertiary/50 resize-none placeholder-on-surface-variant/40"
-              placeholder="Nhập văn bản ở đây...&#10;&#10;Dùng emotion tags: (tươi sáng), (vui vẻ), (buồn), (hào hứng)...&#10;AI sẽ tự động thay đổi cảm xúc theo nội dung!"></textarea>
+              placeholder="Nhập văn bản ở đây..."
+              data-i18n-placeholder="ws.placeholder"></textarea>
             <div class="absolute bottom-3 right-3 text-xs text-on-surface-variant bg-surface-container-lowest px-2 py-0.5 rounded">
               <span id="emotionalCharCount">0</span> ký tự
             </div>
           </div>
-          <!-- Emotion tags guide -->
-          <div class="grid grid-cols-2 gap-2 p-4 bg-surface-container-lowest rounded-xl border border-white/5">
-            <div class="text-xs"><span class="text-yellow-400 font-semibold">😊 Vui/Cheerful:</span> <span class="text-on-surface-variant">(tươi sáng), (nụ cười)</span></div>
-            <div class="text-xs"><span class="text-orange-400 font-semibold">🎉 Phấn khích:</span> <span class="text-on-surface-variant">(hào hứng), (wow)</span></div>
-            <div class="text-xs"><span class="text-blue-400 font-semibold">😌 Bình tĩnh:</span> <span class="text-on-surface-variant">(chậm), (ấm áp), (nhẹ nhàng)</span></div>
-            <div class="text-xs"><span class="text-indigo-400 font-semibold">😢 Buồn:</span> <span class="text-on-surface-variant">(buồn), (tiếc thương)</span></div>
+        </div>
+
+        <!-- Tab: OmniVoice (multilingual TTS) — compact studio layout -->
+        <div class="tab-content hidden ov-studio" id="omnivoiceTab">
+
+          <div class="ov-toolbar">
+            <div class="ov-field ov-field--mode">
+              <label for="omnivoiceModeSelect">Chế độ</label>
+              <div class="ov-mode-row">
+                <div class="ov-select-wrap ov-mode-row__select">
+                  <select id="omnivoiceModeSelect" class="ov-select">
+                    <option value="auto">Auto Voice</option>
+                    <option value="clone">Voice Clone</option>
+                    <option value="design">Voice Design</option>
+                    <option value="emotional">Emotional</option>
+                  </select>
+                  <span class="material-symbols-outlined ov-chevron">expand_more</span>
+                </div>
+                <button type="button" id="omnivoiceHelpBtn" class="ov-help-btn" title="Trợ giúp" aria-label="Trợ giúp">?</button>
+              </div>
+            </div>
+
+            <div class="ov-field ov-field--voice hidden" id="omnivoiceCloneField">
+              <label for="omnivoiceVoiceSelect">Giọng</label>
+              <div class="ov-select-wrap">
+                <select id="omnivoiceVoiceSelect" class="ov-select">
+                  <option value="">— Chọn giọng clone —</option>
+                </select>
+                <span class="material-symbols-outlined ov-chevron">expand_more</span>
+              </div>
+            </div>
+
+            <div class="ov-field ov-field--voice hidden" id="omnivoiceEmotionalCloneField">
+              <label for="omnivoiceEmotionalVoiceSelect">Giọng (tuỳ chọn)</label>
+              <div class="ov-select-wrap">
+                <select id="omnivoiceEmotionalVoiceSelect" class="ov-select">
+                  <option value="">— Auto voice + cảm xúc —</option>
+                </select>
+                <span class="material-symbols-outlined ov-chevron">expand_more</span>
+              </div>
+            </div>
+
+            <div class="ov-field ov-field--design hidden" id="omnivoiceDesignField">
+              <label for="omnivoiceInstruct">Mô tả giọng (instruct)</label>
+              <input type="text" id="omnivoiceInstruct" class="ov-input"
+                placeholder="VD: female, low pitch, british accent">
+            </div>
+          </div>
+
+          <p class="ov-context">
+            <span class="material-symbols-outlined">language</span>
+            OmniVoice · 600+ ngôn ngữ · Vi / En / Zh
+          </p>
+
+          {{ ws_upload_toolbar() }}
+
+          <div class="ov-textarea-wrap ws-text-drop-target">
+            <textarea id="omnivoiceTextInput" class="ov-textarea"
+              placeholder="Nhập văn bản đa ngôn ngữ..."></textarea>
+          </div>
+
+          <div class="ov-textarea-footer">
+            <span><span id="omnivoiceCharCount">0</span> ký tự</span>
+            <span id="omnivoiceChunkHint" class="ov-chunk-hint hidden"></span>
+            <button type="button" id="omnivoiceInsertTagBtn" class="ov-tag-btn hidden">
+              <span class="material-symbols-outlined" style="font-size:14px">sell</span>
+              Chèn tag cảm xúc
+            </button>
+          </div>
+
+          <div id="omnivoiceHelpPopover" class="ov-popover hidden" role="dialog">
+            <p class="ov-popover__title">OmniVoice</p>
+            <div id="omnivoiceHelpContent"></div>
+          </div>
+
+          <div id="omnivoiceTagPopover" class="ov-popover hidden" role="dialog">
+            <p class="ov-popover__title">Chèn tag cảm xúc</p>
+            <p style="color:rgba(203,195,215,0.65);margin-bottom:4px">Click để chèn vào đầu dòng hiện tại:</p>
+            <div class="ov-tag-chips">
+              <button type="button" class="ov-tag-chip" data-tag="(vui vẻ)">(vui vẻ)</button>
+              <button type="button" class="ov-tag-chip" data-tag="(hào hứng)">(hào hứng)</button>
+              <button type="button" class="ov-tag-chip" data-tag="(bình tĩnh)">(bình tĩnh)</button>
+              <button type="button" class="ov-tag-chip" data-tag="(buồn)">(buồn)</button>
+              <button type="button" class="ov-tag-chip" data-tag="(excited)">(excited)</button>
+              <button type="button" class="ov-tag-chip" data-tag="(平静)">(平静)</button>
+            </div>
           </div>
         </div>
 
-        <!-- Voice Selection Row (shown for text + file tabs) -->
-        <div id="voiceSelectionRow" class="flex flex-col sm:flex-row gap-3 mt-5 items-end">
-          <div class="flex-1 w-full">
+        </div><!-- /ws-tab-panels -->
+
+        <!-- Voice Selection (text + file tabs) -->
+        <div id="voiceSelectionRow" class="ws-voice-row flex flex-row gap-2 mt-4 mb-0 items-end">
+          <div class="ws-voice-row__select flex-1 min-w-0">
             <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2" data-i18n="ws.voice.label">Chọn giọng đọc</label>
             <div class="relative">
-              <select id="voiceSelect" class="w-full appearance-none bg-surface-container-highest border border-white/10 rounded-lg py-3 px-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
+              <select id="voiceSelect" class="ws-voice-select w-full appearance-none bg-surface-container-highest border border-white/10 rounded-lg py-3 px-4 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
                 <option>Đang tải danh sách giọng...</option>
               </select>
               <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-on-surface-variant material-symbols-outlined" style="font-size:18px">expand_more</span>
             </div>
           </div>
-          <button id="voiceGalleryBtn" class="shrink-0 h-[46px] px-4 rounded-lg border border-primary/40 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors flex items-center gap-2 whitespace-nowrap">
+          <button id="voiceGalleryBtn" class="ws-voice-row__preview shrink-0 h-[46px] px-3 rounded-lg border border-primary/40 text-primary text-xs sm:text-sm font-semibold hover:bg-primary/10 transition-colors flex items-center gap-1.5 whitespace-nowrap">
             <span class="material-symbols-outlined" style="font-size:18px">library_music</span>
             <span data-i18n="ws.voice.test">Nghe thử</span>
           </button>
         </div>
+
+        <!-- Convert — ngay dưới nội dung tab, trong card -->
+        <div id="wsConvertBar" class="ws-convert-bar mt-4 pt-4 border-t border-white/5">
+          <button id="convertBtn"
+            class="w-full py-4 rounded-xl bg-gradient-to-r from-inverse-primary to-primary text-[#1a0060] font-bold text-lg hover:shadow-[0_0_28px_rgba(208,188,255,0.35)] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" style="font-size:22px;color:inherit">play_circle</span>
+            <span data-i18n="ws.btn.convert">Chuyển đổi ngay</span>
+          </button>
+
+          <button id="convertEmotionalBtn"
+            class="w-full py-4 rounded-xl bg-gradient-to-r from-tertiary to-inverse-primary text-surface-container-lowest font-bold text-lg hover:shadow-[0_0_28px_rgba(47,217,244,0.3)] transition-all duration-300 active:scale-[0.98] hidden flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" style="font-size:22px">sentiment_very_satisfied</span>
+            <span data-i18n="ws.btn.emotional">Chuyển đổi với cảm xúc</span>
+          </button>
+
+          <button id="convertOmnivoiceBtn"
+            class="w-full py-4 rounded-xl bg-gradient-to-r from-primary-container to-primary text-on-primary font-bold text-lg hover:shadow-[0_0_28px_rgba(208,188,255,0.35)] transition-all duration-300 active:scale-[0.98] hidden flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined" style="font-size:22px">language</span>
+            <span>Chuyển đổi OmniVoice</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Convert Button -->
-      <button id="convertBtn"
-        class="w-full py-4 rounded-xl bg-gradient-to-r from-inverse-primary to-primary text-[#1a0060] font-bold text-lg hover:shadow-[0_0_28px_rgba(208,188,255,0.35)] transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined" style="font-size:22px;color:inherit">play_circle</span>
-        <span data-i18n="ws.btn.convert">Chuyển đổi ngay</span>
-      </button>
-
-      <button id="convertEmotionalBtn"
-        class="w-full py-4 rounded-xl bg-gradient-to-r from-tertiary to-inverse-primary text-surface-container-lowest font-bold text-lg hover:shadow-[0_0_28px_rgba(47,217,244,0.3)] transition-all duration-300 active:scale-[0.98] hidden flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined" style="font-size:22px">sentiment_very_satisfied</span>
-        <span data-i18n="ws.btn.emotional">Chuyển đổi với cảm xúc</span>
-      </button>
-    </div><!-- /left column -->
+    </div><!-- /left column — input card only -->
 
     <!-- ═══ RIGHT COLUMN: Output + Info ═══ -->
-    <div class="lg:col-span-4 flex flex-col gap-6">
+    <div class="lg:col-span-4 flex flex-col gap-6 ws-workspace-grid__aside">
 
       <!-- Quick Stats -->
       <div class="bg-gradient-to-br from-inverse-primary/20 to-primary/10 border border-primary/20 rounded-xl p-4 flex items-center justify-around">

@@ -1,6 +1,6 @@
 {% set mob = mob_nav_active|default('') %}
 <div id="mobileNavOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden" onclick="closeMobileNav()"></div>
-<div id="mobileNavDrawer" class="fixed top-16 left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
+<div id="mobileNavDrawer" class="vv-mobile-drawer fixed left-0 right-0 z-40 bg-[#0a1929] border-b border-white/10 shadow-2xl hidden md:hidden">
   <div class="flex flex-col p-3 gap-0.5 max-h-[80vh] overflow-y-auto">
     <a href="{{ url_for('index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm {{ 'font-semibold text-primary bg-primary/10' if mob == 'index' else 'font-medium text-slate-300 hover:text-white hover:bg-white/5' }} no-underline">
       <span class="material-symbols-outlined" style="font-size:20px">graphic_eq</span>
@@ -44,3 +44,12 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('#mobileNavDrawer a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      if (typeof closeMobileNav === 'function') closeMobileNav();
+    });
+  });
+});
+</script>

@@ -32,18 +32,7 @@ function initAudioLibraryPage() {
 
     loadVoicesForFilter();
     loadAudioLibrary();
-
-    const filterBtn = document.getElementById('filterBtn');
-    if (filterBtn && !filterBtn.dataset.bound) {
-        filterBtn.dataset.bound = '1';
-        filterBtn.addEventListener('click', applyFilters);
-    }
-
-    const resetBtn = document.getElementById('resetBtn');
-    if (resetBtn && !resetBtn.dataset.bound) {
-        resetBtn.dataset.bound = '1';
-        resetBtn.addEventListener('click', resetFilters);
-    }
+    bindFilterControls();
 
     document.querySelectorAll('.view-btn-modern').forEach(btn => {
         if (btn.dataset.bound) return;
@@ -77,14 +66,65 @@ function initAudioLibraryPage() {
             if (currentPage < totalPages) { currentPage++; loadAudioLibrary(); }
         });
     }
+}
+
+let _searchDebounceTimer;
+
+function bindFilterControls() {
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn && !resetBtn.dataset.bound) {
+        resetBtn.dataset.bound = '1';
+        resetBtn.addEventListener('click', resetFilters);
+    }
+
+    const dateToggle = document.getElementById('alDateToggle');
+    const datePanel = document.getElementById('alDatePanel');
+    if (dateToggle && datePanel && !dateToggle.dataset.bound) {
+        dateToggle.dataset.bound = '1';
+        dateToggle.addEventListener('click', () => {
+            const willOpen = datePanel.classList.contains('hidden');
+            datePanel.classList.toggle('hidden', !willOpen);
+            dateToggle.setAttribute('aria-expanded', String(willOpen));
+            syncDateToggleState();
+        });
+    }
 
     const searchInput = document.getElementById('searchInput');
     if (searchInput && !searchInput.dataset.bound) {
         searchInput.dataset.bound = '1';
-        searchInput.addEventListener('keypress', e => {
-            if (e.key === 'Enter') applyFilters();
+        searchInput.addEventListener('input', () => {
+            clearTimeout(_searchDebounceTimer);
+            _searchDebounceTimer = setTimeout(applyFilters, 400);
+        });
+        searchInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                clearTimeout(_searchDebounceTimer);
+                applyFilters();
+            }
         });
     }
+
+    ['voiceFilter', 'sortBy', 'dateFrom', 'dateTo'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.bound) {
+            el.dataset.bound = '1';
+            el.addEventListener('change', () => {
+                syncDateToggleState();
+                applyFilters();
+            });
+        }
+    });
+}
+
+function syncDateToggleState() {
+    const dateToggle = document.getElementById('alDateToggle');
+    const datePanel = document.getElementById('alDatePanel');
+    const dateFrom = document.getElementById('dateFrom')?.value;
+    const dateTo = document.getElementById('dateTo')?.value;
+    if (!dateToggle) return;
+    const panelOpen = datePanel && !datePanel.classList.contains('hidden');
+    const hasDates = !!(dateFrom || dateTo);
+    dateToggle.classList.toggle('is-active', panelOpen || hasDates);
 }
 
 // ── Voice filter ──────────────────────────────────────────────────────────────
@@ -123,6 +163,15 @@ function resetFilters() {
     document.getElementById('sortBy').value = 'newest';
     filters = { search: '', voice: '', dateFrom: '', dateTo: '', sortBy: 'newest' };
     currentPage = 1;
+
+    const datePanel = document.getElementById('alDatePanel');
+    const dateToggle = document.getElementById('alDateToggle');
+    if (datePanel) datePanel.classList.add('hidden');
+    if (dateToggle) {
+        dateToggle.classList.remove('is-active');
+        dateToggle.setAttribute('aria-expanded', 'false');
+    }
+
     loadAudioLibrary();
 }
 
@@ -156,8 +205,8 @@ async function loadAudioLibrary() {
             // Update count badge
             const badge = document.getElementById('audioCount');
             badge.innerHTML = `
-                <span class="material-symbols-outlined" style="font-size:14px">folder</span>
-                Tổng: <strong>${data.total}</strong> audio`;
+                <span class="material-symbols-outlined">folder</span>
+                <span>Tổng: <strong>${data.total}</strong></span>`;
 
             renderAudioItems(data.audios);
             updatePagination(data.page, data.total_pages);
@@ -219,43 +268,7 @@ function renderAudioItems(audios) {
             </table>`;
     }
 
-    // Attach play button listeners for grid cards
-    if (currentView === 'grid') {
-        document.querySelectorAll('.play-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const audioEl = this.closest('article').querySelector('.audio-ctrl');
-                if (!audioEl) return;
-                const timeEl = this.closest('article').querySelector('.current-time');
-                const bars = this.closest('article').querySelectorAll('.waveform-bar');
-
-                if (audioEl.paused) {
-                    document.querySelectorAll('.audio-ctrl').forEach(a => {
-                        if (a !== audioEl && !a.paused) {
-                            a.pause();
-                            const otherBtn = a.closest('article')?.querySelector('.play-btn');
-                            otherBtn?.classList.remove('playing');
-                            a.closest('article')?.querySelectorAll('.waveform-bar').forEach(b => b.classList.remove('playing'));
-                        }
-                    });
-                    audioEl.play();
-                    this.classList.add('playing');
-                    bars.forEach(b => b.classList.add('playing'));
-                    audioEl.ontimeupdate = () => {
-                        if (timeEl) timeEl.textContent = formatDuration(audioEl.currentTime);
-                    };
-                    audioEl.onended = () => {
-                        this.classList.remove('playing');
-                        bars.forEach(b => b.classList.remove('playing'));
-                        if (timeEl) timeEl.textContent = '0:00';
-                    };
-                } else {
-                    audioEl.pause();
-                    this.classList.remove('playing');
-                    bars.forEach(b => b.classList.remove('playing'));
-                }
-            });
-        });
-    }
+    bindPlayButtons();
 
     // Attach rename, share, delete listeners (dùng data-* thay inline onclick)
     document.querySelectorAll('.rename-btn').forEach(btn => {
@@ -271,6 +284,44 @@ function renderAudioItems(audios) {
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             deleteAudio(this.dataset.id);
+        });
+    });
+}
+
+function bindPlayButtons() {
+    document.querySelectorAll('.play-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const container = this.closest('article') || this.closest('tr');
+            const audioEl = container?.querySelector('.audio-ctrl');
+            if (!audioEl) return;
+            const timeEl = container.querySelector('.current-time');
+            const bars = container.querySelectorAll('.waveform-bar');
+
+            if (audioEl.paused) {
+                document.querySelectorAll('.audio-ctrl').forEach(a => {
+                    if (a !== audioEl && !a.paused) {
+                        a.pause();
+                        const otherContainer = a.closest('article') || a.closest('tr');
+                        otherContainer?.querySelector('.play-btn')?.classList.remove('playing');
+                        otherContainer?.querySelectorAll('.waveform-bar').forEach(b => b.classList.remove('playing'));
+                    }
+                });
+                audioEl.play();
+                this.classList.add('playing');
+                bars.forEach(b => b.classList.add('playing'));
+                audioEl.ontimeupdate = () => {
+                    if (timeEl) timeEl.textContent = formatDuration(audioEl.currentTime);
+                };
+                audioEl.onended = () => {
+                    this.classList.remove('playing');
+                    bars.forEach(b => b.classList.remove('playing'));
+                    if (timeEl) timeEl.textContent = '0:00';
+                };
+            } else {
+                audioEl.pause();
+                this.classList.remove('playing');
+                bars.forEach(b => b.classList.remove('playing'));
+            }
         });
     });
 }
@@ -396,7 +447,14 @@ function createListRow(audio) {
     <td>${formatSize(audio.audio_file_size)}</td>
     <td>${formatDate(audio.created_at)}</td>
     <td class="actions-col">
-        <audio controls src="${audioUrl}" preload="none" class="mini-player"></audio>
+        <div class="al-row-player">
+            <button type="button" class="play-btn al-row-play" aria-label="Phát">
+                <span class="play-icon material-symbols-outlined">play_arrow</span>
+                <span class="pause-icon material-symbols-outlined">pause</span>
+            </button>
+            <span class="current-time al-row-time">0:00</span>
+            <audio class="audio-ctrl" src="${audioUrl}" preload="none"></audio>
+        </div>
         <button class="rename-btn inline-flex items-center gap-1 px-2 py-1 rounded-md bg-surface-container border border-outline-variant/50 text-on-surface-variant hover:text-primary text-xs font-medium transition-colors"
            data-id="${audio.id}" data-name="${escapeHtml(audio.display_name || '')}" title="Đặt tên">
             <span class="material-symbols-outlined" style="font-size:13px">edit</span>

@@ -16,6 +16,7 @@
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 {% include 'partials/vv_tailwind_config.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pricing-studio.css') }}">
 
 <style>
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -32,56 +33,23 @@
   ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #6d3bd7; }
 
-  /* Glass cards */
-  .glass-card {
-    background: rgba(18,33,49,0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .glass-card-active {
-    box-shadow: 0 0 28px rgba(208,188,255,0.2);
-    border: 1px solid rgba(208,188,255,0.45) !important;
-  }
-
-  /* Pricing card hover */
-  .pricing-card-modern {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .pricing-card-modern:hover:not(.featured) {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
-  }
-  .pricing-card-modern.featured {
-    transform: scale(1.04);
-    z-index: 10;
-    position: relative;
-  }
-
-  /* QR Modal */
+  /* QR Modal (payment confirm legacy) */
   #qrPaymentModal { display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center; }
   #qrPaymentModal.is-active { display:flex; }
   .modal-overlay { position:absolute;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(4px); }
   .modal-content { position:relative;z-index:1;background:#0d1c2d;border:1px solid rgba(208,188,255,0.15);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.5);margin:16px; }
   .modal-header { display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid rgba(73,68,84,0.4); }
   .modal-body { padding:24px; }
-
-  /* Copyable text */
   .copyable-text { cursor:pointer;color:#d0bcff;font-weight:600;transition:color 0.15s; }
   .copyable-text:hover { color:#a078ff; }
-
-  /* Usage progress */
-  #usageProgress { transition: width 0.8s ease; }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeInUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
-  .animate-in { animation: fadeInUp 0.4s ease-out both; }
 </style>
 </head>
 
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
 {% set mob_nav_active = 'pricing' %}
+{% set mobile_header_title = 'Bảng giá' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT ═══ -->
@@ -91,7 +59,7 @@
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-  <main id="content" data-spa-page="pricing" class="flex-1 flex flex-col min-w-0 flex-grow py-6 md:py-10 px-4 md:px-6 lg:px-10 max-w-[1300px] mx-auto w-full pb-[76px] md:pb-10 overflow-hidden">
+  <main id="content" data-spa-page="pricing" class="vv-has-mobile-header flex-1 flex flex-col min-w-0 flex-grow px-4 md:px-6 lg:px-8 w-full pb-[76px] md:pb-10 overflow-hidden md:py-8">
     <script id="pricingPackagesJson" type="application/json">{{ pricing_packages|tojson }}</script>
     {% include 'partials/content/pricing.html' %}
   </main>

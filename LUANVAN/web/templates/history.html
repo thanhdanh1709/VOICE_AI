@@ -105,6 +105,8 @@
 <body class="min-h-screen flex flex-col bg-background text-on-background">
 
 {% set mob_nav_active = 'history' %}
+{% set mobile_header_title = 'Lịch sử' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
@@ -114,7 +116,7 @@
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-    <main id="content" data-spa-page="history" class="flex-1 min-w-0 p-4 md:p-8 min-h-0 flex flex-col gap-4 md:gap-6 pb-[76px] md:pb-8">
+    <main id="content" data-spa-page="history" class="vv-has-mobile-header flex-1 min-w-0 px-4 md:p-8 min-h-0 flex flex-col gap-4 md:gap-6 pb-[76px] md:pb-8 md:pt-8">
     {% include 'partials/content/history.html' %}
   </main>
 </div>

@@ -6,6 +6,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar-layout.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/voice-picker.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/file-upload.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/omnivoice-studio.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workspace-mode-tabs.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workspace-mobile.css') }}">
 <script src="{{ url_for('static', filename='js/sidebar-antiflash.js') }}"></script>
 <title>VietVoice AI - Workspace</title>
 
@@ -115,11 +118,7 @@ tailwind.config = {
     box-shadow: 0 0 6px rgba(208,188,255,0.4);
   }
 
-  /* Tab active */
-  .tab-btn-new.active {
-    color: #d0bcff !important;
-    border-bottom-color: #d0bcff !important;
-  }
+  /* Tab active — pill style in workspace-mode-tabs.css */
 
   /* Audio player */
   audio {
@@ -369,6 +368,8 @@ tailwind.config = {
 <body class="bg-background text-on-background min-h-screen flex flex-col">
 
 {% set mob_nav_active = 'index' %}
+{% set mobile_header_title = 'Tạo Audio' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
@@ -379,7 +380,7 @@ tailwind.config = {
   {%- include 'partials/_workspace_sidebar.html' -%}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-    <main id="content" data-spa-page="index" class="flex-grow min-w-0 pt-4 md:pt-8 pb-[76px] md:pb-8 px-4 md:px-8 w-full overflow-hidden">
+    <main id="content" data-spa-page="index" class="vv-has-mobile-header flex-grow min-w-0 pb-[76px] md:pb-8 px-4 md:px-8 w-full overflow-hidden md:pt-8">
     {% include 'partials/content/index.html' %}
   </main>
 </div><!-- end layout wrapper -->
@@ -403,6 +404,7 @@ document.querySelectorAll('.tab-btn-new').forEach(btn => {
     // Update tabs
     document.querySelectorAll('.tab-btn-new').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    btn.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
 
     // Update panels
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -411,17 +413,24 @@ document.querySelectorAll('.tab-btn-new').forEach(btn => {
 
     // Voice row visibility
     const voiceRow = document.getElementById('voiceSelectionRow');
-    if (voiceRow) voiceRow.style.display = (tab === 'emotional') ? 'none' : '';
+    if (voiceRow) voiceRow.style.display = (tab === 'emotional' || tab === 'omnivoice') ? 'none' : '';
 
     // Convert buttons
     const convertBtn = document.getElementById('convertBtn');
     const convertEmotionalBtn = document.getElementById('convertEmotionalBtn');
+    const convertOmnivoiceBtn = document.getElementById('convertOmnivoiceBtn');
     if (tab === 'emotional') {
       if (convertBtn) convertBtn.classList.add('hidden');
       if (convertEmotionalBtn) convertEmotionalBtn.classList.remove('hidden');
+      if (convertOmnivoiceBtn) convertOmnivoiceBtn.classList.add('hidden');
+    } else if (tab === 'omnivoice') {
+      if (convertBtn) convertBtn.classList.add('hidden');
+      if (convertEmotionalBtn) convertEmotionalBtn.classList.add('hidden');
+      if (convertOmnivoiceBtn) convertOmnivoiceBtn.classList.remove('hidden');
     } else {
       if (convertBtn) convertBtn.classList.remove('hidden');
       if (convertEmotionalBtn) convertEmotionalBtn.classList.add('hidden');
+      if (convertOmnivoiceBtn) convertOmnivoiceBtn.classList.add('hidden');
     }
   });
 });
@@ -436,8 +445,10 @@ async function loadCharsRemaining() {
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el1 = document.getElementById('charsNavCount');
       const el2 = document.getElementById('charsRemainingDisplay');
+      const el3 = document.getElementById('mobileCharsCount');
       if (el1) el1.textContent = fmt + ' ký tự';
       if (el2) el2.textContent = fmt;
+      if (el3) el3.textContent = fmt;
     }
   } catch(e) { console.log('Could not load chars:', e); }
 }
@@ -464,7 +475,8 @@ if (themeToggleBtn) {
 
 // ── Navbar scroll effect ───────────────────────────────────────
 window.addEventListener('scroll', () => {
-  document.querySelector('nav').classList.toggle('shadow-lg', window.scrollY > 10);
+  const nav = document.querySelector('nav');
+  if (nav) nav.classList.toggle('shadow-lg', window.scrollY > 10);
 }, { passive: true });
 
 // ── Mobile nav menu ─────────────────────────────────────────────
@@ -472,19 +484,25 @@ function toggleMobileNav() {
   const drawer = document.getElementById('mobileNavDrawer');
   const overlay = document.getElementById('mobileNavOverlay');
   const icon = document.getElementById('mobileMenuIcon');
+  if (!drawer || !overlay) return;
   const isOpen = !drawer.classList.contains('hidden');
   if (isOpen) {
-    drawer.classList.add('hidden'); overlay.classList.add('hidden');
-    icon.textContent = 'menu';
+    drawer.classList.add('hidden');
+    overlay.classList.add('hidden');
+    if (icon) icon.textContent = 'menu';
   } else {
-    drawer.classList.remove('hidden'); overlay.classList.remove('hidden');
-    icon.textContent = 'close';
+    drawer.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    if (icon) icon.textContent = 'close';
   }
 }
 function closeMobileNav() {
-  document.getElementById('mobileNavDrawer').classList.add('hidden');
-  document.getElementById('mobileNavOverlay').classList.add('hidden');
-  document.getElementById('mobileMenuIcon').textContent = 'menu';
+  const drawer = document.getElementById('mobileNavDrawer');
+  const overlay = document.getElementById('mobileNavOverlay');
+  const icon = document.getElementById('mobileMenuIcon');
+  if (drawer) drawer.classList.add('hidden');
+  if (overlay) overlay.classList.add('hidden');
+  if (icon) icon.textContent = 'menu';
 }
 // Close mobile nav on resize to desktop
 window.addEventListener('resize', () => {

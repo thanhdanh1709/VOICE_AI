@@ -1,0 +1,91 @@
+/* Workspace — chế độ nhập liệu (mobile-first pill tabs) */
+.ws-mode-tabs {
+  margin-bottom: 1.25rem;
+}
+
+.ws-mode-tabs__scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 2px 10px;
+  margin: 0 -4px;
+}
+
+.ws-mode-tabs__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.ws-mode-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(203, 195, 215, 0.88);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.ws-mode-tab:hover {
+  color: #d4e4fa;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ws-mode-tab.active {
+  color: #d0bcff !important;
+  background: rgba(208, 188, 255, 0.14) !important;
+  border-color: rgba(208, 188, 255, 0.42) !important;
+  border-bottom-color: rgba(208, 188, 255, 0.42) !important;
+  box-shadow: 0 0 0 1px rgba(208, 188, 255, 0.08), 0 4px 14px rgba(109, 59, 215, 0.18);
+}
+
+.ws-mode-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.ws-mode-tab__badge--new {
+  background: rgba(47, 217, 244, 0.18);
+  color: #2fd9f4;
+}
+
+.ws-mode-tab__badge--pro {
+  background: rgba(208, 188, 255, 0.18);
+  color: #d0bcff;
+}
+
+@media (min-width: 768px) {
+  .ws-mode-tabs__scroll {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 4px;
+    margin: 0;
+  }
+
+  .ws-mode-tab {
+    min-height: 42px;
+    padding: 9px 16px;
+    font-size: 14px;
+  }
+}

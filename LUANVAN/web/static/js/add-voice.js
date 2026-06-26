@@ -27,20 +27,24 @@ function setupVoiceTypeToggle() {
     const voiceTypeRvc = document.getElementById('voiceTypeRvc');
     const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
     const voiceTypeVixtts = document.getElementById('voiceTypeVixtts');
+    const voiceTypeOmnivoice = document.getElementById('voiceTypeOmnivoice');
     const refTranscriptBlock = document.getElementById('refTranscriptBlock');
     const baseVoiceSection = document.getElementById('baseVoiceSection');
     const adjustmentsSection = document.getElementById('adjustmentsSection');
     const vixttsCloneInfo = document.getElementById('vixttsCloneInfo');
+    const omnivoiceCloneInfo = document.getElementById('omnivoiceCloneInfo');
     const trainingInfoText = document.getElementById('trainingInfoText');
     const trainingInfoNote = document.getElementById('trainingInfoNote');
     
     function updateVisibility() {
         const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
         const isVixtts = voiceTypeVixtts && voiceTypeVixtts.checked;
+        const isOmnivoice = voiceTypeOmnivoice && voiceTypeOmnivoice.checked;
         const isRvc = voiceTypeRvc && voiceTypeRvc.checked;
 
-        if (refTranscriptBlock) refTranscriptBlock.style.display = isZeroShot ? 'block' : 'none';
+        if (refTranscriptBlock) refTranscriptBlock.style.display = (isZeroShot || isOmnivoice) ? 'block' : 'none';
         if (vixttsCloneInfo) vixttsCloneInfo.style.display = isVixtts ? 'block' : 'none';
+        if (omnivoiceCloneInfo) omnivoiceCloneInfo.style.display = isOmnivoice ? 'block' : 'none';
 
         // Base voice and adjustments only for RVC
         if (baseVoiceSection) baseVoiceSection.style.display = isRvc ? 'block' : 'none';
@@ -55,6 +59,8 @@ function setupVoiceTypeToggle() {
             if (isVixtts) {
                 uploadSpecs.innerHTML = _t('addv.upload.specs_vixtts',
                     '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 6 giây - 2 phút<br><strong>Chất lượng:</strong> Không noise, không echo');
+            } else if (isOmnivoice) {
+                uploadSpecs.innerHTML = '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 3–30 giây (tối ưu 3–10 giây)<br><strong>Chất lượng:</strong> Không noise, không echo';
             } else {
                 uploadSpecs.innerHTML = _t('addv.upload.specs_rvc',
                     '<strong>Hỗ trợ:</strong> WAV, MP3, M4A<br><strong>Độ dài:</strong> 30 giây - 15 phút<br><strong>Chất lượng:</strong> Không noise, không echo');
@@ -66,6 +72,8 @@ function setupVoiceTypeToggle() {
             if (isVixtts) {
                 trainingInfoText.innerHTML = _t('addv.training.vixtts',
                     'Giọng <strong>viXTTS Clone</strong> được tạo ngay lập tức.');
+            } else if (isOmnivoice) {
+                trainingInfoText.innerHTML = 'Giọng <strong>OmniVoice Clone</strong> được tạo ngay lập tức.';
             } else if (isZeroShot) {
                 trainingInfoText.innerHTML = _t('addv.training.zeroshot',
                     'Giọng <strong>Zero-shot</strong> được tạo ngay lập tức.');
@@ -78,6 +86,8 @@ function setupVoiceTypeToggle() {
             if (isVixtts) {
                 trainingInfoNote.innerHTML = _t('addv.training.tip.vixtts',
                     '💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả clone tốt nhất.');
+            } else if (isOmnivoice) {
+                trainingInfoNote.innerHTML = '💡 <strong>Tip:</strong> Audio mẫu 3–10 giây, rõ ràng. Transcript tuỳ chọn — OmniVoice có thể tự phiên âm.';
             } else if (isZeroShot) {
                 trainingInfoNote.innerHTML = _t('addv.training.tip.zeroshot',
                     '💡 <strong>Tip:</strong> Transcript phải khớp chính xác với nội dung trong file audio mẫu.');
@@ -91,6 +101,7 @@ function setupVoiceTypeToggle() {
     if (voiceTypeRvc) voiceTypeRvc.addEventListener('change', updateVisibility);
     if (voiceTypeZeroShot) voiceTypeZeroShot.addEventListener('change', updateVisibility);
     if (voiceTypeVixtts) voiceTypeVixtts.addEventListener('change', updateVisibility);
+    if (voiceTypeOmnivoice) voiceTypeOmnivoice.addEventListener('change', updateVisibility);
 
     // Re-render dynamic text when language switches
     window.addEventListener('vv:langChanged', updateVisibility);
@@ -307,8 +318,10 @@ async function handleSubmit() {
     
     const voiceTypeZeroShot = document.getElementById('voiceTypeZeroShot');
     const voiceTypeVixtts = document.getElementById('voiceTypeVixtts');
+    const voiceTypeOmnivoice = document.getElementById('voiceTypeOmnivoice');
     const isZeroShot = voiceTypeZeroShot && voiceTypeZeroShot.checked;
     const isVixtts = voiceTypeVixtts && voiceTypeVixtts.checked;
+    const isOmnivoice = voiceTypeOmnivoice && voiceTypeOmnivoice.checked;
 
     const refTranscript = document.getElementById('refTranscript') ? document.getElementById('refTranscript').value.trim() : '';
     if (isZeroShot && !refTranscript) {
@@ -322,6 +335,7 @@ async function handleSubmit() {
     let voiceTypeValue = 'rvc';
     if (isZeroShot) voiceTypeValue = 'zero_shot';
     else if (isVixtts) voiceTypeValue = 'vixtts_clone';
+    else if (isOmnivoice) voiceTypeValue = 'omnivoice_clone';
 
     // Show progress
     showTrainingProgress();
@@ -333,7 +347,7 @@ async function handleSubmit() {
         formData.append('voice_name', voiceName);
         formData.append('description', description);
         formData.append('voice_type', voiceTypeValue);
-        if (isZeroShot) formData.append('ref_transcript', refTranscript);
+        if (isZeroShot || isOmnivoice) formData.append('ref_transcript', refTranscript);
         
         // Add base voice and adjustments (RVC only)
         const baseVoice = document.getElementById('baseVoice').value;
@@ -377,6 +391,10 @@ async function handleSubmit() {
         }
         if (data.voice_type === 'vixtts_clone') {
             showTrainingSuccess(data.message || 'Giọng viXTTS Clone đã sẵn sàng. Bạn có thể dùng ngay.');
+            return;
+        }
+        if (data.voice_type === 'omnivoice_clone') {
+            showTrainingSuccess(data.message || 'Giọng OmniVoice Clone đã sẵn sàng. Bạn có thể dùng ngay.');
             return;
         }
         

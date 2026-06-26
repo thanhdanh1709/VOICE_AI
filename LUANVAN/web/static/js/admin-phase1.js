@@ -15,8 +15,18 @@
     let _drawerUserId = null;
 
     function t(key, fb, vars) {
-        if (window._t) return window._t(key, fb, vars);
-        return fb || key;
+        let s;
+        if (window._t) {
+            s = window._t(key, fb, vars);
+            if (s && s !== key) return s;
+        }
+        s = fb || key;
+        if (vars && s) {
+            Object.keys(vars).forEach((k) => {
+                s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+            });
+        }
+        return s;
     }
 
     function esc(s) {
@@ -100,7 +110,210 @@
             drawer.classList.add('hidden');
             drawer.setAttribute('aria-hidden', 'true');
         }
+        const badges = document.getElementById('adminUserDrawerBadges');
+        if (badges) badges.innerHTML = '';
         _drawerUserId = null;
+    }
+
+    function formatNum(n) {
+        if (window.formatNumber) return window.formatNumber(n);
+        return Number(n || 0).toLocaleString('vi-VN');
+    }
+
+    function formatShortDate(iso) {
+        if (!iso) return '—';
+        return String(iso).split('T')[0];
+    }
+
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        return String(iso).replace('T', ' ').slice(0, 16);
+    }
+
+    function getInitials(u) {
+        const src = (u.full_name || u.username || u.email || '?').trim();
+        const parts = src.split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return src.slice(0, 2).toUpperCase();
+    }
+
+    function daysUntil(iso) {
+        if (!iso) return null;
+        const end = new Date(iso);
+        if (Number.isNaN(end.getTime())) return null;
+        return Math.ceil((end - Date.now()) / 86400000);
+    }
+
+    function usagePct(used, limit) {
+        if (!limit || limit <= 0) return 0;
+        return Math.min(100, Math.round(((used || 0) / limit) * 100));
+    }
+
+    function drawerStatusBadge(status, type) {
+        const s = String(status || '').toLowerCase();
+        let cls = 'ud-badge--muted';
+        let label = status || '—';
+        if (type === 'payment') {
+            if (s === 'completed' || s === 'success') { cls = 'ud-badge--success'; label = t('admin.pay.status.completed', 'Thành công'); }
+            else if (s === 'failed') { cls = 'ud-badge--danger'; label = t('admin.pay.status.failed', 'Thất bại'); }
+            else if (s === 'pending') { cls = 'ud-badge--warn'; label = t('admin.pay.status.pending', 'Chờ xử lý'); }
+        } else if (type === 'conversion') {
+            if (s === 'completed') { cls = 'ud-badge--success'; label = t('admin.conv.status.completed', 'Hoàn tất'); }
+            else if (s === 'failed') { cls = 'ud-badge--danger'; label = t('admin.conv.status.failed', 'Lỗi'); }
+            else if (s === 'processing') { cls = 'ud-badge--warn'; label = t('admin.conv.status.processing', 'Đang xử lý'); }
+        } else if (type === 'account') {
+            if (s === 'active') { cls = 'ud-badge--success'; label = t('admin.user.status.active', 'Hoạt động'); }
+            else { cls = 'ud-badge--danger'; label = t('admin.user.status.inactive', 'Vô hiệu'); }
+        }
+        return `<span class="ud-badge ${cls}">${esc(label)}</span>`;
+    }
+
+    function drawerRoleBadge(role) {
+        const r = String(role || 'user').toLowerCase();
+        const cls = r === 'admin' ? 'ud-badge--violet' : r === 'moderator' ? 'ud-badge--cyan' : 'ud-badge--muted';
+        return `<span class="ud-badge ${cls}">${esc(role || 'user')}</span>`;
+    }
+
+    function renderDrawerHeader(u) {
+        const avatar = document.getElementById('adminUserDrawerAvatar');
+        const badges = document.getElementById('adminUserDrawerBadges');
+        if (avatar) avatar.textContent = getInitials(u);
+        if (badges) {
+            badges.innerHTML = [
+                drawerRoleBadge(u.role),
+                drawerStatusBadge(u.is_active ? 'active' : 'inactive', 'account'),
+                u.delete_status && u.delete_status !== 'none'
+                    ? `<span class="ud-badge ud-badge--danger">${t('admin.user.delete_pending', 'Chờ xóa')}</span>`
+                    : '',
+            ].filter(Boolean).join('');
+        }
+    }
+
+    function renderSubSection(sub, pkgOptions) {
+        if (!sub) {
+            return `<section class="ud-section ud-section--plan ud-fade" style="--ud-i:1">
+              <div class="ud-section__head">
+                <span class="material-symbols-outlined ud-section__icon ud-section__icon--violet">workspace_premium</span>
+                <h3>${t('admin.user.sub_title', 'Gói & hạn mức')}</h3>
+              </div>
+              <div class="ud-empty-plan">
+                <span class="material-symbols-outlined">inventory_2</span>
+                <p>${t('admin.user.no_sub', 'Chưa có gói')}</p>
+              </div>
+              <div class="ud-tool-group">
+                <label class="ud-tool-label">${t('admin.user.add_chars', 'Cộng ký tự')}</label>
+                <div class="ud-tool-row">
+                  <input type="number" id="drawerAddChars" class="ac-drawer-input" placeholder="100000" min="1000" step="1000"/>
+                  <button type="button" class="ud-btn ud-btn--primary" onclick="AdminPhase1.subAction('add_chars')">
+                    <span class="material-symbols-outlined">add_circle</span>${t('admin.user.add_chars', 'Cộng ký tự')}
+                  </button>
+                </div>
+              </div>
+            </section>`;
+        }
+
+        const pct = usagePct(sub.characters_used, sub.characters_limit);
+        const days = daysUntil(sub.end_date);
+        const daysLabel = days == null ? '—'
+            : days < 0 ? t('admin.user.expired', 'Đã hết hạn')
+            : t('admin.user.days_left', 'Còn {n} ngày', { n: days });
+
+        return `<section class="ud-section ud-section--plan ud-fade" style="--ud-i:1">
+          <div class="ud-section__head">
+            <span class="material-symbols-outlined ud-section__icon ud-section__icon--violet">workspace_premium</span>
+            <h3>${t('admin.user.sub_title', 'Gói & hạn mức')}</h3>
+          </div>
+
+          <div class="ud-plan-hero">
+            <div class="ud-plan-hero__name">${esc(sub.package_name)}</div>
+            <div class="ud-plan-hero__meta">
+              <span><span class="material-symbols-outlined">event</span>${t('admin.user.from', 'Từ')} ${formatShortDate(sub.start_date)}</span>
+              <span><span class="material-symbols-outlined">schedule</span>${daysLabel}</span>
+            </div>
+          </div>
+
+          <div class="ud-usage">
+            <div class="ud-usage__top">
+              <span>${t('admin.user.used', 'Đã dùng')} <strong>${formatNum(sub.characters_used)}</strong></span>
+              <span>${formatNum(sub.characters_remaining)} ${t('admin.user.remaining_short', 'còn lại')}</span>
+            </div>
+            <div class="ud-usage__track"><div class="ud-usage__fill" style="width:${pct}%"></div></div>
+            <div class="ud-usage__bottom">
+              <span>${pct}% ${t('admin.user.of_limit', 'hạn mức')}</span>
+              <span>${t('admin.user.limit', 'Hạn mức')}: ${formatNum(sub.characters_limit)}</span>
+            </div>
+          </div>
+
+          <div class="ud-kpi-row">
+            <div class="ud-kpi ud-kpi--cyan"><span>${t('admin.user.used', 'Đã dùng')}</span><strong>${formatNum(sub.characters_used)}</strong></div>
+            <div class="ud-kpi ud-kpi--violet"><span>${t('admin.user.remaining', 'Còn lại')}</span><strong>${formatNum(sub.characters_remaining)}</strong></div>
+            <div class="ud-kpi ud-kpi--green"><span>${t('admin.user.until', 'Hết hạn')}</span><strong>${formatShortDate(sub.end_date)}</strong></div>
+          </div>
+
+          <div class="ud-tool-group">
+            <label class="ud-tool-label">${t('admin.user.manage_quota', 'Quản lý hạn mức')}</label>
+            <div class="ud-tool-row">
+              <input type="number" id="drawerAddChars" class="ac-drawer-input" placeholder="100000" min="1000" step="1000"/>
+              <button type="button" class="ud-btn ud-btn--ghost" onclick="AdminPhase1.subAction('add_chars')">
+                <span class="material-symbols-outlined">add</span>${t('admin.user.add_chars', 'Cộng ký tự')}
+              </button>
+              <button type="button" class="ud-btn ud-btn--ghost" onclick="AdminPhase1.subAction('reset_used')">
+                <span class="material-symbols-outlined">restart_alt</span>${t('admin.user.reset_used', 'Reset')}
+              </button>
+            </div>
+          </div>
+
+          <div class="ud-tool-group">
+            <label class="ud-tool-label">${t('admin.user.extend_plan', 'Gia hạn & gói')}</label>
+            <div class="ud-tool-row">
+              <input type="number" id="drawerExtendDays" class="ac-drawer-input ac-drawer-input--sm" value="30" min="1"/>
+              <span class="ud-tool-hint">${t('admin.user.days', 'ngày')}</span>
+              <button type="button" class="ud-btn ud-btn--ghost" onclick="AdminPhase1.subAction('extend_days')">
+                <span class="material-symbols-outlined">update</span>${t('admin.user.extend', 'Gia hạn')}
+              </button>
+            </div>
+            <div class="ud-tool-row ud-tool-row--full">
+              <select id="drawerPackageSelect" class="ac-drawer-select">${pkgOptions}</select>
+              <button type="button" class="ud-btn ud-btn--primary" onclick="AdminPhase1.subAction('apply_package')">
+                <span class="material-symbols-outlined">check_circle</span>${t('admin.user.apply_pkg', 'Áp dụng gói')}
+              </button>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function renderPaymentList(payments) {
+        const list = payments || [];
+        if (!list.length) {
+            return `<p class="ud-list-empty">${t('admin.no_data', 'Không có dữ liệu')}</p>`;
+        }
+        return `<ul class="ud-list">${list.map((p, i) => `
+          <li class="ud-list__item ud-fade" style="--ud-i:${i + 2}">
+            <span class="ud-list__icon ud-list__icon--pay"><span class="material-symbols-outlined">payments</span></span>
+            <div class="ud-list__body">
+              <div class="ud-list__title">${esc(p.package_name || '—')}</div>
+              <div class="ud-list__meta">${formatNum(p.amount_vnd)}₫ · ${formatDateTime(p.created_at)}</div>
+            </div>
+            ${drawerStatusBadge(p.payment_status, 'payment')}
+          </li>`).join('')}</ul>`;
+    }
+
+    function renderConversionList(conversions) {
+        const list = conversions || [];
+        if (!list.length) {
+            return `<p class="ud-list-empty">${t('admin.no_data', 'Không có dữ liệu')}</p>`;
+        }
+        return `<ul class="ud-list">${list.map((c, i) => {
+            const dur = c.duration_seconds ? `${Number(c.duration_seconds).toFixed(1)}s` : '';
+            return `<li class="ud-list__item ud-fade" style="--ud-i:${i + 3}">
+              <span class="ud-list__icon ud-list__icon--conv"><span class="material-symbols-outlined">graphic_eq</span></span>
+              <div class="ud-list__body">
+                <div class="ud-list__title">${esc(c.voice_name || c.voice_id || '—')}</div>
+                <div class="ud-list__meta">${formatNum(c.text_length)} ${t('admin.stat.chars_short', 'ký tự')}${dur ? ` · ${dur}` : ''} · ${formatDateTime(c.created_at)}</div>
+              </div>
+              ${drawerStatusBadge(c.status, 'conversion')}
+            </li>`;
+        }).join('')}</ul>`;
     }
 
     async function openAdminUserDrawer(userId) {
@@ -124,75 +337,68 @@
             }
 
             const u = data.user;
-            if (title) title.textContent = u.username || u.full_name || '—';
+            if (title) title.textContent = u.full_name || u.username || '—';
             if (email) email.textContent = u.email || '—';
+            renderDrawerHeader(u);
 
             const sub = data.subscription;
             const pkgs = await loadAdminPackages();
             const pkgOptions = pkgs.map((p) =>
-                `<option value="${p.id}">${esc(p.name)} (${formatNum(p.characters)})</option>`
+                `<option value="${p.id}"${sub && sub.package_id === p.id ? ' selected' : ''}>${esc(p.name)} (${formatNum(p.characters)})</option>`
             ).join('');
 
-            const subHtml = sub
-                ? `<div class="ac-drawer-card">
-                    <h4>${t('admin.user.sub_title', 'Gói & hạn mức')}</h4>
-                    <div class="ac-drawer-kpi-grid">
-                      <div><span class="ac-drawer-kpi__label">${t('admin.user.pkg', 'Gói')}</span><strong>${esc(sub.package_name)}</strong></div>
-                      <div><span class="ac-drawer-kpi__label">${t('admin.user.used', 'Đã dùng')}</span><strong>${formatNum(sub.characters_used)}</strong></div>
-                      <div><span class="ac-drawer-kpi__label">${t('admin.user.limit', 'Hạn mức')}</span><strong>${formatNum(sub.characters_limit)}</strong></div>
-                      <div><span class="ac-drawer-kpi__label">${t('admin.user.remaining', 'Còn lại')}</span><strong class="text-primary">${formatNum(sub.characters_remaining)}</strong></div>
-                    </div>
-                    <p class="ac-drawer-meta">${t('admin.user.until', 'Hết hạn')}: ${esc((sub.end_date || '').split('T')[0])}</p>
-                    <div class="ac-drawer-actions">
-                      <input type="number" id="drawerAddChars" class="ac-drawer-input" placeholder="100000" min="1000" step="1000"/>
-                      <button type="button" class="ac-btn-inline ac-btn-inline--ghost" onclick="AdminPhase1.subAction('add_chars')">${t('admin.user.add_chars', 'Cộng ký tự')}</button>
-                      <button type="button" class="ac-btn-inline ac-btn-inline--ghost" onclick="AdminPhase1.subAction('reset_used')">${t('admin.user.reset_used', 'Reset đã dùng')}</button>
-                      <input type="number" id="drawerExtendDays" class="ac-drawer-input ac-drawer-input--sm" value="30" min="1"/>
-                      <button type="button" class="ac-btn-inline ac-btn-inline--ghost" onclick="AdminPhase1.subAction('extend_days')">${t('admin.user.extend', 'Gia hạn')}</button>
-                    </div>
-                    <div class="ac-drawer-actions mt-2">
-                      <select id="drawerPackageSelect" class="ac-drawer-select">${pkgOptions}</select>
-                      <button type="button" class="ac-btn-inline ac-btn-inline--success" onclick="AdminPhase1.subAction('apply_package')">${t('admin.user.apply_pkg', 'Áp dụng gói')}</button>
-                    </div>
-                  </div>`
-                : `<div class="ac-drawer-card"><p class="ac-drawer-meta">${t('admin.user.no_sub', 'Chưa có gói')}</p>
-                    <div class="ac-drawer-actions">
-                      <input type="number" id="drawerAddChars" class="ac-drawer-input" placeholder="100000"/>
-                      <button type="button" class="ac-btn-inline ac-btn-inline--success" onclick="AdminPhase1.subAction('add_chars')">${t('admin.user.add_chars', 'Cộng ký tự')}</button>
-                    </div></div>`;
-
-            const payRows = (data.recent_payments || []).map((p) =>
-                `<tr><td>${esc(p.package_name || '—')}</td><td>${formatNum(p.amount_vnd)}₫</td><td>${esc(p.payment_status)}</td></tr>`
-            ).join('') || `<tr><td colspan="3" class="text-center">${t('admin.no_data', 'Không có')}</td></tr>`;
-
-            const convRows = (data.recent_conversions || []).map((c) =>
-                `<tr><td>${esc(c.voice_name || c.voice_id || '—')}</td><td>${formatNum(c.text_length)}</td><td>${esc(c.status)}</td></tr>`
-            ).join('') || `<tr><td colspan="3" class="text-center">${t('admin.no_data', 'Không có')}</td></tr>`;
-
             body.innerHTML = `
-                <div class="ac-drawer-stats">
-                  <span>${t('admin.stat.conversions', 'Chuyển đổi')}: <strong>${formatNum(u.total_conversions)}</strong></span>
-                  <span>${t('admin.user.custom_voices', 'Giọng tùy chỉnh')}: <strong>${formatNum(u.custom_voice_count)}</strong></span>
-                  <span>${t('admin.col.role', 'Vai trò')}: <strong>${esc(u.role)}</strong></span>
+              <div class="ud-studio">
+                <div class="ud-stats ud-fade" style="--ud-i:0">
+                  <div class="ud-stat ud-stat--cyan">
+                    <span class="material-symbols-outlined">sync</span>
+                    <div><span>${t('admin.stat.conversions', 'Chuyển đổi')}</span><strong>${formatNum(u.total_conversions)}</strong></div>
+                  </div>
+                  <div class="ud-stat ud-stat--violet">
+                    <span class="material-symbols-outlined">record_voice_over</span>
+                    <div><span>${t('admin.user.custom_voices', 'Giọng tùy chỉnh')}</span><strong>${formatNum(u.custom_voice_count)}</strong></div>
+                  </div>
+                  <div class="ud-stat ud-stat--green">
+                    <span class="material-symbols-outlined">badge</span>
+                    <div><span>ID</span><strong>#${u.id}</strong></div>
+                  </div>
                 </div>
-                ${subHtml}
-                <div class="ac-drawer-card">
-                  <h4>${t('admin.user.recent_pay', 'Thanh toán gần đây')}</h4>
-                  <table class="ac-drawer-table"><thead><tr><th>${t('admin.col.package', 'Gói')}</th><th>${t('admin.col.amount', 'Số tiền')}</th><th>${t('admin.col.status', 'TT')}</th></tr></thead><tbody>${payRows}</tbody></table>
+
+                <div class="ud-info-bar ud-fade" style="--ud-i:0">
+                  <span><span class="material-symbols-outlined">person</span>@${esc(u.username || '—')}</span>
+                  <span><span class="material-symbols-outlined">calendar_month</span>${t('admin.user.joined', 'Tham gia')}: ${formatShortDate(u.created_at)}</span>
                 </div>
-                <div class="ac-drawer-card">
-                  <h4>${t('admin.user.recent_conv', 'Chuyển đổi gần đây')}</h4>
-                  <table class="ac-drawer-table"><thead><tr><th>${t('admin.conv.voice', 'Giọng')}</th><th>${t('admin.stat.chars', 'Ký tự')}</th><th>${t('admin.col.status', 'TT')}</th></tr></thead><tbody>${convRows}</tbody></table>
-                </div>`;
+
+                ${renderSubSection(sub, pkgOptions)}
+
+                <section class="ud-section ud-fade" style="--ud-i:2">
+                  <div class="ud-section__head">
+                    <span class="material-symbols-outlined ud-section__icon ud-section__icon--cyan">receipt_long</span>
+                    <h3>${t('admin.user.recent_pay', 'Thanh toán gần đây')}</h3>
+                  </div>
+                  ${renderPaymentList(data.recent_payments)}
+                </section>
+
+                <section class="ud-section ud-fade" style="--ud-i:3">
+                  <div class="ud-section__head">
+                    <span class="material-symbols-outlined ud-section__icon ud-section__icon--green">history</span>
+                    <h3>${t('admin.user.recent_conv', 'Chuyển đổi gần đây')}</h3>
+                  </div>
+                  ${renderConversionList(data.recent_conversions)}
+                </section>
+              </div>`;
+
+            requestAnimationFrame(() => {
+                body.querySelectorAll('.ud-usage__fill').forEach((el) => {
+                    const w = el.style.width;
+                    el.style.width = '0%';
+                    requestAnimationFrame(() => { el.style.width = w; });
+                });
+            });
         } catch (e) {
             console.error(e);
             body.innerHTML = `<p class="ac-dash-empty error-text">${t('err.network', 'Lỗi mạng')}</p>`;
         }
-    }
-
-    function formatNum(n) {
-        if (window.formatNumber) return window.formatNumber(n);
-        return Number(n || 0).toLocaleString('vi-VN');
     }
 
     async function subAction(action) {

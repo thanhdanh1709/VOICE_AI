@@ -1,0 +1,37 @@
+{# Mobile top bar — sidebar ẩn trên mobile, dùng drawer + bottom nav #}
+<header class="vv-mobile-header md:hidden">
+  <div class="vv-mobile-header__inner">
+    <button type="button"
+      id="mobileMenuBtn"
+      class="vv-mobile-header__menu-btn"
+      onclick="toggleMobileNav()"
+      aria-label="Menu"
+      title="Menu">
+      <span class="material-symbols-outlined" id="mobileMenuIcon">menu</span>
+    </button>
+
+    <a href="{{ url_for('index') }}" class="vv-mobile-header__brand no-underline">
+      <span class="vv-mobile-header__logo">
+        <span class="material-symbols-outlined">graphic_eq</span>
+      </span>
+      <span class="vv-mobile-header__title">{{ mobile_header_title | default('VietVoice AI') }}</span>
+    </a>
+
+    <div class="vv-mobile-header__actions">
+      <a href="{{ url_for('pricing') }}"
+        class="vv-mobile-header__chars"
+        id="mobileCharsBadge"
+        title="Ký tự còn lại">
+        <span class="material-symbols-outlined">bolt</span>
+        <span id="mobileCharsCount" data-characters-display>…</span>
+      </a>
+      <a href="{{ url_for('profile') }}" class="vv-mobile-header__avatar no-underline" title="Hồ sơ">
+        {% if session.avatar_url %}
+        <img src="{{ session.avatar_url }}" alt="" class="w-8 h-8 rounded-full object-cover"/>
+        {% else %}
+        <span class="vv-mobile-header__avatar-fallback">{{ (session.full_name or session.username or 'U')[0] | upper }}</span>
+        {% endif %}
+      </a>
+    </div>
+  </div>
+</header>

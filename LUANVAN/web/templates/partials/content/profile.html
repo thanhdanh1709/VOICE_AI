@@ -1,80 +1,137 @@
-<!-- Header -->
-    <header class="mb-8 flex items-center gap-4">
-      <div class="avatar-upload-wrap" id="profileAvatarWrap">
-        {% if user.avatar_url %}
-        <img src="{{ user.avatar_url }}{% if not user.avatar_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}" alt="Avatar" class="avatar-img" id="profileAvatarImg">
-        <div class="avatar-fallback" id="profileAvatarFallback" style="display:none">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
-        {% else %}
-        <img src="" alt="Avatar" class="avatar-img" id="profileAvatarImg" style="display:none">
-        <div class="avatar-fallback" id="profileAvatarFallback">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
-        {% endif %}
-        <label for="avatarInput" class="avatar-upload-overlay" data-i18n-title="prof.avatar.change" title="Đổi ảnh đại diện">
-          <span class="material-symbols-outlined" style="font-size:22px">photo_camera</span>
+<div class="pf-studio pf-animate-in">
+  <div class="pf-ambient" aria-hidden="true">
+    <span class="pf-ambient__orb pf-ambient__orb--1"></span>
+    <span class="pf-ambient__orb pf-ambient__orb--2"></span>
+    <span class="pf-ambient__orb pf-ambient__orb--3"></span>
+  </div>
+
+  <!-- Hero -->
+  <section class="pf-hero">
+    <div class="pf-hero__banner-wrap">
+      <div class="pf-hero__banner{% if user.cover_url %} has-cover{% endif %}" id="profileCoverBanner"{% if user.cover_url %} style="background-image:url('{{ user.cover_url }}{% if not user.cover_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}')"{% endif %}></div>
+      <div class="pf-hero__cover-actions">
+        <label for="coverInput" class="pf-hero__cover-btn" data-i18n-title="prof.cover.change" title="Đổi ảnh bìa">
+          <span class="material-symbols-outlined">photo_camera</span>
+          <span data-i18n="prof.cover.change">Đổi ảnh bìa</span>
         </label>
-        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"/>
+        <button type="button" id="btnRemoveCover" class="pf-hero__cover-btn pf-hero__cover-btn--ghost" onclick="removeCover()"{% if not user.cover_url %} style="display:none"{% endif %} data-i18n-title="prof.cover.remove" title="Xóa ảnh bìa">
+          <span class="material-symbols-outlined">hide_image</span>
+          <span data-i18n="prof.cover.remove">Xóa bìa</span>
+        </button>
+        <input type="file" id="coverInput" accept="image/jpeg,image/png,image/webp" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"/>
       </div>
-      <div>
-        <h1 class="text-2xl font-extrabold text-on-surface">{{ user.full_name or user.username }}</h1>
-        <p class="text-sm text-on-surface-variant mt-0.5">
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold" style="background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);color:#d0bcff">
-            {{ user.role or 'user' }}
-          </span>
-          {% if user.created_at %}
-          <span class="ml-2 text-xs text-outline"><span data-i18n="prof.subtitle.joined">Tham gia</span> {{ user.created_at }}</span>
-          {% endif %}
-        </p>
-      </div>
-    </header>
-
-    <!-- ── Gói & sử dụng ── -->
-    <div class="card mb-6" id="planUsageCard">
-      <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">bolt</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.plan.title">Gói & sử dụng</h2>
-        </div>
-        <div class="flex gap-2">
-          <a href="{{ url_for('pricing') }}" class="btn-primary no-underline" style="padding:8px 16px;font-size:13px">
-            <span class="material-symbols-outlined" style="font-size:16px">upgrade</span>
-            <span data-i18n="prof.plan.upgrade">Nâng cấp</span>
-          </a>
-        </div>
-      </div>
-
-      <div id="planLoading" class="flex items-center gap-3 py-4 text-on-surface-variant text-sm">
-        <div class="spin" style="width:18px;height:18px;border:2px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%"></div>
-        <span data-i18n="common.loading">Đang tải...</span>
-      </div>
-
-      <div id="planContent" style="display:none">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.current">Gói hiện tại</p>
-            <p class="text-lg font-bold text-primary" id="planName">—</p>
-          </div>
-          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.expires">Hết hạn / gia hạn</p>
-            <p class="text-lg font-bold text-on-surface" id="planExpiry">—</p>
-            <p class="text-xs text-on-surface-variant mt-0.5" id="planDaysLeft"></p>
-          </div>
-          <div class="p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <p class="text-xs text-on-surface-variant mb-1" data-i18n="prof.plan.remaining">Ký tự còn lại</p>
-            <p class="text-lg font-bold text-tertiary" id="planRemaining">—</p>
+    </div>
+    <div class="pf-hero__body">
+      <div class="pf-hero__user">
+        <div class="pf-hero__avatar">
+          <div class="avatar-upload-wrap" id="profileAvatarWrap">
+            {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}{% if not user.avatar_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}" alt="Avatar" class="avatar-img" id="profileAvatarImg">
+            <div class="avatar-fallback" id="profileAvatarFallback" style="display:none">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+            {% else %}
+            <img src="" alt="Avatar" class="avatar-img" id="profileAvatarImg" style="display:none">
+            <div class="avatar-fallback" id="profileAvatarFallback">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
+            {% endif %}
+            <label for="avatarInput" class="avatar-upload-overlay" data-i18n-title="prof.avatar.change" title="Đổi ảnh đại diện">
+              <span class="material-symbols-outlined" style="font-size:22px">photo_camera</span>
+            </label>
+            <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0"/>
           </div>
         </div>
-
-        <div class="mb-2 flex justify-between text-xs text-on-surface-variant">
-          <span data-i18n="prof.plan.used">Đã dùng</span>
-          <span id="planUsedLabel">0 / 0</span>
-        </div>
-        <div class="h-3 rounded-full bg-surface-container overflow-hidden border border-outline-variant/20 mb-6">
-          <div id="planProgressBar" class="h-full rounded-full transition-all duration-500" style="width:0%;background:linear-gradient(90deg,#6d3bd7,#2fd9f4)"></div>
-        </div>
-
         <div>
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide" data-i18n="prof.plan.chart">Ký tự dùng (7 ngày)</p>
-            <span id="usageChartTotal" class="text-xs font-bold text-tertiary">—</span>
+          <h1 class="pf-hero__name">{{ user.full_name or user.username }}</h1>
+          <div class="pf-hero__meta">
+            <span class="pf-hero__role">{{ user.role or 'user' }}</span>
+            {% if user.created_at %}
+            <span class="pf-hero__joined"><span data-i18n="prof.subtitle.joined">Tham gia</span> {{ user.created_at }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="pf-hero__actions">
+        <a href="/" class="pf-hero__chip">
+          <span class="material-symbols-outlined">graphic_eq</span>
+          Workspace
+        </a>
+        <a href="{{ url_for('pricing') }}" class="pf-hero__chip pf-hero__chip--accent">
+          <span class="material-symbols-outlined">upgrade</span>
+          <span data-i18n="prof.plan.upgrade">Nâng cấp</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick nav -->
+  <nav class="pf-nav" aria-label="Profile sections">
+    <a href="#pfPlan" class="pf-nav__link pf-nav__link--1">
+      <span class="material-symbols-outlined">bolt</span>
+      <span data-i18n="prof.plan.title">Gói & sử dụng</span>
+    </a>
+    <a href="#pfAccount" class="pf-nav__link pf-nav__link--2">
+      <span class="material-symbols-outlined">person</span>
+      <span data-i18n="prof.card.info">Tài khoản</span>
+    </a>
+    <a href="#pfPrefs" class="pf-nav__link pf-nav__link--3">
+      <span class="material-symbols-outlined">tune</span>
+      <span data-i18n="prof.tts.title">Tùy chọn</span>
+    </a>
+    <a href="#pfBilling" class="pf-nav__link pf-nav__link--4">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span data-i18n="prof.card.tx">Giao dịch</span>
+    </a>
+  </nav>
+
+  <!-- Plan & usage -->
+  <section class="pf-section pf-section--plan pf-card pf-card--wide" id="pfPlan">
+    <div class="pf-plan-head">
+      <div class="pf-card__head" style="margin:0;padding:0;border:none">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">bolt</span></span>
+        <h2 class="pf-card__title" data-i18n="prof.plan.title">Gói & sử dụng</h2>
+      </div>
+    </div>
+
+    <div id="planLoading" class="pf-loading">
+      <div class="pf-spinner"></div>
+      <span data-i18n="common.loading">Đang tải...</span>
+    </div>
+
+    <div id="planContent" style="display:none">
+      <div class="pf-plan-layout">
+        <div class="pf-plan-main">
+          <div class="pf-plan-stats">
+            <div class="pf-stat pf-stat--1">
+              <span class="pf-stat__label" data-i18n="prof.plan.current">Gói hiện tại</span>
+              <span class="pf-stat__value" id="planName">—</span>
+            </div>
+            <div class="pf-stat pf-stat--2">
+              <span class="pf-stat__label" data-i18n="prof.plan.expires">Hết hạn / gia hạn</span>
+              <span class="pf-stat__value" id="planExpiry">—</span>
+              <span class="pf-stat__sub" id="planDaysLeft"></span>
+            </div>
+            <div class="pf-stat pf-stat--3">
+              <span class="pf-stat__label" data-i18n="prof.plan.remaining">Ký tự còn lại</span>
+              <span class="pf-stat__value" id="planRemaining">—</span>
+            </div>
+          </div>
+          <div class="pf-progress">
+            <div class="pf-progress__labels">
+              <span data-i18n="prof.plan.used">Đã dùng</span>
+              <span class="pf-progress__meta">
+                <span id="planUsedLabel">0 / 0</span>
+                <span id="planUsedPct" class="pf-progress__pct">0%</span>
+              </span>
+            </div>
+            <div class="pf-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="pf-progress__track-fill" aria-hidden="true"></div>
+              <div id="planProgressBar" class="pf-progress__fill" style="width:0%"></div>
+              <span id="planProgressHint" class="pf-progress__hint" data-i18n="prof.plan.empty_hint">Chưa sử dụng ký tự</span>
+            </div>
+          </div>
+        </div>
+        <div class="pf-plan-chart">
+          <div class="pf-chart-head">
+            <span class="pf-chart-head__title" data-i18n="prof.plan.chart">Ký tự dùng (7 ngày)</span>
+            <span id="usageChartTotal" class="pf-chart-head__total">—</span>
           </div>
           <div class="usage-chart-panel">
             <div id="usageChart" class="usage-chart"></div>
@@ -82,383 +139,356 @@
         </div>
       </div>
     </div>
+  </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="pf-grid pf-grid--main">
 
-      <!-- ── Card 1: Thông tin cá nhân ── -->
-      <div class="card">
-        <div class="flex items-center gap-2 mb-6">
-          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">person</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.info">Thông tin cá nhân</h2>
-        </div>
+    <!-- Thông tin cá nhân -->
+    <section class="pf-card pf-card--purple pf-span-6" id="pfAccount">
+      <div class="pf-card__head">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">person</span></span>
+        <h2 class="pf-card__title" data-i18n="prof.card.info">Thông tin cá nhân</h2>
+      </div>
 
-        <div class="space-y-4">
+      <div class="pf-form-stack pf-form-stack--compact">
+        <div class="pf-form-grid pf-form-grid--2">
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.avatar">Ảnh đại diện</label>
-            <div class="flex items-center gap-4">
-              <div class="avatar-upload-wrap" style="width:3.5rem;height:3.5rem">
-                {% if user.avatar_url %}
-                <img src="{{ user.avatar_url }}{% if not user.avatar_url.startswith('http') %}?t={{ range(1, 99999) | random }}{% endif %}" alt="" class="avatar-img" id="profileAvatarImgCard">
-                <div class="avatar-fallback" id="profileAvatarFallbackCard" style="display:none">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
-                {% else %}
-                <img src="" alt="" class="avatar-img" id="profileAvatarImgCard" style="display:none">
-                <div class="avatar-fallback" id="profileAvatarFallbackCard">{{ (user.full_name or user.username or 'U')[0] | upper }}</div>
-                {% endif %}
-              </div>
-              <div>
-                <label for="avatarInput" class="btn-secondary cursor-pointer inline-flex" style="padding:8px 14px;font-size:13px">
-                  <span class="material-symbols-outlined" style="font-size:16px">upload</span>
-                  <span data-i18n="prof.btn.upload_avatar">Tải ảnh lên</span>
-                </label>
-                <p class="avatar-upload-hint" data-i18n="prof.field.avatar.hint">JPG, PNG hoặc WEBP — tối đa 2MB</p>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.username">Tên đăng nhập</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.username">Tên đăng nhập</label>
             <input class="form-input" value="{{ user.username }}" disabled/>
-            <p class="text-[11px] text-outline mt-1" data-i18n="prof.field.username.hint">Tên đăng nhập không thể thay đổi.</p>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.email">Email</label>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.email">Email</label>
             <input class="form-input" value="{{ user.email or '—' }}" disabled/>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.fullname">Họ và tên</label>
-            <input id="inputFullName" class="form-input" type="text" value="{{ user.full_name }}" placeholder="Nhập họ và tên..." data-i18n-placeholder="prof.field.fullname.ph"/>
-          </div>
         </div>
-
-        <div class="mt-6 flex justify-end">
-          <button id="btnUpdateProfile" class="btn-primary" onclick="updateProfile()">
-            <span class="material-symbols-outlined" style="font-size:17px">save</span>
-            <span data-i18n="prof.btn.save">Lưu thay đổi</span>
-          </button>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.fullname">Họ và tên</label>
+          <input id="inputFullName" class="form-input" type="text" value="{{ user.full_name }}" placeholder="Nhập họ và tên..." data-i18n-placeholder="prof.field.fullname.ph"/>
         </div>
       </div>
 
-      <!-- ── Card 2: Đổi mật khẩu ── -->
-      <div class="card">
-        <div class="flex items-center gap-2 mb-6">
-          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">lock</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.password">Đổi mật khẩu</h2>
-        </div>
-
-        {% if user.email %}
-        <div class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.current_pw">Mật khẩu hiện tại</label>
-            <div class="relative">
-              <input id="inputCurrentPw" class="form-input pr-10" type="password" placeholder="••••••••"/>
-              <button onclick="togglePw('inputCurrentPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
-                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
-              </button>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.new_pw">Mật khẩu mới</label>
-            <div class="relative">
-              <input id="inputNewPw" class="form-input pr-10" type="password" placeholder="Ít nhất 6 ký tự" data-i18n-placeholder="prof.field.new_pw.ph"/>
-              <button onclick="togglePw('inputNewPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
-                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
-              </button>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.field.confirm_pw">Xác nhận mật khẩu mới</label>
-            <div class="relative">
-              <input id="inputConfirmPw" class="form-input pr-10" type="password" placeholder="Nhập lại mật khẩu mới" data-i18n-placeholder="prof.field.confirm_pw.ph"/>
-              <button onclick="togglePw('inputConfirmPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
-                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="mt-6 flex justify-end">
-          <button id="btnChangePw" class="btn-primary" onclick="changePassword()" style="background:linear-gradient(135deg,#009fb4,#2fd9f4)">
-            <span class="material-symbols-outlined" style="font-size:17px">lock_reset</span>
-            <span data-i18n="prof.btn.change_pw">Đổi mật khẩu</span>
-          </button>
-        </div>
-        {% else %}
-        <div class="py-6 text-center text-on-surface-variant text-sm">
-          <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">lock</span>
-          <p class="mt-2" data-i18n="prof.oauth.no_pw">Tài khoản Google OAuth không thể đổi mật khẩu.</p>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- ── Card: Mặc định TTS ── -->
-      <div class="card">
-        <div class="flex items-center gap-2 mb-6">
-          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">tune</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.tts.title">Mặc định TTS</h2>
-        </div>
-        <p class="text-xs text-on-surface-variant mb-4" data-i18n="prof.tts.desc">Áp dụng khi mở Workspace — không cần chọn lại mỗi lần.</p>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.voice.basic">Giọng TTS cơ bản</label>
-            <select id="ttsDefaultVoice" class="form-input text-sm">
-              <option value="" data-i18n="prof.tts.voice.default">— Không đặt —</option>
-              {% if system_voices %}
-              <optgroup label="Giọng hệ thống">
-                {% for v in system_voices %}
-                <option value="{{ v.voice_id }}">{{ v.voice_name }}</option>
-                {% endfor %}
-              </optgroup>
-              {% endif %}
-              {% if custom_voices %}
-              <optgroup label="Giọng của tôi">
-                {% for v in custom_voices %}
-                <option value="custom_{{ v.id }}">{{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
-                {% endfor %}
-              </optgroup>
-              {% endif %}
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.voice.emotional">Giọng Emotional TTS (viXTTS)</label>
-            <select id="ttsDefaultEmotionalVoice" class="form-input text-sm">
-              <option value="" data-i18n="prof.tts.emotional.default">⭐ Mặc định (base_voice.wav)</option>
-              {% if emotional_voices %}
-              <optgroup label="viXTTS Clone">
-                {% for v in emotional_voices %}
-                <option value="{{ v.id }}">🎙️ {{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
-                {% endfor %}
-              </optgroup>
-              {% endif %}
-            </select>
-            <p class="text-[11px] text-outline mt-1" data-i18n="prof.tts.emotional.hint">Áp dụng cho tab Emotional TTS trong Workspace.</p>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.pitch">Cao độ (Pitch)</label>
-            <div class="flex items-center gap-3">
-              <input type="range" id="ttsDefaultPitch" min="-12" max="12" value="0" step="1" class="flex-1"/>
-              <span id="ttsPitchVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">0</span>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.speed">Tốc độ (Speed)</label>
-            <div class="flex items-center gap-3">
-              <input type="range" id="ttsDefaultSpeed" min="0.5" max="2" value="1" step="0.1" class="flex-1"/>
-              <span id="ttsSpeedVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">1.0x</span>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.format">Định dạng xuất</label>
-              <select id="ttsExportFormat" class="form-input text-sm">
-                <option value="wav">WAV</option>
-                <option value="mp3">MP3</option>
-                <option value="ogg">OGG</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.bitrate">Bitrate</label>
-              <select id="ttsExportBitrate" class="form-input text-sm">
-                <option value="128">128 kbps</option>
-                <option value="192" selected>192 kbps</option>
-                <option value="256">256 kbps</option>
-                <option value="320">320 kbps</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-on-surface-variant mb-1.5" data-i18n="prof.tts.lang">Ngôn ngữ mặc định</label>
-            <select id="ttsDefaultLang" class="form-input text-sm">
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-        </div>
-        <div class="mt-6 flex justify-end">
-          <button type="button" id="btnSaveTts" class="btn-primary" onclick="saveTtsSettings()">
-            <span class="material-symbols-outlined" style="font-size:17px">save</span>
-            <span data-i18n="prof.tts.save">Lưu mặc định TTS</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- ── Card: Thông báo email ── -->
-      <div class="card">
-        <div class="flex items-center gap-2 mb-6">
-          <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">notifications</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.notify.title">Thông báo & email</h2>
-        </div>
-        <p class="text-xs text-on-surface-variant mb-4" data-i18n="prof.notify.desc">Gửi email khi có sự kiện quan trọng (cần cấu hình SMTP).</p>
-        <div class="space-y-3">
-          <label class="prof-toggle-row">
-            <div>
-              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.chars">Ký tự sắp hết (&lt;10%)</p>
-            </div>
-            <input type="checkbox" id="notifyCharsLow" class="prof-toggle-input"/>
-          </label>
-          <label class="prof-toggle-row">
-            <div>
-              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.payment">Thanh toán thành công / thất bại</p>
-            </div>
-            <input type="checkbox" id="notifyPayment" class="prof-toggle-input"/>
-          </label>
-          <label class="prof-toggle-row">
-            <div>
-              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.expiry">Gói sắp hết hạn</p>
-            </div>
-            <input type="checkbox" id="notifyPlanExpiry" class="prof-toggle-input"/>
-          </label>
-          <label class="prof-toggle-row">
-            <div>
-              <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.marketing">Tin tức sản phẩm</p>
-              <p class="text-xs text-on-surface-variant" data-i18n="prof.notify.marketing.hint">Tùy chọn — bật/tắt marketing</p>
-            </div>
-            <input type="checkbox" id="notifyMarketing" class="prof-toggle-input"/>
-          </label>
-        </div>
-        <div class="mt-6 flex justify-end">
-          <button type="button" id="btnSaveNotify" class="btn-secondary" onclick="saveNotificationSettings()">
-            <span class="material-symbols-outlined" style="font-size:17px">save</span>
-            <span data-i18n="prof.notify.save">Lưu thông báo</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- ── Card 3: Lịch sử giao dịch ── -->
-      <div class="card lg:col-span-2">
-        <div class="flex items-center gap-2 mb-5">
-          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">receipt_long</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.tx">Lịch sử giao dịch</h2>
-        </div>
-
-        <div id="txLoading" class="flex items-center gap-3 py-6 text-on-surface-variant text-sm">
-          <div style="width:18px;height:18px;border:2px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%" class="spin"></div>
-          Đang tải...
-        </div>
-        <div id="txEmpty" style="display:none" class="py-6 text-center text-on-surface-variant text-sm">
-          <span class="material-symbols-outlined" style="font-size:36px;opacity:0.3">receipt_long</span>
-          <p class="mt-2" data-i18n="prof.tx.empty">Chưa có giao dịch nào.</p>
-        </div>
-        <div id="txTable" style="display:none" class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-outline-variant/30 text-xs text-on-surface-variant">
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.package">Gói</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden sm:table-cell" data-i18n="prof.tx.col.txid">Mã GD</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.amount">Số tiền</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide hidden md:table-cell" data-i18n="prof.tx.col.date">Ngày</th>
-                <th class="pb-3 text-left font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.status">Trạng thái</th>
-                <th class="pb-3 text-right font-semibold uppercase tracking-wide" data-i18n="prof.tx.col.invoice">Hóa đơn</th>
-              </tr>
-            </thead>
-            <tbody id="txBody" class="divide-y divide-outline-variant/20"></tbody>
-          </table>
-          <div id="txPaginationWrap" style="display:none" class="pt-4 mt-2 border-t border-outline-variant/30 flex items-center justify-between gap-4 flex-wrap">
-            <span id="txPaginationInfo" class="text-xs text-on-surface-variant"></span>
-            <div id="txPagination" class="flex items-center gap-1.5"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Card 4: Cài đặt hệ thống ── -->
-      <div class="card lg:col-span-2">
-        <div class="flex items-center gap-2 mb-5">
-          <span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings:'FILL' 1">settings</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.card.settings">Cài đặt</h2>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-
-          <!-- Theme -->
-          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">dark_mode</span>
-              <div>
-                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.theme.label">Giao diện</p>
-                <p class="text-xs text-on-surface-variant" data-i18n="prof.theme.desc">Sáng / Tối</p>
-              </div>
-            </div>
-            <button id="themeToggleCard" onclick="toggleTheme()" class="relative w-11 h-6 rounded-full transition-all" style="background:rgba(208,188,255,0.2);border:1px solid rgba(208,188,255,0.3)">
-              <span id="themeToggleDot" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-primary transition-all"></span>
-            </button>
-          </div>
-
-          <!-- Sidebar collapse -->
-          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">menu_open</span>
-              <div>
-                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.sidebar.label">Thanh bên</p>
-                <p class="text-xs text-on-surface-variant" data-i18n="prof.sidebar.desc">Ẩn / Hiện</p>
-              </div>
-            </div>
-            <button onclick="document.getElementById('sidebarCollapseBtn').click()" class="px-3 py-1.5 rounded-lg border border-outline-variant/40 text-xs font-semibold text-on-surface-variant hover:bg-white/5 transition-colors">
-              Toggle
-            </button>
-          </div>
-
-          <!-- Language -->
-          <div class="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant/30">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">language</span>
-              <div>
-                <p class="text-sm font-semibold text-on-surface" data-i18n="prof.lang.label">Ngôn ngữ</p>
-                <p class="text-xs text-on-surface-variant" data-i18n="prof.lang.desc">VI / EN</p>
-              </div>
-            </div>
-            <button onclick="VVi18n && VVi18n.toggle()" class="vv-lang-toggle" aria-label="Switch language">
-              <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ── Card: Xuất dữ liệu cá nhân ── -->
-      <div class="card lg:col-span-2">
-        <div class="flex items-center gap-2 mb-5">
-          <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">description</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.export.title">Xuất dữ liệu cá nhân</h2>
-        </div>
-        <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.export.desc">
-          Tải báo cáo dễ đọc: tài khoản, gói dịch vụ, giao dịch, lịch sử chuyển đổi (không có file âm thanh).
-        </p>
-        <div class="flex flex-wrap gap-3 items-center">
-          <button type="button" id="btnExportPdf" class="btn-primary" onclick="exportPersonalData('pdf')">
-            <span class="material-symbols-outlined" style="font-size:17px">picture_as_pdf</span>
-            <span data-i18n="prof.export.btn_pdf">Tải PDF</span>
-          </button>
-          <button type="button" id="btnExportDocx" class="btn-secondary" onclick="exportPersonalData('docx')">
-            <span class="material-symbols-outlined" style="font-size:17px">description</span>
-            <span data-i18n="prof.export.btn_docx">Tải Word</span>
-          </button>
-          <a href="{{ url_for('data_deletion') }}" class="btn-secondary no-underline" data-i18n="prof.export.deletion">Chính sách xóa dữ liệu →</a>
-          <a href="{{ url_for('privacy') }}" class="text-xs text-on-surface-variant hover:text-primary no-underline" data-i18n="prof.export.privacy">Chính sách quyền riêng tư</a>
-        </div>
-      </div>
-
-      <!-- ── Card 5: Yêu cầu xóa tài khoản ── -->
-      <div class="card lg:col-span-2" id="accountDeletionCard">
-        <div class="flex items-center gap-2 mb-5">
-          <span class="material-symbols-outlined text-red-400" style="font-variation-settings:'FILL' 1">person_off</span>
-          <h2 class="text-base font-bold text-on-surface" data-i18n="prof.delete.card">Yêu cầu xóa tài khoản</h2>
-        </div>
-
-        <div id="deletePendingBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm text-amber-200">
-          <span class="material-symbols-outlined align-middle mr-1" style="font-size:18px">hourglass_top</span>
-          <span data-i18n="prof.delete.pending">Bạn đã gửi yêu cầu xóa tài khoản. Vui lòng chờ admin xử lý.</span>
-          <span id="deletePendingAt" class="block text-xs mt-1 text-amber-200/80"></span>
-        </div>
-
-        <div id="deleteRejectedBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-200">
-          <p data-i18n="prof.delete.rejected">Yêu cầu xóa tài khoản trước đó đã bị từ chối.</p>
-          <p id="deleteRejectedNote" class="text-xs mt-1 text-red-200/80"></p>
-        </div>
-
-        <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.delete.desc">
-          Nếu bạn không còn nhu cầu sử dụng dịch vụ, bạn có thể gửi yêu cầu xóa tài khoản. Admin sẽ xem xét và xác nhận trước khi tài khoản bị vô hiệu hóa.
-        </p>
-
-        <button id="btnRequestDeleteAccount" type="button" class="btn-secondary text-red-400 border-red-500/30 hover:bg-red-500/10" onclick="openDeleteAccountModal()">
-          <span class="material-symbols-outlined" style="font-size:17px">delete_forever</span>
-          <span data-i18n="prof.delete.btn">Yêu cầu xóa tài khoản</span>
+      <div class="pf-card__foot pf-card__foot--compact">
+        <button id="btnUpdateProfile" class="btn-primary" onclick="updateProfile()">
+          <span class="material-symbols-outlined" style="font-size:17px">save</span>
+          <span data-i18n="prof.btn.save">Lưu thay đổi</span>
         </button>
       </div>
+    </section>
 
-    </div><!-- /grid -->
+    <!-- Đổi mật khẩu -->
+    <section class="pf-card pf-card--cyan pf-span-6">
+      <div class="pf-card__head">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">lock</span></span>
+        <h2 class="pf-card__title" data-i18n="prof.card.password">Đổi mật khẩu</h2>
+      </div>
+
+      {% if user.email %}
+      <div class="pf-form-stack pf-form-stack--compact">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.current_pw">Mật khẩu hiện tại</label>
+          <div class="relative">
+            <input id="inputCurrentPw" class="form-input pr-10" type="password" placeholder="••••••••"/>
+            <button type="button" onclick="togglePw('inputCurrentPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+              <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+            </button>
+          </div>
+        </div>
+        <div class="pf-form-grid pf-form-grid--2">
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.new_pw">Mật khẩu mới</label>
+            <div class="relative">
+              <input id="inputNewPw" class="form-input pr-10" type="password" placeholder="Ít nhất 6 ký tự" data-i18n-placeholder="prof.field.new_pw.ph"/>
+              <button type="button" onclick="togglePw('inputNewPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.field.confirm_pw">Xác nhận mật khẩu mới</label>
+            <div class="relative">
+              <input id="inputConfirmPw" class="form-input pr-10" type="password" placeholder="Nhập lại mật khẩu mới" data-i18n-placeholder="prof.field.confirm_pw.ph"/>
+              <button type="button" onclick="togglePw('inputConfirmPw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface">
+                <span class="material-symbols-outlined" style="font-size:18px">visibility</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pf-card__foot pf-card__foot--compact">
+        <button id="btnChangePw" class="btn-primary" onclick="changePassword()" style="background:linear-gradient(135deg,#009fb4,#2fd9f4)">
+          <span class="material-symbols-outlined" style="font-size:17px">lock_reset</span>
+          <span data-i18n="prof.btn.change_pw">Đổi mật khẩu</span>
+        </button>
+      </div>
+      {% else %}
+      <div class="pf-empty">
+        <span class="material-symbols-outlined">lock</span>
+        <p data-i18n="prof.oauth.no_pw">Tài khoản Google OAuth không thể đổi mật khẩu.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Mặc định TTS -->
+    <section class="pf-card pf-card--violet pf-card--wide" id="pfPrefs">
+      <div class="pf-card__head">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">tune</span></span>
+        <div>
+          <h2 class="pf-card__title" data-i18n="prof.tts.title">Mặc định TTS</h2>
+          <p class="pf-card__subtitle" data-i18n="prof.tts.desc">Áp dụng khi mở Workspace.</p>
+        </div>
+      </div>
+      <div class="pf-form-grid pf-form-grid--2 pf-form-grid--3-lg">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.voice.basic">Giọng TTS cơ bản</label>
+          <select id="ttsDefaultVoice" class="form-input text-sm">
+            <option value="" data-i18n="prof.tts.voice.default">— Không đặt —</option>
+            {% if system_voices %}
+            <optgroup label="Giọng hệ thống">
+              {% for v in system_voices %}
+              <option value="{{ v.voice_id }}">{{ v.voice_name }}</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+            {% if custom_voices %}
+            <optgroup label="Giọng của tôi">
+              {% for v in custom_voices %}
+              <option value="custom_{{ v.id }}">{{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.voice.emotional">Giọng Emotional TTS (viXTTS)</label>
+          <select id="ttsDefaultEmotionalVoice" class="form-input text-sm">
+            <option value="" data-i18n="prof.tts.emotional.default">⭐ Mặc định (base_voice.wav)</option>
+            {% if emotional_voices %}
+            <optgroup label="viXTTS Clone">
+              {% for v in emotional_voices %}
+              <option value="{{ v.id }}">🎙️ {{ v.voice_name }}{% if v.quality_score %} ⭐{{ '%.1f'|format(v.quality_score) }}{% endif %}</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.pitch">Cao độ (Pitch)</label>
+          <div class="flex items-center gap-2">
+            <input type="range" id="ttsDefaultPitch" min="-12" max="12" value="0" step="1" class="flex-1"/>
+            <span id="ttsPitchVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">0</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.speed">Tốc độ (Speed)</label>
+          <div class="flex items-center gap-2">
+            <input type="range" id="ttsDefaultSpeed" min="0.5" max="2" value="1" step="0.1" class="flex-1"/>
+            <span id="ttsSpeedVal" class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">1.0x</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.format">Định dạng xuất</label>
+          <select id="ttsExportFormat" class="form-input text-sm">
+            <option value="wav">WAV</option>
+            <option value="mp3">MP3</option>
+            <option value="ogg">OGG</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.bitrate">Bitrate</label>
+          <select id="ttsExportBitrate" class="form-input text-sm">
+            <option value="128">128 kbps</option>
+            <option value="192" selected>192 kbps</option>
+            <option value="256">256 kbps</option>
+            <option value="320">320 kbps</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1" data-i18n="prof.tts.lang">Ngôn ngữ mặc định</label>
+          <select id="ttsDefaultLang" class="form-input text-sm">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+      <div class="pf-card__foot pf-card__foot--compact">
+        <button type="button" id="btnSaveTts" class="btn-primary" onclick="saveTtsSettings()">
+          <span class="material-symbols-outlined" style="font-size:17px">save</span>
+          <span data-i18n="prof.tts.save">Lưu mặc định TTS</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Thông báo -->
+    <section class="pf-card pf-card--green pf-span-6">
+      <div class="pf-card__head">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">notifications</span></span>
+        <h2 class="pf-card__title" data-i18n="prof.notify.title">Thông báo & email</h2>
+      </div>
+      <div class="pf-toggle-list">
+        <label class="pf-toggle-row">
+          <div>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.chars">Ký tự sắp hết (&lt;10%)</p>
+          </div>
+          <input type="checkbox" id="notifyCharsLow" class="prof-toggle-input"/>
+        </label>
+        <label class="pf-toggle-row">
+          <div>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.payment">Thanh toán thành công / thất bại</p>
+          </div>
+          <input type="checkbox" id="notifyPayment" class="prof-toggle-input"/>
+        </label>
+        <label class="pf-toggle-row">
+          <div>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.expiry">Gói sắp hết hạn</p>
+          </div>
+          <input type="checkbox" id="notifyPlanExpiry" class="prof-toggle-input"/>
+        </label>
+        <label class="pf-toggle-row">
+          <div>
+            <p class="text-sm font-semibold text-on-surface" data-i18n="prof.notify.marketing">Tin tức sản phẩm</p>
+          </div>
+          <input type="checkbox" id="notifyMarketing" class="prof-toggle-input"/>
+        </label>
+      </div>
+      <div class="pf-card__foot pf-card__foot--compact">
+        <button type="button" id="btnSaveNotify" class="btn-secondary" onclick="saveNotificationSettings()">
+          <span class="material-symbols-outlined" style="font-size:17px">save</span>
+          <span data-i18n="prof.notify.save">Lưu thông báo</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Cài đặt -->
+    <section class="pf-card pf-card--amber pf-span-6">
+      <div class="pf-card__head">
+        <span class="pf-card__icon"><span class="material-symbols-outlined">settings</span></span>
+        <h2 class="pf-card__title" data-i18n="prof.card.settings">Cài đặt</h2>
+      </div>
+      <div class="pf-settings-grid pf-settings-grid--compact">
+        <div class="pf-setting-tile pf-setting-tile--theme">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="pf-setting-tile__icon"><span class="material-symbols-outlined" style="font-size:18px">dark_mode</span></span>
+            <div>
+              <p class="pf-setting-tile__label" data-i18n="prof.theme.label">Giao diện</p>
+            </div>
+          </div>
+          <button type="button" id="themeToggleCard" onclick="toggleTheme()" class="relative w-11 h-6 rounded-full transition-all" style="background:rgba(208,188,255,0.2);border:1px solid rgba(208,188,255,0.3)">
+            <span id="themeToggleDot" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-primary transition-all"></span>
+          </button>
+        </div>
+        <div class="pf-setting-tile pf-setting-tile--sidebar">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="pf-setting-tile__icon"><span class="material-symbols-outlined" style="font-size:18px">menu_open</span></span>
+            <div>
+              <p class="pf-setting-tile__label" data-i18n="prof.sidebar.label">Thanh bên</p>
+            </div>
+          </div>
+          <button type="button" onclick="document.getElementById('sidebarCollapseBtn').click()" class="px-3 py-1 rounded-lg border border-outline-variant/40 text-xs font-semibold text-on-surface-variant hover:bg-white/5 transition-colors">
+            Toggle
+          </button>
+        </div>
+        <div class="pf-setting-tile pf-setting-tile--lang">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="pf-setting-tile__icon"><span class="material-symbols-outlined" style="font-size:18px">language</span></span>
+            <div>
+              <p class="pf-setting-tile__label" data-i18n="prof.lang.label">Ngôn ngữ</p>
+            </div>
+          </div>
+          <button type="button" onclick="VVi18n && VVi18n.toggle()" class="vv-lang-toggle" aria-label="Switch language">
+            <span class="lang-vi lang-active">VI</span><span class="lang-sep">|</span><span class="lang-en lang-inactive">EN</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  <!-- Lịch sử giao dịch -->
+  <section class="pf-card pf-card--wide pf-card--purple" id="pfBilling">
+    <div class="pf-card__head">
+      <span class="pf-card__icon"><span class="material-symbols-outlined">receipt_long</span></span>
+      <h2 class="pf-card__title" data-i18n="prof.card.tx">Lịch sử giao dịch</h2>
+    </div>
+
+    <div id="txLoading" class="pf-loading">
+      <div class="pf-spinner"></div>
+      <span data-i18n="common.loading">Đang tải...</span>
+    </div>
+    <div id="txEmpty" style="display:none" class="pf-empty">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <p data-i18n="prof.tx.empty">Chưa có giao dịch nào.</p>
+    </div>
+    <div id="txTable" style="display:none" class="pf-tx-wrap">
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="prof.tx.col.package">Gói</th>
+              <th class="hidden sm:table-cell" data-i18n="prof.tx.col.txid">Mã GD</th>
+              <th data-i18n="prof.tx.col.amount">Số tiền</th>
+              <th class="hidden md:table-cell" data-i18n="prof.tx.col.date">Ngày</th>
+              <th data-i18n="prof.tx.col.status">Trạng thái</th>
+              <th class="text-right" data-i18n="prof.tx.col.invoice">Hóa đơn</th>
+            </tr>
+          </thead>
+          <tbody id="txBody"></tbody>
+        </table>
+      </div>
+      <div id="txPaginationWrap" style="display:none" class="pf-tx-pagination">
+        <span id="txPaginationInfo" class="text-xs text-on-surface-variant"></span>
+        <div id="txPagination" class="flex items-center gap-1.5"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Xuất dữ liệu -->
+  <section class="pf-card pf-card--wide pf-card--cyan">
+    <div class="pf-card__head">
+      <span class="pf-card__icon"><span class="material-symbols-outlined">description</span></span>
+      <h2 class="pf-card__title" data-i18n="prof.export.title">Xuất dữ liệu cá nhân</h2>
+    </div>
+    <p class="pf-card__desc" data-i18n="prof.export.desc">
+      Tải báo cáo dễ đọc: tài khoản, gói dịch vụ, giao dịch, lịch sử chuyển đổi (không có file âm thanh).
+    </p>
+    <div class="pf-export-actions">
+      <button type="button" id="btnExportPdf" class="btn-primary" onclick="exportPersonalData('pdf')">
+        <span class="material-symbols-outlined" style="font-size:17px">picture_as_pdf</span>
+        <span data-i18n="prof.export.btn_pdf">Tải PDF</span>
+      </button>
+      <button type="button" id="btnExportDocx" class="btn-secondary" onclick="exportPersonalData('docx')">
+        <span class="material-symbols-outlined" style="font-size:17px">description</span>
+        <span data-i18n="prof.export.btn_docx">Tải Word</span>
+      </button>
+      <a href="{{ url_for('data_deletion') }}" class="btn-secondary no-underline" data-i18n="prof.export.deletion">Chính sách xóa dữ liệu →</a>
+      <a href="{{ url_for('privacy') }}" class="pf-export-link" data-i18n="prof.export.privacy">Chính sách quyền riêng tư</a>
+    </div>
+  </section>
+
+  <!-- Xóa tài khoản -->
+  <section class="pf-card pf-card--wide pf-card--red" id="accountDeletionCard">
+    <div class="pf-card__head">
+      <span class="pf-card__icon" style="background:rgba(248,113,113,0.12);color:#fca5a5"><span class="material-symbols-outlined">person_off</span></span>
+      <h2 class="pf-card__title" data-i18n="prof.delete.card">Yêu cầu xóa tài khoản</h2>
+    </div>
+
+    <div id="deletePendingBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm text-amber-200">
+      <span class="material-symbols-outlined align-middle mr-1" style="font-size:18px">hourglass_top</span>
+      <span data-i18n="prof.delete.pending">Bạn đã gửi yêu cầu xóa tài khoản. Vui lòng chờ admin xử lý.</span>
+      <span id="deletePendingAt" class="block text-xs mt-1 text-amber-200/80"></span>
+    </div>
+
+    <div id="deleteRejectedBanner" style="display:none" class="mb-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-200">
+      <p data-i18n="prof.delete.rejected">Yêu cầu xóa tài khoản trước đó đã bị từ chối.</p>
+      <p id="deleteRejectedNote" class="text-xs mt-1 text-red-200/80"></p>
+    </div>
+
+    <div class="pf-delete-zone">
+      <p class="text-sm text-on-surface-variant mb-4" data-i18n="prof.delete.desc">
+        Nếu bạn không còn nhu cầu sử dụng dịch vụ, bạn có thể gửi yêu cầu xóa tài khoản. Admin sẽ xem xét và xác nhận trước khi tài khoản bị vô hiệu hóa.
+      </p>
+      <button id="btnRequestDeleteAccount" type="button" class="btn-secondary text-red-400 border-red-500/30 hover:bg-red-500/10" onclick="openDeleteAccountModal()">
+        <span class="material-symbols-outlined" style="font-size:17px">delete_forever</span>
+        <span data-i18n="prof.delete.btn">Yêu cầu xóa tài khoản</span>
+      </button>
+    </div>
+  </section>
+  </div>
+</div>

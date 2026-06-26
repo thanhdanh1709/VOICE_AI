@@ -79,6 +79,8 @@
 <body class="min-h-screen flex flex-col">
 
 {% set mob_nav_active = 'my_voices' %}
+{% set mobile_header_title = 'Giọng của tôi' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT ═══ -->
@@ -88,7 +90,7 @@
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-    <main id="content" data-spa-page="my_voices" class="flex-1 min-w-0 p-4 md:p-8 min-h-0 pb-[76px] md:pb-8 overflow-hidden">
+    <main id="content" data-spa-page="my_voices" class="vv-has-mobile-header flex-1 min-w-0 px-4 md:p-8 min-h-0 pb-[76px] md:pb-8 overflow-hidden md:pt-8">
     {% include 'partials/content/my_voices.html' %}
   </main>
 </div>

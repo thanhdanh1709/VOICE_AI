@@ -1,5 +1,5 @@
 /**
- * File Upload tab — Document workspace (Phase 1)
+ * File upload — tích hợp vào từng tab chuyển đổi (Nhập văn bản / Emotional / OmniVoice)
  */
 (function () {
     'use strict';
@@ -8,7 +8,6 @@
     const ALLOWED = ['txt', 'pdf', 'docx'];
 
     let progressTimer = null;
-    let isEditing = false;
 
     function t(key, fallback) {
         if (window.VVi18n && window.VVi18n.t) {
@@ -82,43 +81,43 @@
         setProgress(100);
     }
 
+    function dispatchInput(el) {
+        if (el) el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
     function syncWorkspaceText(text) {
+        const value = text || '';
         const textInput = $('textInput');
         const emotionalInput = $('emotionalTextInput');
-        const preview = $('fileTextPreview');
-        const value = text || '';
+        const omnivoiceInput = $('omnivoiceTextInput');
 
-        if (textInput) textInput.value = value;
-        if (emotionalInput) emotionalInput.value = value;
-        if (preview) preview.value = value;
-
-        const n = value.length;
-        const fmt = n.toLocaleString();
-        const charCount = $('charCount');
-        const fileCharCount = $('fileCharCount');
-        if (charCount) charCount.textContent = fmt;
-        if (fileCharCount) fileCharCount.textContent = fmt;
+        if (textInput) {
+            textInput.value = value;
+            dispatchInput(textInput);
+        }
+        if (emotionalInput) {
+            emotionalInput.value = value;
+            dispatchInput(emotionalInput);
+        }
+        if (omnivoiceInput) {
+            omnivoiceInput.value = value;
+            dispatchInput(omnivoiceInput);
+        }
 
         if (typeof window.updateVietnameseInputWarning === 'function') {
             window.updateVietnameseInputWarning(value);
         }
     }
 
-    function setView(mode) {
-        const empty = $('fuEmpty');
-        const loaded = $('fuLoaded');
-
-        if (mode === 'empty') {
-            show(empty);
-            hide(loaded);
-            return;
-        }
-
-        hide(empty);
-        show(loaded);
+    function setStripVisible(visible) {
+        const strip = $('fuStatusStrip');
+        if (!strip) return;
+        if (visible) show(strip);
+        else hide(strip);
     }
 
     function showProcessingUI(file) {
+        setStripVisible(true);
         const ext = getExt(file.name);
         $('fuFileName').textContent = file.name;
         $('fuFileMeta').textContent = `${fileTypeLabel(ext)} · ${formatSize(file.size)}`;
@@ -130,8 +129,6 @@
         hide($('fuStatusReady'));
         hide($('fuStatusError'));
         show($('fuProgress'));
-        hide($('fuPreviewWrap'));
-        hide($('fuActions'));
         startFakeProgress();
     }
 
@@ -149,39 +146,16 @@
         }
         show($('fuStatusReady'));
         hide($('fuStatusError'));
-
-        show($('fuPreviewWrap'));
-        show($('fuActions'));
-        updateEditButton();
     }
 
     function showErrorUI(message) {
         stopFakeProgress();
         hide($('fuProgress'));
         hide($('fuStatusReady'));
-        hide($('fuPreviewWrap'));
-        hide($('fuActions'));
 
         const errText = $('fuStatusErrorText');
         if (errText) errText.textContent = message;
         show($('fuStatusError'));
-    }
-
-    function updateEditButton() {
-        const btn = $('fuEditBtn');
-        const preview = $('fileTextPreview');
-        if (!btn || !preview) return;
-
-        if (isEditing) {
-            btn.classList.add('is-active');
-            btn.querySelector('span:last-child').textContent = t('file.btn.done', 'Xong');
-            preview.removeAttribute('readonly');
-            preview.focus();
-        } else {
-            btn.classList.remove('is-active');
-            btn.querySelector('span:last-child').textContent = t('file.btn.edit', 'Chỉnh sửa');
-            preview.setAttribute('readonly', 'readonly');
-        }
     }
 
     function resetFileInput() {
@@ -191,10 +165,12 @@
 
     function clearUpload() {
         stopFakeProgress();
-        isEditing = false;
         resetFileInput();
         syncWorkspaceText('');
-        setView('empty');
+        setStripVisible(false);
+        hide($('fuProgress'));
+        hide($('fuStatusReady'));
+        hide($('fuStatusError'));
     }
 
     function validateFile(file) {
@@ -210,37 +186,32 @@
 
     async function processFile(file) {
         const err = validateFile(file);
+        setStripVisible(true);
+        $('fuFileName').textContent = file.name;
+        $('fuFileMeta').textContent = formatSize(file.size);
+
         if (err) {
-            setView('loaded');
-            $('fuFileName').textContent = file.name;
-            $('fuFileMeta').textContent = formatSize(file.size);
             showErrorUI(err);
             return;
         }
 
-        setView('loaded');
         showProcessingUI(file);
 
         const ext = getExt(file.name);
 
         try {
+            let text = '';
             if (ext === 'txt') {
-                const text = await readTxt(file);
-                if (!text.trim()) {
-                    showErrorUI(t('file.error.empty', 'Không tìm thấy văn bản trong file.'));
-                    return;
-                }
-                syncWorkspaceText(text);
-                showReadyUI(file, text.length);
+                text = await readTxt(file);
             } else if (ext === 'pdf' || ext === 'docx') {
-                const text = await extractViaApi(file);
-                if (!text.trim()) {
-                    showErrorUI(t('file.error.empty', 'Không tìm thấy văn bản trong file.'));
-                    return;
-                }
-                syncWorkspaceText(text);
-                showReadyUI(file, text.length);
+                text = await extractViaApi(file);
             }
+            if (!text.trim()) {
+                showErrorUI(t('file.error.empty', 'Không tìm thấy văn bản trong file.'));
+                return;
+            }
+            syncWorkspaceText(text);
+            showReadyUI(file, text.length);
         } catch (e) {
             console.error('[FileUpload]', e);
             showErrorUI(e.message || t('err.convert_failed', 'Lỗi xử lý file'));
@@ -297,53 +268,51 @@
         if (input) input.click();
     }
 
-    function bindDropzone() {
-        const dropzone = $('fuDropzone');
-        const input = $('fileInput');
-        if (!dropzone || !input) return;
-
-        dropzone.addEventListener('click', () => openFilePicker());
-        dropzone.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+    function bindUploadTriggers() {
+        document.querySelectorAll('[data-fu-trigger]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 openFilePicker();
-            }
-        });
-
-        ['dragenter', 'dragover'].forEach((evt) => {
-            dropzone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropzone.classList.add('is-dragover');
             });
         });
 
-        ['dragleave', 'dragend'].forEach((evt) => {
-            dropzone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                dropzone.classList.remove('is-dragover');
+        const input = $('fileInput');
+        if (input) {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (file) processFile(file);
             });
-        });
+        }
+    }
 
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.classList.remove('is-dragover');
-            const file = e.dataTransfer?.files?.[0];
-            if (file) processFile(file);
-        });
-
-        input.addEventListener('change', (e) => {
-            const file = e.target.files?.[0];
-            if (file) processFile(file);
+    function bindDropTargets() {
+        document.querySelectorAll('.ws-text-drop-target').forEach((zone) => {
+            zone.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                zone.classList.add('is-dragover');
+            });
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('is-dragover');
+            });
+            ['dragleave', 'dragend'].forEach((evt) => {
+                zone.addEventListener(evt, (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('is-dragover');
+                });
+            });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('is-dragover');
+                const file = e.dataTransfer?.files?.[0];
+                if (file) processFile(file);
+            });
         });
     }
 
     function bindActions() {
         const removeBtn = $('fuRemoveBtn');
         const changeBtn = $('fuChangeBtn');
-        const editBtn = $('fuEditBtn');
-        const preview = $('fileTextPreview');
 
         if (removeBtn) {
             removeBtn.addEventListener('click', (e) => {
@@ -353,27 +322,18 @@
         }
 
         if (changeBtn) {
-            changeBtn.addEventListener('click', () => openFilePicker());
-        }
-
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
-                isEditing = !isEditing;
-                updateEditButton();
-            });
-        }
-
-        if (preview) {
-            preview.addEventListener('input', () => {
-                syncWorkspaceText(preview.value);
+            changeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openFilePicker();
             });
         }
     }
 
     function init() {
-        bindDropzone();
+        bindUploadTriggers();
+        bindDropTargets();
         bindActions();
-        setView('empty');
+        setStripVisible(false);
     }
 
     if (document.readyState === 'loading') {

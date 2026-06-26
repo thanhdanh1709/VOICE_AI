@@ -80,6 +80,9 @@ ALLOWED_AVATAR_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
 AVATAR_UPLOAD_DIR = UPLOAD_DIR / 'avatars'
 AVATAR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+MAX_COVER_BYTES = 3 * 1024 * 1024
+COVER_UPLOAD_DIR = UPLOAD_DIR / 'covers'
+COVER_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 from authlib.integrations.flask_client import OAuth
 import qrcode
 import io
@@ -112,6 +115,26 @@ try:
 except ImportError as e:
     VIXTTS_EMOTIONAL_AVAILABLE = False
     print(f"[WARNING] viXTTS Emotional TTS not available: {e}")
+
+# Import OmniVoice multilingual TTS
+OMNIVOICE_AVAILABLE = False
+OMNIVOICE_INSTANCE = None
+try:
+    from omnivoice_tts import (
+        get_omnivoice_instance,
+        is_omnivoice_available,
+        set_omnivoice_progress,
+        get_omnivoice_progress,
+        clear_omnivoice_progress,
+    )
+    OMNIVOICE_AVAILABLE = is_omnivoice_available()
+    if OMNIVOICE_AVAILABLE:
+        print("[INFO] OmniVoice TTS is available")
+    else:
+        print("[WARNING] OmniVoice TTS not available (chạy scripts/setup_omnivoice_venv.bat)")
+except ImportError as e:
+    OMNIVOICE_AVAILABLE = False
+    print(f"[WARNING] OmniVoice TTS not available: {e}")
 
 # Import custom voice training modules
 try:
@@ -1123,6 +1146,7 @@ _tts_instance = None
 # Lock để ngăn concurrent TTS inference (model không thread-safe)
 import threading as _threading
 _tts_lock = _threading.Lock()
+_omnivoice_lock = _threading.Lock()
 
 def split_text_for_tts(text, max_chars=240):
     """Tách văn bản thành các đoạn nhỏ để tránh vượt context window của TTS model.
@@ -2103,7 +2127,7 @@ def convert_text_to_speech():
         
         try:
             _cv_type = (custom_voice_data.get('voice_type') or 'rvc').strip().lower() if (is_custom_voice and custom_voice_data) else 'rvc'
-            voice_data = tts.get_preset_voice(voice_id) if voice_id and _cv_type not in ('zero_shot', 'vixtts_clone') else None
+            voice_data = tts.get_preset_voice(voice_id) if voice_id and _cv_type not in ('zero_shot', 'vixtts_clone', 'omnivoice_clone') else None
             print(f"[CONVERT] Voice data obtained: {voice_id}")
         except Exception as voice_error:
             print(f"[WARNING] Could not get preset voice {voice_id}, using None: {voice_error}")
@@ -2115,6 +2139,7 @@ def convert_text_to_speech():
 
         # viXTTS Clone: synthesize directly with user's voice reference
         use_vixtts_clone = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'vixtts_clone'
+        use_omnivoice_clone = is_custom_voice and custom_voice_data and (custom_voice_data.get('voice_type') or 'rvc').strip().lower() == 'omnivoice_clone'
 
         if use_vixtts_clone:
             try:
@@ -2136,6 +2161,33 @@ def convert_text_to_speech():
                 print(f"[ERROR] viXTTS Clone failed: {vixtts_err}")
                 print(f"[ERROR] Traceback: {error_trace}")
                 raise Exception(f"Lỗi tạo âm thanh viXTTS Clone: {str(vixtts_err)}")
+        elif use_omnivoice_clone:
+            try:
+                if not OMNIVOICE_AVAILABLE:
+                    raise Exception("OmniVoice chưa được cài đặt.")
+                ov_engine = get_omnivoice_engine(load_if_needed=True)
+                if ov_engine is None or not ov_engine.is_loaded:
+                    raise Exception("OmniVoice model chưa được tải. Vui lòng thử lại sau vài phút.")
+                ref_audio_path = resolve_audio_path(custom_voice_data.get('sample_audio_path'))
+                if not ref_audio_path or not os.path.exists(ref_audio_path):
+                    raise Exception(f"Không tìm thấy file audio mẫu của giọng OmniVoice Clone: {ref_audio_path}")
+                ref_text_ov = (custom_voice_data.get('ref_transcript') or '').strip() or None
+                print(f"[CONVERT OmniVoice-Clone] Using voice ref: {ref_audio_path}")
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with _omnivoice_lock:
+                    ov_engine.synthesize_with_voice(
+                        text, ref_audio_path, str(output_path), ref_text=ref_text_ov
+                    )
+                import librosa as _librosa_ov
+                _y_ov, _sr_ov = _librosa_ov.load(str(output_path), sr=None)
+                duration_seconds = len(_y_ov) / _sr_ov
+                sample_rate = _sr_ov
+                print(f"[CONVERT OmniVoice-Clone] Audio generated, duration: {duration_seconds:.2f}s")
+            except Exception as ov_err:
+                error_trace = traceback.format_exc()
+                print(f"[ERROR] OmniVoice Clone failed: {ov_err}")
+                print(f"[ERROR] Traceback: {error_trace}")
+                raise Exception(f"Lỗi tạo âm thanh OmniVoice Clone: {str(ov_err)}")
         else:
             try:
                 import numpy as np
@@ -2499,21 +2551,22 @@ def check_emotional_tts_status():
                 'message': 'Emotional TTS không được cài đặt (import failed)'
             }), 200
         
-        # Check instance và model
+        # Check instance và model — lazy load: bao san sang neu module co the import
         if VIXTTS_INSTANCE is None:
             return jsonify({
                 'success': True,
-                'ready': False,
-                'message': 'Model chưa được khởi tạo'
+                'ready': True,
+                'lazy': True,
+                'message': 'Sẵn sàng (load khi convert lần đầu ~30s)'
             }), 200
         
-        # Check if model is loaded
         is_ready = VIXTTS_INSTANCE.model is not None
         
         return jsonify({
             'success': True,
-            'ready': is_ready,
-            'message': 'Sẵn sàng' if is_ready else 'Model đang load...'
+            'ready': True,
+            'lazy': not is_ready,
+            'message': 'Sẵn sàng' if is_ready else 'Sẵn sàng (load khi convert lần đầu ~30s)'
         }), 200
         
     except Exception as e:
@@ -2540,12 +2593,10 @@ def convert_text_to_speech_emotional():
                 'message': 'Tính năng Emotional TTS chưa được cài đặt. Vui lòng liên hệ admin.'
             }), 503
 
-        # Check model đã load chưa
+        # Lazy load model on first convert if startup skipped preload
         if VIXTTS_INSTANCE.model is None:
-            return jsonify({
-                'success': False,
-                'message': 'Emotional TTS đang khởi động. Vui lòng đợi 30 giây và thử lại.'
-            }), 503
+            print("[CONVERT EMOTIONAL] Loading viXTTS model (first use)...", flush=True)
+            VIXTTS_INSTANCE.load_model()
         
         emotional_tts = VIXTTS_INSTANCE
         
@@ -2737,6 +2788,361 @@ def convert_text_to_speech_emotional():
             'message': f'Lỗi: {str(e)}'
         }), 500
     
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_omnivoice_engine(load_if_needed=False):
+    """Lazy-init global OmniVoice instance (works with gunicorn)."""
+    global OMNIVOICE_INSTANCE
+    if not OMNIVOICE_AVAILABLE:
+        return None
+    if OMNIVOICE_INSTANCE is None:
+        OMNIVOICE_INSTANCE = get_omnivoice_instance()
+    if load_if_needed and OMNIVOICE_INSTANCE is not None and not OMNIVOICE_INSTANCE.is_loaded:
+        try:
+            OMNIVOICE_INSTANCE.load_model()
+        except Exception as e:
+            print(f"[OmniVoice] load_model failed: {e}")
+    return OMNIVOICE_INSTANCE
+
+
+def free_memory_for_omnivoice():
+    """Giai phong RAM/VRAM: go bo viXTTS khoi bo nho truoc khi OmniVoice chay GPU."""
+    import gc
+    import torch
+    global VIXTTS_INSTANCE
+    target = (os.environ.get("OMNIVOICE_DEVICE") or "").strip().lower()
+    if not target.startswith("cuda"):
+        return
+    if VIXTTS_INSTANCE is None:
+        return
+    try:
+        if getattr(VIXTTS_INSTANCE, "model", None) is not None:
+            VIXTTS_INSTANCE.model.cpu()
+            del VIXTTS_INSTANCE.model
+            VIXTTS_INSTANCE.model = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+            print("[GPU] Da giai phong viXTTS khoi RAM (~4GB) — OmniVoice dung GPU", flush=True)
+    except Exception as e:
+        print(f"[GPU] Khong the giai phong bo nho: {e}", flush=True)
+
+
+def release_gpu_for_omnivoice():
+    """Alias — giai phong RAM cho OmniVoice GPU."""
+    free_memory_for_omnivoice()
+
+
+def preload_omnivoice_model():
+    """Pre-load OmniVoice vào RAM (gọi lúc startup)."""
+    global OMNIVOICE_INSTANCE
+    if not OMNIVOICE_AVAILABLE:
+        return False
+    try:
+        release_gpu_for_omnivoice()
+        OMNIVOICE_INSTANCE = get_omnivoice_instance()
+        if not OMNIVOICE_INSTANCE.is_loaded:
+            OMNIVOICE_INSTANCE.load_model()
+        return OMNIVOICE_INSTANCE.is_loaded
+    except Exception as e:
+        print(f"[OmniVoice] Pre-load failed: {e}")
+        OMNIVOICE_INSTANCE = None
+        return False
+
+
+@app.route('/api/omnivoice/status', methods=['GET'])
+def check_omnivoice_status():
+    """Check if OmniVoice TTS is ready."""
+    try:
+        if not OMNIVOICE_AVAILABLE:
+            return jsonify({
+                'success': True,
+                'ready': False,
+                'message': 'OmniVoice chưa được cài đặt (pip install -r requirements_omnivoice.txt)'
+            }), 200
+
+        engine = get_omnivoice_engine(load_if_needed=True)
+        if engine is None:
+            return jsonify({
+                'success': True,
+                'ready': False,
+                'message': 'Model chưa được khởi tạo'
+            }), 200
+
+        is_ready = engine.is_loaded
+        device = ""
+        if engine._use_daemon and engine._daemon:
+            device = engine._daemon._device or ""
+        elif engine.model is not None:
+            device = str(engine.device_map)
+        try:
+            from omnivoice_tts import DEFAULT_GPU_MAX_CHARS
+            gpu_max_chars = DEFAULT_GPU_MAX_CHARS
+        except Exception:
+            gpu_max_chars = int(os.environ.get('OMNIVOICE_GPU_MAX_CHARS', '200'))
+        return jsonify({
+            'success': True,
+            'ready': is_ready,
+            'device': device,
+            'gpu_max_chars': gpu_max_chars,
+            'message': f"Sẵn sàng ({device})" if is_ready and device else ('Sẵn sàng' if is_ready else 'Model đang load...')
+        }), 200
+    except Exception as e:
+        return jsonify({'success': False, 'ready': False, 'message': str(e)}), 500
+
+
+@app.route('/api/convert-omnivoice/progress/<int:conversion_id>', methods=['GET'])
+def omnivoice_conversion_progress(conversion_id):
+    """Poll OmniVoice emotional conversion progress."""
+    try:
+        if not is_logged_in():
+            return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'}), 401
+        prog = get_omnivoice_progress(conversion_id)
+        if not prog:
+            return jsonify({'success': True, 'status': 'unknown', 'percent': 0}), 200
+        return jsonify({'success': True, **prog}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/convert-omnivoice', methods=['POST'])
+def convert_text_to_speech_omnivoice():
+    """
+    Chuyển văn bản thành giọng nói bằng OmniVoice (600+ ngôn ngữ).
+    Hỗ trợ: voice clone, voice design, auto voice, emotional.
+    """
+    conn = None
+    conversion_id = None
+
+    try:
+        if not OMNIVOICE_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'message': 'OmniVoice chưa được cài đặt. Vui lòng liên hệ admin.'
+            }), 503
+
+        engine = get_omnivoice_engine(load_if_needed=True)
+        if engine is None or not engine.is_loaded:
+            return jsonify({
+                'success': False,
+                'message': 'OmniVoice đang khởi động. Vui lòng đợi và thử lại.'
+            }), 503
+
+        if not is_logged_in():
+            return jsonify({'success': False, 'message': 'Vui lòng đăng nhập'}), 401
+
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'Dữ liệu không hợp lệ'}), 400
+
+        text = (data.get('text') or '').strip()
+        mode = (data.get('mode') or 'auto').strip().lower()
+        custom_voice_id = data.get('custom_voice_id')
+        instruct = (data.get('instruct') or '').strip()
+        speed = float(data.get('speed') or 1.0)
+
+        if not text:
+            return jsonify({'success': False, 'message': 'Vui lòng nhập văn bản'}), 400
+
+        if mode not in ('clone', 'design', 'auto', 'emotional'):
+            mode = 'auto'
+
+        ref_audio_path = None
+        ref_text = None
+        voice_id = 'OmniVoice-Auto'
+        emotions_used = []
+
+        if mode == 'emotional':
+            voice_id = 'OmniVoice-Emotional'
+            if custom_voice_id:
+                conn_cv = get_db_connection()
+                if conn_cv:
+                    try:
+                        with conn_cv.cursor() as cur_cv:
+                            cur_cv.execute("""
+                                SELECT sample_audio_path, voice_type, voice_name, ref_transcript
+                                FROM custom_voices
+                                WHERE id = %s AND user_id = %s AND status = 'completed'
+                            """, (int(custom_voice_id), session['user_id']))
+                            cv_row = cur_cv.fetchone()
+                    finally:
+                        conn_cv.close()
+                    if cv_row and (cv_row.get('voice_type') or '').strip().lower() == 'omnivoice_clone':
+                        ref_audio_path = resolve_audio_path(cv_row.get('sample_audio_path'))
+                        ref_text = (cv_row.get('ref_transcript') or '').strip() or None
+                        voice_id = f"OmniVoice-Emotional ({cv_row['voice_name']})"
+                    elif cv_row:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Giọng clone phải là OmniVoice Clone.'
+                        }), 400
+        elif mode == 'clone':
+            voice_id = 'OmniVoice-Clone'
+            if custom_voice_id:
+                conn_cv = get_db_connection()
+                if conn_cv:
+                    try:
+                        with conn_cv.cursor() as cur_cv:
+                            cur_cv.execute("""
+                                SELECT sample_audio_path, voice_type, voice_name, ref_transcript
+                                FROM custom_voices
+                                WHERE id = %s AND user_id = %s AND status = 'completed'
+                            """, (int(custom_voice_id), session['user_id']))
+                            cv_row = cur_cv.fetchone()
+                    finally:
+                        conn_cv.close()
+                    if cv_row and (cv_row.get('voice_type') or '').strip().lower() == 'omnivoice_clone':
+                        ref_audio_path = resolve_audio_path(cv_row.get('sample_audio_path'))
+                        ref_text = (cv_row.get('ref_transcript') or '').strip() or None
+                        voice_id = f"OmniVoice ({cv_row['voice_name']})"
+                    elif cv_row:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Giọng này không phải OmniVoice Clone.'
+                        }), 400
+                    else:
+                        return jsonify({'success': False, 'message': 'Không tìm thấy giọng clone.'}), 404
+            if not ref_audio_path or not os.path.exists(ref_audio_path):
+                return jsonify({
+                    'success': False,
+                    'message': 'Chế độ clone cần chọn giọng OmniVoice Clone hoặc tạo giọng mới tại Voices.'
+                }), 400
+        elif mode == 'design':
+            if not instruct:
+                return jsonify({
+                    'success': False,
+                    'message': 'Chế độ Voice Design cần mô tả giọng (instruct), ví dụ: "female, low pitch, british accent".'
+                }), 400
+            voice_id = f"OmniVoice-Design ({instruct[:40]})"
+
+        text_length = len(text)
+        can_convert, error_message = check_characters_limit(session['user_id'], text_length)
+        if not can_convert:
+            return jsonify({'success': False, 'message': error_message}), 403
+
+        filename = f"{uuid.uuid4()}_omnivoice.wav"
+        output_path = AUDIO_OUTPUT_DIR / filename
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'message': 'Không thể kết nối database'}), 500
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
+                       VALUES (%s, %s, %s, %s, 'processing')""",
+                    (session['user_id'], text, len(text), voice_id)
+                )
+                conn.commit()
+                conversion_id = cursor.lastrowid
+        except Exception as e:
+            print(f"[ERROR] Error saving OmniVoice conversion: {e}")
+            conn.close()
+            return jsonify({'success': False, 'message': 'Không thể lưu bản ghi chuyển đổi'}), 500
+        conn.close()
+        conn = None
+
+        print(f"[CONVERT OMNIVOICE] mode={mode}, text_len={text_length}", flush=True)
+        release_gpu_for_omnivoice()
+
+        def _ov_progress_cb(current, total, emotion, _chunk_text):
+            set_omnivoice_progress(
+                conversion_id,
+                status='processing',
+                current=current,
+                total=total,
+                emotion=emotion,
+                percent=min(99, int(100 * current / total)) if total else 0,
+            )
+
+        with _omnivoice_lock:
+            if mode == 'emotional':
+                from emotion_parser import plan_emotional_chunks
+                emotions_used = list(dict.fromkeys(
+                    j['emotion'] for j in plan_emotional_chunks(text)
+                ))
+                engine.synthesize_emotional(
+                    text=text,
+                    output_file=str(output_path),
+                    ref_audio=ref_audio_path,
+                    ref_text=ref_text,
+                    speed=speed,
+                    progress_callback=_ov_progress_cb,
+                )
+            else:
+                engine.synthesize(
+                    text=text,
+                    output_file=str(output_path),
+                    ref_audio=ref_audio_path,
+                    ref_text=ref_text,
+                    instruct=instruct if mode == 'design' else None,
+                    speed=speed,
+                )
+        set_omnivoice_progress(conversion_id, status='completed', percent=100)
+
+        if not output_path.exists():
+            raise Exception("File audio không được tạo thành công")
+
+        file_size = os.path.getsize(output_path)
+        import librosa
+        y, sr = librosa.load(str(output_path), sr=None)
+        duration_seconds = len(y) / sr
+
+        if conversion_id:
+            conn_update = get_db_connection()
+            if conn_update:
+                try:
+                    with conn_update.cursor() as cursor:
+                        cursor.execute(
+                            """UPDATE conversions SET
+                               audio_file_path = %s, audio_file_size = %s, voice_name = %s,
+                               duration_seconds = %s, status = 'completed', completed_at = NOW()
+                               WHERE id = %s""",
+                            (str(output_path), file_size, voice_id, duration_seconds, conversion_id)
+                        )
+                        conn_update.commit()
+                        update_characters_used(session['user_id'], text_length)
+                except Exception as e:
+                    print(f"[ERROR] Error updating OmniVoice conversion: {e}")
+                finally:
+                    conn_update.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Chuyển đổi OmniVoice thành công!',
+            'audio_url': f'/api/audio/{filename}',
+            'audio_filename': filename,
+            'conversion_id': conversion_id,
+            'file_size': file_size,
+            'duration': round(duration_seconds, 2),
+            'emotions_used': emotions_used if mode == 'emotional' else None,
+        }), 200
+
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] OmniVoice conversion error: {e}", flush=True)
+        print(f"[ERROR] Traceback: {error_trace}", flush=True)
+
+        if conversion_id:
+            try:
+                conn_err = get_db_connection()
+                if conn_err:
+                    with conn_err.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE conversions SET status = 'failed', completed_at = NOW() WHERE id = %s",
+                            (conversion_id,)
+                        )
+                        conn_err.commit()
+                    conn_err.close()
+            except Exception:
+                pass
+
+        return jsonify({'success': False, 'message': f'Lỗi: {str(e)}'}), 500
+
     finally:
         if conn:
             conn.close()
@@ -5452,6 +5858,7 @@ def payment_confirm():
             'package_name':     row['package_name'],
             'characters_limit': row['characters_limit'],
             'duration_days':    row['duration_days'],
+            'created_at':       row['created_at'],
             'qr_code':          qr_result.get('qr_image', ''),
             'bank_name':        SEPAY_BANK_ID,
             'account_number':   SEPAY_ACCOUNT_NUMBER,
@@ -5475,7 +5882,7 @@ def profile():
         try:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    """SELECT id, username, email, full_name, avatar_url, role, created_at,
+                    """SELECT id, username, email, full_name, avatar_url, cover_url, role, created_at,
                               delete_requested, delete_status, delete_requested_at, admin_delete_note
                        FROM users WHERE id = %s""",
                     (session['user_id'],)
@@ -5488,6 +5895,7 @@ def profile():
                         'email':      row['email'] or '',
                         'full_name':  row['full_name'] or '',
                         'avatar_url': row.get('avatar_url') or '',
+                        'cover_url':  row.get('cover_url') or '',
                         'role':       row['role'],
                         'created_at': row['created_at'].strftime('%d/%m/%Y') if row.get('created_at') else '',
                         'delete_requested': bool(row.get('delete_requested')),
@@ -5747,6 +6155,98 @@ def upload_avatar():
         })
     except Exception as e:
         print(f'[ERROR] upload_avatar: {e}')
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/upload-cover', methods=['POST'])
+@login_required
+def upload_cover():
+    """Upload / thay ảnh bìa hồ sơ"""
+    if 'cover' not in request.files:
+        return jsonify({'success': False, 'message': 'Không có file ảnh'}), 400
+
+    file = request.files['cover']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'Không có file ảnh'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_AVATAR_EXTENSIONS:
+        return jsonify({'success': False, 'message': 'Chỉ chấp nhận JPG, PNG hoặc WEBP'}), 400
+
+    file.seek(0, os.SEEK_END)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_COVER_BYTES:
+        return jsonify({'success': False, 'message': 'Ảnh bìa tối đa 3MB'}), 400
+
+    user_id = session['user_id']
+    filename = f'cover_user_{user_id}.{ext}'
+    save_path = COVER_UPLOAD_DIR / filename
+    cover_url = f'/uploads/covers/{filename}'
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        for old_file in COVER_UPLOAD_DIR.glob(f'cover_user_{user_id}.*'):
+            try:
+                old_file.unlink()
+            except OSError:
+                pass
+
+        file.save(str(save_path))
+
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET cover_url = %s WHERE id = %s",
+                (cover_url, user_id)
+            )
+            conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Cập nhật ảnh bìa thành công',
+            'cover_url': f'{cover_url}?t={int(time.time())}'
+        })
+    except Exception as e:
+        print(f'[ERROR] upload_cover: {e}')
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/remove-cover', methods=['POST'])
+@login_required
+def remove_cover():
+    """Xóa ảnh bìa — trở về gradient mặc định"""
+    user_id = session['user_id']
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection failed'}), 500
+
+    try:
+        for old_file in COVER_UPLOAD_DIR.glob(f'cover_user_{user_id}.*'):
+            try:
+                old_file.unlink()
+            except OSError:
+                pass
+
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE users SET cover_url = NULL WHERE id = %s",
+                (user_id,)
+            )
+            conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Đã xóa ảnh bìa',
+        })
+    except Exception as e:
+        print(f'[ERROR] remove_cover: {e}')
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
@@ -9051,9 +9551,9 @@ def upload_custom_voice():
         voice_name = request.form.get('voice_name', 'Untitled Voice')
         description = request.form.get('description', '')
         
-        # Voice type: 'rvc' (training), 'zero_shot' (clone from audio + transcript), or 'vixtts_clone' (viXTTS clone)
+        # Voice type: 'rvc', 'zero_shot', 'vixtts_clone', or 'omnivoice_clone'
         voice_type = (request.form.get('voice_type') or 'rvc').strip().lower()
-        if voice_type not in ('rvc', 'zero_shot', 'vixtts_clone'):
+        if voice_type not in ('rvc', 'zero_shot', 'vixtts_clone', 'omnivoice_clone'):
             voice_type = 'rvc'
         ref_transcript = (request.form.get('ref_transcript') or '').strip()
         if voice_type == 'zero_shot' and not ref_transcript:
@@ -9066,6 +9566,8 @@ def upload_custom_voice():
                 return jsonify({'success': False, 'error': 'Transcript quá ngắn. Vui lòng nhập đúng nội dung nói trong file mẫu (ít nhất 10 ký tự). Ví dụ: "Xin chào, đây là giọng đọc của tôi."'}), 400
         if voice_type == 'vixtts_clone' and (not VIXTTS_EMOTIONAL_AVAILABLE or VIXTTS_INSTANCE is None):
             return jsonify({'success': False, 'error': 'viXTTS model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
+        if voice_type == 'omnivoice_clone' and not OMNIVOICE_AVAILABLE:
+            return jsonify({'success': False, 'error': 'OmniVoice chưa được cài đặt. Chạy: pip install -r requirements_omnivoice.txt'}), 503
         
         # V2: Get base voice and adjustments (with defaults) - for RVC mode
         base_voice_id = request.form.get('base_voice_id', 'ly')
@@ -9104,6 +9606,20 @@ def upload_custom_voice():
                 os.remove(audio_path)
                 return jsonify({'success': False, 'error': 'Audio quá dài cho viXTTS Clone. Tối đa 120 giây (2 phút).'}), 400
             is_valid, message = True, 'Audio hợp lệ'
+        elif voice_type == 'omnivoice_clone':
+            # OmniVoice Clone: 3–10 seconds recommended, allow up to 30s
+            import librosa as _lb_ov
+            try:
+                duration = _lb_ov.get_duration(path=audio_path)
+            except Exception:
+                duration = 0
+            if duration < 3:
+                os.remove(audio_path)
+                return jsonify({'success': False, 'error': 'Audio quá ngắn cho OmniVoice Clone. Cần ít nhất 3 giây.'}), 400
+            if duration > 30:
+                os.remove(audio_path)
+                return jsonify({'success': False, 'error': 'Audio quá dài cho OmniVoice Clone. Tối đa 30 giây.'}), 400
+            is_valid, message = True, 'Audio hợp lệ'
         else:
             is_valid, message, duration = audio_processor.validate_audio(audio_path)
         
@@ -9124,8 +9640,8 @@ def upload_custom_voice():
             return jsonify({'success': False, 'error': 'Database connection failed'}), 500
         
         cursor = conn.cursor()
-        # Zero-shot / vixtts_clone: status='completed' immediately; RVC: status='pending' then training
-        initial_status = 'completed' if voice_type in ('zero_shot', 'vixtts_clone') else 'pending'
+        # Zero-shot / vixtts_clone / omnivoice_clone: status='completed' immediately; RVC: status='pending'
+        initial_status = 'completed' if voice_type in ('zero_shot', 'vixtts_clone', 'omnivoice_clone') else 'pending'
         try:
             cursor.execute("""
                 INSERT INTO custom_voices 
@@ -9135,7 +9651,7 @@ def upload_custom_voice():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (user_id, voice_name, description, audio_path, int(duration), file_size, 
                   quality_score, initial_status, base_voice_id, pitch_adjustment, speed_adjustment, 
-                  energy_adjustment, voice_type, ref_transcript if voice_type == 'zero_shot' else None))
+                  energy_adjustment, voice_type, ref_transcript if voice_type in ('zero_shot', 'omnivoice_clone') else None))
         except Exception as db_err:
             # Fallback if voice_type/ref_transcript columns don't exist yet
             if 'voice_type' in str(db_err) or 'ref_transcript' in str(db_err):
@@ -9178,6 +9694,16 @@ def upload_custom_voice():
                 'custom_voice_id': custom_voice_id,
                 'voice_type': 'vixtts_clone',
                 'message': 'Giọng viXTTS Clone đã sẵn sàng. Bạn có thể dùng ngay.',
+                'quality_score': quality_score,
+                'quality_message': quality_msg,
+                'duration': duration
+            })
+        elif voice_type == 'omnivoice_clone':
+            return jsonify({
+                'success': True,
+                'custom_voice_id': custom_voice_id,
+                'voice_type': 'omnivoice_clone',
+                'message': 'Giọng OmniVoice Clone đã sẵn sàng. Bạn có thể dùng ngay.',
                 'quality_score': quality_score,
                 'quality_message': quality_msg,
                 'duration': duration
@@ -9318,6 +9844,22 @@ def test_custom_voice(voice_id):
                     return jsonify({'error': 'viXTTS model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
                 print(f"[TEST VOICE viXTTS-Clone] ref_audio={ref_audio_path}")
                 VIXTTS_INSTANCE.synthesize_with_voice(test_text, ref_audio_path, str(audio_path))
+            elif voice_type_cv == 'omnivoice_clone':
+                pitch_adj, speed_adj = 0, 1.0
+                ref_audio_path = resolve_audio_path(voice.get('sample_audio_path'))
+                if not ref_audio_path or not os.path.exists(ref_audio_path):
+                    return jsonify({'error': f'Không tìm thấy file audio mẫu của giọng OmniVoice Clone: {ref_audio_path}'}), 400
+                if not OMNIVOICE_AVAILABLE:
+                    return jsonify({'error': 'OmniVoice chưa được cài đặt.'}), 503
+                ov_engine = get_omnivoice_engine(load_if_needed=True)
+                if ov_engine is None or not ov_engine.is_loaded:
+                    return jsonify({'error': 'OmniVoice model chưa sẵn sàng. Vui lòng thử lại sau vài phút.'}), 503
+                ref_text_ov = (voice.get('ref_transcript') or '').strip() or None
+                print(f"[TEST VOICE OmniVoice-Clone] ref_audio={ref_audio_path}")
+                with _omnivoice_lock:
+                    ov_engine.synthesize_with_voice(
+                        test_text, ref_audio_path, str(audio_path), ref_text=ref_text_ov
+                    )
             else:
                 try:
                     if voice_type_cv == 'zero_shot':
@@ -9793,6 +10335,7 @@ def run_db_migrations():
         ('users', 'deletion_effective_at', 'DATETIME NULL DEFAULT NULL'),
         ('users', 'restore_requested', 'TINYINT(1) NOT NULL DEFAULT 0'),
         ('users', 'restore_requested_at', 'DATETIME NULL DEFAULT NULL'),
+        ('users', 'cover_url', 'VARCHAR(500) NULL DEFAULT NULL AFTER avatar_url'),
     ]
     conn = get_db_connection()
     if not conn:
@@ -9888,8 +10431,35 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"[WORKER] ❌ Failed to start worker: {e}")
     
-    # Pre-load viXTTS Emotional TTS để user không phải chờ lần đầu
-    if VIXTTS_EMOTIONAL_AVAILABLE:
+    # Pre-load OmniVoice truoc (uu tien GPU) — viXTTS load CPU sau
+    if OMNIVOICE_AVAILABLE:
+        try:
+            print("\n" + "=" * 60)
+            print("[OmniVoice] 🚀 ĐANG LOAD OMNIVOICE MODEL...")
+            print("[OmniVoice] Vui lòng đợi (lần đầu sẽ download model ~1.2GB)")
+            print("=" * 60 + "\n")
+
+            if preload_omnivoice_model():
+                print("\n" + "=" * 60)
+                print("[OmniVoice] ✅ MODEL ĐÃ SẴN SÀNG!")
+                print("=" * 60 + "\n")
+            else:
+                print("\n[OmniVoice] ❌ Pre-load FAILED\n")
+        except Exception as e:
+            import traceback
+            print(f"\n[OmniVoice] ❌ Pre-load FAILED: {e}")
+            print(f"[OmniVoice] Traceback:\n{traceback.format_exc()}")
+            print("[OmniVoice] Model sẽ được load khi có request đầu tiên\n")
+
+    # Pre-load viXTTS — bo qua khi OmniVoice dung GPU (tiet kiem ~4GB RAM)
+    _vixtts_preload = os.environ.get("VIXTTS_PRELOAD", "auto").strip().lower()
+    _omni_wants_gpu = (os.environ.get("OMNIVOICE_DEVICE") or "").strip().lower().startswith("cuda")
+    _should_preload_vixtts = VIXTTS_EMOTIONAL_AVAILABLE and (
+        _vixtts_preload in ("1", "true", "yes")
+        or (_vixtts_preload == "auto" and not _omni_wants_gpu)
+    )
+
+    if _should_preload_vixtts:
         try:
             print("\n" + "=" * 60)
             print("[viXTTS] 🚀 ĐANG LOAD EMOTIONAL TTS MODEL...")
@@ -9898,7 +10468,7 @@ if __name__ == '__main__':
             print("=" * 60 + "\n")
             
             VIXTTS_INSTANCE = get_vixtts_emotional_instance()
-            VIXTTS_INSTANCE.load_model()  # Load model ngay
+            VIXTTS_INSTANCE.load_model()
             
             print("\n" + "=" * 60)
             print("[viXTTS] ✅ MODEL ĐÃ SẴN SÀNG!")
@@ -9911,14 +10481,32 @@ if __name__ == '__main__':
             print(f"\n[viXTTS] ❌ Pre-load FAILED: {e}")
             print(f"[viXTTS] Traceback:\n{traceback.format_exc()}")
             print("[viXTTS] Model sẽ được load khi có request đầu tiên\n")
-    
+    elif VIXTTS_EMOTIONAL_AVAILABLE and _omni_wants_gpu:
+        print("[viXTTS] Bo qua preload startup — uu tien RAM/GPU cho OmniVoice (load khi dung tab Emotional)")
+        try:
+            VIXTTS_INSTANCE = get_vixtts_emotional_instance()
+        except Exception:
+            VIXTTS_INSTANCE = None
+
     # Check readiness status
-    is_ready = VIXTTS_INSTANCE is not None and VIXTTS_INSTANCE.model is not None if VIXTTS_EMOTIONAL_AVAILABLE else False
+    is_ready = VIXTTS_EMOTIONAL_AVAILABLE and (
+        VIXTTS_INSTANCE is not None and VIXTTS_INSTANCE.model is not None
+        if VIXTTS_INSTANCE is not None else True
+    ) if VIXTTS_EMOTIONAL_AVAILABLE else False
+    ov_ready = OMNIVOICE_INSTANCE is not None and OMNIVOICE_INSTANCE.is_loaded if OMNIVOICE_AVAILABLE else False
     
     print("=" * 60)
     print("[TTS] 🎉 SERVER READY - SẴN SÀNG PHỤC VỤ!")
     print("[TTS] URL: http://127.0.0.1:5000")
-    print("[TTS] Emotional TTS: " + ("✅ Sẵn sàng" if is_ready else "❌ Không khả dụng"))
+    print("[TTS] Emotional TTS: " + (
+        "✅ Sẵn sàng" if is_ready and VIXTTS_INSTANCE and VIXTTS_INSTANCE.model
+        else ("✅ Sẵn sàng (lazy load)" if VIXTTS_EMOTIONAL_AVAILABLE else "❌ Không khả dụng")
+    ))
+    ov_device = ""
+    if ov_ready and OMNIVOICE_INSTANCE and getattr(OMNIVOICE_INSTANCE, "_daemon", None):
+        ov_device = OMNIVOICE_INSTANCE._daemon._device or ""
+    print("[TTS] OmniVoice TTS: " + ("✅ Sẵn sàng" if ov_ready else "❌ Không khả dụng")
+          + (f" ({ov_device})" if ov_device else ""))
     if SMTP_HOST and SMTP_USER:
         print(f"[EMAIL] SMTP: ✅ {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
     else:

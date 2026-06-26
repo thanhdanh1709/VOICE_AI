@@ -1,0 +1,101 @@
+/* Workspace index — voice row + mobile layout */
+
+.ws-voice-row {
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.ws-voice-row__select {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-voice-row__preview {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.ws-voice-select {
+  color-scheme: dark;
+  color: #d4e4fa !important;
+  background-color: rgba(13, 28, 45, 0.95) !important;
+  -webkit-text-fill-color: #d4e4fa;
+}
+
+.ws-voice-select option {
+  background-color: #1c2b3c;
+  color: #d4e4fa;
+}
+
+/* Vùng nội dung tab — text / file / emotional / omnivoice */
+.ws-tab-panels {
+  min-height: 0;
+}
+
+.ws-tab-panels > .tab-content:not(.hidden) {
+  animation: wsTabIn 0.15s ease-out;
+}
+
+@keyframes wsTabIn {
+  from { opacity: 0.6; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  /* Nút chuyển đổi: nằm trong card, ngay dưới ô nhập — không fixed */
+  .ws-convert-bar {
+    position: static;
+    margin-top: 1rem !important;
+    padding-top: 1rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .ws-convert-bar button {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    font-size: 16px;
+  }
+
+  #content.vv-has-mobile-header {
+    padding-bottom: 76px !important;
+  }
+
+  /* Thu gọn card nhập trên mobile */
+  .ws-input-card {
+    padding: 1rem !important;
+    overflow: visible !important;
+  }
+
+  .ws-input-card > h2 {
+    margin-bottom: 0.85rem !important;
+    font-size: 1.05rem !important;
+  }
+
+  /* Chọn giọng — ngay dưới tab, cùng hàng với Nghe thử */
+  .ws-voice-row {
+    gap: 8px;
+    margin-top: 0.85rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .ws-voice-select {
+    font-size: 13px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+
+  /* Emotional tab — dropdown giọng gọn trên mobile */
+  .ws-emotional-select-wrap .ov-select-menu {
+    max-height: min(180px, 32vh);
+  }
+
+  .ws-emotional-select-wrap .ov-select-menu__item {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+
+  .ws-emotional-select-wrap .ov-select-menu__group {
+    font-size: 9px;
+    padding: 5px 10px 3px;
+  }
+}

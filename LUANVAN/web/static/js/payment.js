@@ -293,6 +293,9 @@ class PaymentTracker {
             const navEl = document.getElementById('charsNavCount');
             if (navEl) navEl.textContent = fmt + ' ký tự';
 
+            const mobileEl = document.getElementById('mobileCharsCount');
+            if (mobileEl) mobileEl.textContent = fmt;
+
             // Cập nhật bất kỳ element nào có data-characters-display
             document.querySelectorAll('[data-characters-display]').forEach(el => {
                 el.textContent = this._num(n);

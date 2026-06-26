@@ -1,67 +1,66 @@
 <!-- Page Header -->
-    <header class="mb-5 md:mb-8">
-      <h1 class="text-3xl md:text-4xl font-extrabold text-on-surface mb-1 md:mb-2 tracking-tight" data-i18n="lib.title">Thư viện Audio</h1>
-      <p class="text-sm md:text-base text-on-surface-variant" data-i18n="lib.subtitle">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
+    <header class="mb-4 md:mb-6">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-on-surface mb-1 tracking-tight" data-i18n="lib.title">Thư viện Audio</h1>
+      <p class="text-xs md:text-sm text-on-surface-variant" data-i18n="lib.subtitle">Quản lý và tìm kiếm các tệp âm thanh đã tạo</p>
     </header>
 
-    <!-- Filter Bar -->
-    <section class="glass-panel rounded-xl p-4 mb-5">
-      <!-- Search -->
-      <div class="relative mb-3">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-size:18px">search</span>
-        <input id="searchInput" type="search"
-          class="w-full bg-surface-container border border-outline-variant rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors placeholder-on-surface-variant/60"
-          placeholder="Tìm kiếm theo nội dung âm thanh..." data-i18n-placeholder="lib.search_placeholder"/>
+    <!-- Compact filter toolbar -->
+    <section class="al-toolbar glass-panel rounded-xl mb-4">
+      <div class="al-toolbar__row">
+        <div class="al-search">
+          <span class="material-symbols-outlined al-search__icon">search</span>
+          <input id="searchInput" type="search"
+            class="al-search__input"
+            placeholder="Tìm kiếm..." data-i18n-placeholder="lib.search"/>
+        </div>
+        <div class="al-toolbar__controls">
+          <select id="voiceFilter" class="al-select" title="Giọng đọc">
+            <option value="" data-i18n="lib.filter.all_voices">Tất cả giọng</option>
+          </select>
+          <select id="sortBy" class="al-select al-select--sort" title="Sắp xếp">
+            <option value="newest" data-i18n="lib.sort.newest">Mới nhất</option>
+            <option value="oldest" data-i18n="lib.sort.oldest">Cũ nhất</option>
+            <option value="duration" data-i18n="lib.sort.duration">Thời lượng</option>
+            <option value="size" data-i18n="lib.sort.size">Kích thước</option>
+          </select>
+          <button type="button" id="alDateToggle" class="al-icon-btn" aria-expanded="false" aria-controls="alDatePanel" title="Lọc theo ngày">
+            <span class="material-symbols-outlined">date_range</span>
+          </button>
+          <button type="button" id="resetBtn" class="al-icon-btn" title="Đặt lại" data-i18n-title="common.reset">
+            <span class="material-symbols-outlined">restart_alt</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Filters row 1: voice + sort -->
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <select id="voiceFilter" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
-          <option value="" data-i18n="lib.filter.all_voices">Tất cả giọng đọc</option>
-        </select>
-        <select id="sortBy" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface focus:outline-none focus:border-tertiary appearance-none">
-          <option value="newest" data-i18n="lib.sort.newest">Mới nhất</option>
-          <option value="oldest" data-i18n="lib.sort.oldest">Cũ nhất</option>
-          <option value="duration" data-i18n="lib.sort.duration">Thời lượng</option>
-          <option value="size" data-i18n="lib.sort.size">Kích thước</option>
-        </select>
+      <div id="alDatePanel" class="al-toolbar__dates hidden">
+        <label class="al-date-field">
+          <span data-i18n="lib.filter.from">Từ</span>
+          <input id="dateFrom" type="date"/>
+        </label>
+        <span class="al-date-sep">—</span>
+        <label class="al-date-field">
+          <span data-i18n="lib.filter.to">Đến</span>
+          <input id="dateTo" type="date"/>
+        </label>
       </div>
 
-      <!-- Filters row 2: dates -->
-      <div class="grid grid-cols-2 gap-2 mb-3">
-        <input id="dateFrom" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
-        <input id="dateTo" type="date" class="bg-surface-container border border-outline-variant rounded-lg py-2.5 px-3 text-sm text-on-surface-variant focus:outline-none focus:border-tertiary"/>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="flex gap-2">
-        <button id="filterBtn" class="flex-1 py-2.5 rounded-lg bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors flex items-center justify-center gap-1.5">
-          <span class="material-symbols-outlined" style="font-size:16px">filter_list</span>
-          <span data-i18n="lib.btn.filter">Lọc</span>
-        </button>
-        <button id="resetBtn" class="flex-1 py-2.5 rounded-lg bg-white/5 border border-white/10 text-on-surface-variant text-sm font-medium hover:bg-white/10 transition-colors">
-          <span data-i18n="common.reset">Đặt lại</span>
-        </button>
+      <div class="al-toolbar__footer">
+        <div class="al-view-toggle">
+          <button class="view-btn-modern active flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all" data-view="grid">
+            <span class="material-symbols-outlined" style="font-size:15px">grid_view</span>
+            <span class="hidden sm:inline" data-i18n="lib.view.grid">Lưới</span>
+          </button>
+          <button class="view-btn-modern flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all" data-view="list">
+            <span class="material-symbols-outlined" style="font-size:15px">view_list</span>
+            <span class="hidden sm:inline" data-i18n="lib.view.list">Danh sách</span>
+          </button>
+        </div>
+        <div id="audioCount" class="al-count-badge">
+          <span class="material-symbols-outlined">folder</span>
+          <span>Tổng: <strong>0</strong></span>
+        </div>
       </div>
     </section>
-
-    <!-- View Toggles & Stats -->
-    <div class="flex items-center justify-between mb-5">
-      <div class="inline-flex bg-surface-container rounded-lg p-1 border border-outline-variant gap-1">
-        <button class="view-btn-modern active flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="grid">
-          <span class="material-symbols-outlined" style="font-size:16px">grid_view</span>
-          <span data-i18n="lib.view.grid">Lưới</span>
-        </button>
-        <button class="view-btn-modern flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all" data-view="list">
-          <span class="material-symbols-outlined" style="font-size:16px">view_list</span>
-          <span data-i18n="lib.view.list">Danh sách</span>
-        </button>
-      </div>
-      <div id="audioCount" class="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold border border-primary/20 flex items-center gap-1.5">
-        <span class="material-symbols-outlined" style="font-size:14px">folder</span>
-        Tổng: <strong>0</strong> audio
-      </div>
-    </div>
 
     <!-- Audio Container (populated by JS) -->
     <div id="audioContainer" class="audio-grid-modern gap-5 mb-8">

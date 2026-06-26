@@ -4,6 +4,15 @@
   min-height: 15rem;
 }
 
+.fu-root--compact {
+  min-height: 0;
+}
+
+.fu-root--compact .fu-preview {
+  min-height: 10rem;
+  max-height: 14rem;
+}
+
 .fu-empty.hidden,
 .fu-loaded.hidden,
 .fu-preview-wrap.hidden,
@@ -38,6 +47,52 @@
   border-color: rgba(208, 188, 255, 0.55);
   background: rgba(208, 188, 255, 0.08);
   box-shadow: 0 0 24px rgba(208, 188, 255, 0.12);
+}
+
+/* Compact — cùng khung với tab Nhập văn bản */
+.fu-dropzone--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  min-height: 13rem;
+  height: 13rem;
+  padding: 1rem 1.25rem;
+  background: rgba(1, 15, 31, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .fu-dropzone--compact {
+    min-height: 15rem;
+    height: 15rem;
+  }
+}
+
+.fu-dropzone--compact .fu-dropzone__icon {
+  font-size: 2.25rem;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.fu-dropzone--compact .fu-dropzone__text {
+  flex: 1;
+  min-width: 140px;
+  text-align: left;
+}
+
+.fu-dropzone--compact .fu-format-chips {
+  margin-top: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.fu-scan-warning--compact {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  font-size: 0.6875rem;
 }
 
 .fu-dropzone__icon {
@@ -372,4 +427,68 @@ html:not(.dark) .fu-btn--ghost {
   background: #f8fafc;
   border-color: #e2e8f0;
   color: #475569;
+}
+
+/* ── Inline upload (tích hợp vào từng tab) ── */
+.ws-input-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.ws-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(208, 188, 255, 0.28);
+  background: rgba(208, 188, 255, 0.08);
+  color: #d0bcff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ws-upload-btn:hover {
+  background: rgba(208, 188, 255, 0.14);
+  border-color: rgba(208, 188, 255, 0.42);
+}
+
+.ws-upload-btn .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.ws-upload-hint {
+  font-size: 0.6875rem;
+  color: rgba(203, 195, 215, 0.5);
+}
+
+.fu-status-strip {
+  margin-bottom: 0.75rem;
+}
+
+.fu-file-card--strip {
+  padding: 0.65rem 0.85rem;
+}
+
+.fu-strip-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.fu-btn--xs {
+  padding: 0.25rem 0.4rem;
+  min-width: 0;
+}
+
+.ws-text-drop-target.is-dragover textarea,
+.ws-text-drop-target.is-dragover .ov-textarea {
+  border-color: rgba(208, 188, 255, 0.45) !important;
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.12);
 }

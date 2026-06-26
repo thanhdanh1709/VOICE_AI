@@ -255,6 +255,7 @@ tailwind.config = {
             <strong class="text-on-surface">RVC:</strong> Train model từ audio (mất vài phút).
             <strong class="text-on-surface">Zero-shot:</strong> Clone giọng ngay từ mẫu (cần nhập transcript).
             <strong class="text-on-surface">viXTTS Clone:</strong> AI clone giọng bằng model viXTTS, không cần transcript.
+            <strong class="text-on-surface">OmniVoice Clone:</strong> Clone giọng đa ngôn ngữ (600+ ngôn ngữ), transcript tuỳ chọn.
           </p>
 
           <div class="ml-11 flex flex-wrap gap-4 mb-4">
@@ -269,6 +270,10 @@ tailwind.config = {
             <label class="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg transition-all" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
               <input type="radio" name="voice_type" value="vixtts_clone" id="voiceTypeVixtts" class="accent-primary">
               <span class="text-sm font-medium text-on-surface">🤖 viXTTS Clone</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg transition-all" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+              <input type="radio" name="voice_type" value="omnivoice_clone" id="voiceTypeOmnivoice" class="accent-primary">
+              <span class="text-sm font-medium text-on-surface">🌍 OmniVoice Clone</span>
             </label>
           </div>
 
@@ -298,6 +303,13 @@ tailwind.config = {
             <h4 class="text-sm font-bold text-on-surface mb-1" data-i18n="addv.vixtts.title">🤖 viXTTS Clone — AI clone giọng</h4>
             <p class="text-sm text-on-surface-variant mb-2" data-i18n-html="addv.vixtts.desc">Model <strong class="text-on-surface">viXTTS</strong> sẽ học đặc trưng giọng nói từ file audio mẫu và tổng hợp giọng mới không cần transcript.</p>
             <p class="text-xs text-primary" data-i18n-html="addv.vixtts.tip">💡 <strong>Tip:</strong> Dùng file audio rõ ràng, ít tạp âm, dài 10–60 giây để có kết quả tốt nhất.</p>
+          </div>
+
+          <!-- OmniVoice info (shown for omnivoice_clone) -->
+          <div id="omnivoiceCloneInfo" class="ml-11 rounded-xl p-4" style="display:none;background:rgba(208,188,255,0.06);border-left:3px solid #a078ff">
+            <h4 class="text-sm font-bold text-on-surface mb-1">🌍 OmniVoice Clone — đa ngôn ngữ</h4>
+            <p class="text-sm text-on-surface-variant mb-2">Model <strong class="text-on-surface">OmniVoice</strong> clone giọng từ audio mẫu 3–10 giây, hỗ trợ 600+ ngôn ngữ. Transcript tuỳ chọn (Whisper tự phiên âm nếu bỏ trống).</p>
+            <p class="text-xs text-primary">💡 <strong>Tip:</strong> Audio mẫu nên cùng ngôn ngữ với văn bản đích để phát âm chuẩn nhất.</p>
           </div>
         </div>
 

@@ -1,0 +1,402 @@
+/* OmniVoice tab — compact studio layout */
+.ov-studio {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 420px;
+  color-scheme: dark;
+}
+
+.ov-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ov-field {
+  flex: 1;
+  min-width: 140px;
+}
+
+.ov-field--voice {
+  flex: 1.4;
+  min-width: 180px;
+}
+
+.ov-field--design {
+  flex: 2;
+  min-width: 220px;
+}
+
+.ov-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(203, 195, 215, 0.85);
+  margin-bottom: 6px;
+}
+
+.ov-select,
+.ov-input {
+  width: 100%;
+  appearance: none;
+  background-color: rgba(13, 28, 45, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 36px 10px 14px;
+  font-size: 14px;
+  color: #d4e4fa !important;
+  -webkit-text-fill-color: #d4e4fa;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ov-select option,
+.ov-select optgroup {
+  background-color: #1c2b3c;
+  color: #d4e4fa;
+}
+
+.ov-input {
+  padding-right: 14px;
+}
+
+.ov-select-wrap {
+  position: relative;
+}
+
+.ov-select-wrap .material-symbols-outlined.ov-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: rgba(203, 195, 215, 0.6);
+  pointer-events: none;
+  transition: transform 0.15s ease;
+  z-index: 2;
+}
+
+.ov-select-wrap.is-open .ov-chevron {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.ov-select-wrap.is-enhanced .ov-select--native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ov-select-trigger {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  appearance: none;
+  background-color: rgba(13, 28, 45, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 36px 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #d4e4fa;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ov-select-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.ov-select-wrap.is-open .ov-select-trigger {
+  border-color: rgba(208, 188, 255, 0.45);
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.12);
+}
+
+.ov-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: min(220px, 42vh);
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: 10px;
+  background: #1c2b3c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+}
+
+.ov-select-menu.hidden {
+  display: none;
+}
+
+.ov-select-menu__group {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(203, 195, 215, 0.45);
+}
+
+.ov-select-menu__item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #d4e4fa;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ov-select-menu__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ov-select-menu__item.is-selected {
+  background: rgba(208, 188, 255, 0.16);
+  color: #d0bcff;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .ov-select-trigger {
+    font-size: 13px;
+    padding: 9px 34px 9px 12px;
+  }
+
+  .ov-select-menu__item {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
+.ov-select:focus,
+.ov-input:focus {
+  outline: none;
+  border-color: rgba(208, 188, 255, 0.45);
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.12);
+}
+
+.ov-field--mode {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.ov-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ov-mode-row__select {
+  flex: 1;
+  min-width: 0;
+}
+
+.ov-help-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(203, 195, 215, 0.8);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ov-help-btn:hover {
+  background: rgba(208, 188, 255, 0.1);
+  border-color: rgba(208, 188, 255, 0.35);
+  color: #d0bcff;
+}
+
+.ov-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(203, 195, 215, 0.55);
+  margin-bottom: 10px;
+}
+
+.ov-context .material-symbols-outlined {
+  font-size: 14px;
+  color: rgba(47, 217, 244, 0.7);
+}
+
+.ov-textarea-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+.ov-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 280px;
+  resize: vertical;
+  background: rgba(1, 15, 31, 0.6);
+  border: 1px solid rgba(208, 188, 255, 0.22);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #d4e4fa;
+}
+
+.ov-textarea:focus {
+  outline: none;
+  border-color: rgba(208, 188, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(208, 188, 255, 0.12);
+}
+
+.ov-textarea::placeholder {
+  color: rgba(203, 195, 215, 0.35);
+}
+
+.ov-textarea-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(203, 195, 215, 0.55);
+}
+
+.ov-chunk-hint {
+  flex: 1;
+  min-width: 160px;
+  font-size: 11px;
+  color: rgba(203, 195, 215, 0.45);
+}
+
+.ov-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(47, 217, 244, 0.25);
+  background: rgba(47, 217, 244, 0.08);
+  color: #2fd9f4;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ov-tag-btn:hover {
+  background: rgba(47, 217, 244, 0.14);
+}
+
+.ov-popover {
+  position: absolute;
+  z-index: 40;
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #1c2b3c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(212, 228, 250, 0.9);
+}
+
+.ov-popover.hidden {
+  display: none;
+}
+
+.ov-popover__title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #d0bcff;
+}
+
+.ov-popover code {
+  color: #d0bcff;
+  background: rgba(208, 188, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.ov-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ov-tag-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4e4fa;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ov-tag-chip:hover {
+  background: rgba(208, 188, 255, 0.12);
+  border-color: rgba(208, 188, 255, 0.3);
+}
+
+.ov-studio {
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .ov-field,
+  .ov-field--voice,
+  .ov-field--design {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .ov-textarea-wrap {
+    min-height: 200px;
+  }
+
+  .ov-textarea {
+    min-height: 180px;
+  }
+
+  .ov-studio {
+    min-height: 0;
+  }
+}

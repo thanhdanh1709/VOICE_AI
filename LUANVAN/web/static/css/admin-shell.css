@@ -351,17 +351,54 @@
 }
 
 .ac-toolbar--payments {
-  flex-direction: row;
+  gap: 0.85rem;
+}
+
+.ac-toolbar__row {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.ac-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.ac-toolbar__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.ac-toolbar__action .material-symbols-outlined {
+  font-size: 16px !important;
+}
+
+.ac-toolbar__action--success:hover {
+  background: rgba(16, 185, 129, 0.18);
 }
 
 .ac-toolbar__search {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex: 1;
+  flex: 1 1 220px;
   min-width: 0;
   padding: 0.5rem 0.75rem;
   border-radius: 10px;
@@ -370,7 +407,7 @@
 }
 
 .ac-toolbar__search--wide {
-  max-width: 420px;
+  max-width: none;
 }
 
 .ac-toolbar__search .material-symbols-outlined {
@@ -391,6 +428,24 @@
 
 .ac-toolbar__search input::placeholder {
   color: #958ea0;
+}
+
+@media (max-width: 639px) {
+  .ac-toolbar__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ac-toolbar__actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .ac-toolbar__action,
+  .ac-toolbar__actions .ac-dash-refresh-btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 .ac-filter-chips--toolbar {

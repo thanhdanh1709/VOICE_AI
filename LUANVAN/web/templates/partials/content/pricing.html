@@ -1,153 +1,162 @@
-<!-- Page Header -->
-      <header class="text-center mb-6 md:mb-10">
-        <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-on-surface mb-2 md:mb-3 tracking-tight" data-i18n="price.title">Nâng cấp gói dịch vụ</h1>
-        <p class="text-sm md:text-base text-on-surface-variant max-w-xl mx-auto" data-i18n="price.subtitle">Chọn gói phù hợp để mở rộng khả năng chuyển đổi của bạn</p>
+<div class="pr-studio pr-animate-in">
+      <div class="pr-ambient" aria-hidden="true">
+        <span class="pr-ambient__orb pr-ambient__orb--1"></span>
+        <span class="pr-ambient__orb pr-ambient__orb--2"></span>
+        <span class="pr-ambient__orb pr-ambient__orb--3"></span>
+      </div>
+
+      <header class="pr-studio__header">
+        <p class="pr-studio__kicker">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <span data-i18n="price.kicker">Nâng cấp trải nghiệm AI Voice</span>
+        </p>
+        <h1 class="pr-studio__title" data-i18n="price.title">Nâng cấp gói dịch vụ</h1>
+        <p class="pr-studio__subtitle" data-i18n="price.subtitle">Chọn gói phù hợp để mở rộng khả năng chuyển đổi của bạn</p>
       </header>
 
-      <!-- Account Status Grid -->
-      <section class="mb-6 md:mb-12 animate-in" style="animation-delay:0.05s">
-        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
-          <!-- Used -->
-          <div class="glass-card rounded-xl p-5 flex flex-col">
-            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
-              <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;font-size:18px">data_usage</span>
-              <span class="text-xs font-semibold uppercase tracking-wider" data-i18n="price.stat.used">Đã sử dụng</span>
-            </div>
-            <div class="text-2xl font-bold text-on-surface" id="charactersUsed">—</div>
-            <div class="text-xs text-on-surface-variant mt-0.5" data-i18n="common.chars">ký tự</div>
-          </div>
-          <!-- Remaining -->
-          <div class="glass-card rounded-xl p-5 flex flex-col">
-            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
-              <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;font-size:18px">pie_chart</span>
-              <span class="text-xs font-semibold uppercase tracking-wider" data-i18n="price.stat.remaining">Còn lại</span>
-            </div>
-            <div class="text-2xl font-bold text-primary" id="charactersRemaining">—</div>
-            <div class="text-xs text-on-surface-variant mt-0.5" data-i18n="common.chars">ký tự</div>
-            <div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-3 overflow-hidden">
-              <div id="usageProgress" class="bg-gradient-to-r from-tertiary to-primary h-full rounded-full" style="width:0%"></div>
-            </div>
-            <div class="text-[11px] text-on-surface-variant mt-1"><span id="usagePercent">0%</span> <span data-i18n="price.stat.used_percent">đã dùng</span></div>
-          </div>
-          <!-- Limit -->
-          <div class="glass-card rounded-xl p-5 flex flex-col">
-            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
-              <span class="material-symbols-outlined text-secondary" style="font-variation-settings:'FILL' 1;font-size:18px">inventory_2</span>
-              <span class="text-xs font-semibold uppercase tracking-wider" data-i18n="price.stat.limit">Tổng hạn mức</span>
-            </div>
-            <div class="text-2xl font-bold text-on-surface" id="charactersLimit">—</div>
-            <div class="text-xs text-on-surface-variant mt-0.5" data-i18n="price.stat.chars_per_period">ký tự / kỳ</div>
-          </div>
-          <!-- Expiry -->
-          <div class="glass-card rounded-xl p-5 flex flex-col">
-            <div class="flex items-center gap-2 mb-2 text-on-surface-variant">
-              <span class="material-symbols-outlined text-error" style="font-variation-settings:'FILL' 1;font-size:18px">event</span>
-              <span class="text-xs font-semibold uppercase tracking-wider" data-i18n="price.stat.expiry">Hết hạn</span>
-            </div>
-            <div class="text-2xl font-bold text-on-surface" id="endDate">—</div>
-          </div>
-        </div>
-      </section>
+      <div class="pr-studio-shell">
 
-      <!-- Pricing Section -->
-      <section class="mb-12">
-        <div class="text-center mb-8">
-          <h2 class="text-2xl font-bold text-on-surface mb-1" data-i18n="price.plans.title">Các gói dịch vụ</h2>
-          <p class="text-sm text-on-surface-variant" data-i18n="price.plans.subtitle">Tất cả gói đều bao gồm đầy đủ tính năng cốt lõi</p>
-        </div>
-
-        <!-- Dynamic pricing grid — populated by pricing.js -->
-        <div id="pricingGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 items-start">
-          <div style="grid-column:1/-1" class="flex flex-col items-center py-14 gap-3 text-on-surface-variant">
-            <div style="width:32px;height:32px;border:3px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
-            <p class="text-sm" data-i18n="price.plans.loading">Đang tải gói dịch vụ...</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Payment Info -->
-      <section class="glass-card rounded-xl p-7 flex flex-col md:flex-row items-start md:items-center gap-7 border-t-2 border-t-tertiary/25 animate-in" style="animation-delay:0.2s">
-        <div class="flex-1">
-          <h3 class="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
-            <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1">payments</span>
-            <span data-i18n="price.payment.title">Thanh toán dễ dàng</span>
-          </h3>
-          <p class="text-sm text-on-surface-variant mb-5 max-w-xl" data-i18n="price.payment.desc">Chúng tôi hỗ trợ nhiều hình thức thanh toán để đảm bảo quá trình nâng cấp dịch vụ của bạn diễn ra nhanh chóng và thuận tiện nhất.</p>
-          <div class="flex flex-wrap gap-3">
-            <div class="flex items-center gap-2 bg-surface-container py-2 px-4 rounded-lg border border-white/5">
-              <span class="material-symbols-outlined text-primary" style="font-size:18px">qr_code</span>
-              <span class="text-sm font-medium text-on-surface" data-i18n="price.payment.qr">Quét mã QR</span>
+        <!-- Usage — 4 stat cells trong 1 card -->
+        <section class="pr-usage-strip" aria-label="Hạn mức tài khoản">
+          <div class="pr-usage-grid">
+            <div class="pr-usage-cell pr-usage-cell--highlight pr-usage-cell--c1">
+              <span class="pr-usage-cell__icon material-symbols-outlined">bolt</span>
+              <span class="pr-usage-cell__label" data-i18n="price.stat.remaining">Còn lại</span>
+              <span class="pr-usage-cell__value" id="charactersRemaining">—</span>
+              <span class="pr-usage-cell__unit" data-i18n="common.chars">ký tự</span>
             </div>
-            <div class="flex items-center gap-2 bg-surface-container py-2 px-4 rounded-lg border border-white/5">
-              <span class="material-symbols-outlined text-tertiary" style="font-size:18px">account_balance</span>
-              <span class="text-sm font-medium text-on-surface" data-i18n="price.payment.transfer">Chuyển khoản</span>
+            <div class="pr-usage-cell pr-usage-cell--c2">
+              <span class="pr-usage-cell__icon material-symbols-outlined">trending_up</span>
+              <span class="pr-usage-cell__label" data-i18n="price.stat.used">Đã sử dụng</span>
+              <span class="pr-usage-cell__value" id="charactersUsed">—</span>
+              <span class="pr-usage-cell__unit" data-i18n="common.chars">ký tự</span>
+            </div>
+            <div class="pr-usage-cell pr-usage-cell--c3">
+              <span class="pr-usage-cell__icon material-symbols-outlined">data_usage</span>
+              <span class="pr-usage-cell__label" data-i18n="price.stat.limit">Tổng hạn mức</span>
+              <span class="pr-usage-cell__value" id="charactersLimit">—</span>
+              <span class="pr-usage-cell__unit" data-i18n="price.stat.chars_per_period">ký tự / kỳ</span>
+            </div>
+            <div class="pr-usage-cell pr-usage-cell--c4">
+              <span class="pr-usage-cell__icon material-symbols-outlined">event</span>
+              <span class="pr-usage-cell__label" data-i18n="price.stat.expiry">Hết hạn</span>
+              <span class="pr-usage-cell__value pr-usage-cell__value--date" id="endDate">—</span>
             </div>
           </div>
-          <div class="mt-5 text-xs text-on-surface-variant space-y-1.5">
-            <div class="flex items-start gap-2">
-              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              <span data-i18n="price.payment.bullet1">Thanh toán qua QR Code chuyển khoản ngân hàng nhanh chóng</span>
+          <div class="pr-usage-strip__bar-wrap">
+            <div class="pr-usage-strip__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div id="usageProgress" class="pr-usage-strip__fill" style="width:0%"></div>
             </div>
-            <div class="flex items-start gap-2">
-              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              <span data-i18n="price.payment.bullet2">Gói sẽ được kích hoạt sau khi admin xác nhận thanh toán (trong 24h)</span>
+            <span class="pr-usage-strip__pct"><span id="usagePercent">0%</span> <span data-i18n="price.stat.used_percent">đã dùng</span></span>
+          </div>
+        </section>
+
+        <!-- Tabs full width -->
+        <nav class="pr-tabs" role="tablist" aria-label="Pricing sections">
+          <button type="button" class="pr-tab active" role="tab" aria-selected="true" data-pr-tab="plans" id="prTabPlans">
+            <span class="material-symbols-outlined">layers</span>
+            <span data-i18n="price.tab.plans">Gói dịch vụ</span>
+          </button>
+          <button type="button" class="pr-tab" role="tab" aria-selected="false" data-pr-tab="history" id="prTabHistory">
+            <span class="material-symbols-outlined">receipt_long</span>
+            <span data-i18n="price.tab.history">Lịch sử</span>
+          </button>
+        </nav>
+
+        <!-- Panel: Plans -->
+        <section id="prPanelPlans" class="pr-panel" role="tabpanel" aria-labelledby="prTabPlans">
+          <div class="pr-plans-header">
+            <p class="pr-plans-header__title" data-i18n="price.plans.subtitle">Tất cả gói đều bao gồm đầy đủ tính năng cốt lõi</p>
+            <div class="pr-feature-pills">
+              <span class="pr-feature-pill pr-feature-pill--1"><span class="material-symbols-outlined">graphic_eq</span><span data-i18n="price.pill.voices">Giọng VN</span></span>
+              <span class="pr-feature-pill pr-feature-pill--2"><span class="material-symbols-outlined">sentiment_satisfied</span><span data-i18n="price.pill.emotional">Emotional TTS</span></span>
+              <span class="pr-feature-pill pr-feature-pill--3"><span class="material-symbols-outlined">qr_code</span><span data-i18n="price.pill.qr">QR tức thì</span></span>
+              <span class="pr-feature-pill pr-feature-pill--4"><span class="material-symbols-outlined">bolt</span><span data-i18n="price.pill.auto">Tự kích hoạt</span></span>
             </div>
-            <div class="flex items-start gap-2">
-              <span class="material-symbols-outlined text-tertiary shrink-0" style="font-size:14px">check_circle</span>
-              <span><span data-i18n="price.payment.bullet3_prefix">Liên hệ</span> <a href="{{ url_for('contact') }}" class="text-primary hover:underline no-underline">{{ support_email_addr() }}</a> <span data-i18n="price.payment.bullet3_suffix">nếu cần hỗ trợ</span></span>
+          </div>
+
+          <div class="pr-plans-shell">
+            <div class="pr-plans-carousel">
+              <div id="pricingGrid" class="pr-plans-grid--loading">
+                <div class="pr-loading">
+                  <div class="pr-spinner"></div>
+                  <span data-i18n="price.plans.loading">Đang tải gói dịch vụ...</span>
+                </div>
+              </div>
+            </div>
+            <p class="pr-carousel-hint">
+              <span class="material-symbols-outlined">swipe</span>
+              <span data-i18n="price.carousel.hint">Vuốt để xem thêm gói</span>
+            </p>
+          </div>
+
+          <div class="pr-pay-steps">
+            <div class="pr-pay-step pr-pay-step--1">
+              <span class="pr-pay-step__num">1</span>
+              <div>
+                <strong data-i18n="price.step1.title">Chọn gói</strong>
+                <p data-i18n="price.step1.desc">Nhấn Đăng ký trên gói phù hợp</p>
+              </div>
+            </div>
+            <div class="pr-pay-step pr-pay-step--2">
+              <span class="pr-pay-step__num">2</span>
+              <div>
+                <strong data-i18n="price.step2.title">Quét QR</strong>
+                <p data-i18n="price.step2.desc">Chuyển khoản qua app ngân hàng</p>
+              </div>
+            </div>
+            <div class="pr-pay-step pr-pay-step--3">
+              <span class="pr-pay-step__num">3</span>
+              <div>
+                <strong data-i18n="price.step3.title">Dùng ngay</strong>
+                <p data-i18n="price.step3.desc">Ký tự được cộng tự động</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="shrink-0 w-44 h-44 bg-white rounded-xl flex items-center justify-center border border-white/10 overflow-hidden">
-          <img alt="QR thanh toán" class="w-full h-full object-cover opacity-90"
-               src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VietVoice-Payment"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-          <div style="display:none" class="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-400">
-            <span class="material-symbols-outlined" style="font-size:40px">qr_code_2</span>
-            <span class="text-xs">QR Code</span>
+          <p class="pr-pay-support">
+            <span class="material-symbols-outlined">support_agent</span>
+            <span data-i18n="price.payment.bullet3_prefix">Liên hệ</span>
+            <a href="{{ url_for('contact') }}">{{ support_email_addr() }}</a>
+            <span data-i18n="price.payment.bullet3_suffix">nếu cần hỗ trợ</span>
+          </p>
+        </section>
+
+        <!-- Panel: History -->
+        <section id="prPanelHistory" class="pr-panel hidden" role="tabpanel" aria-labelledby="prTabHistory">
+          <p class="pr-history-intro" data-i18n="price.history.intro">Theo dõi các giao dịch và tải hóa đơn điện tử.</p>
+
+          <div id="paymentHistoryLoading" class="pr-loading">
+            <div class="pr-spinner"></div>
+            <span data-i18n="price.history.loading">Đang tải lịch sử thanh toán...</span>
           </div>
-        </div>
-      </section>
 
-      <!-- ═══ PAYMENT HISTORY ═══ -->
-      <section class="mt-8 md:mt-12 animate-in" style="animation-delay:0.15s">
-        <div class="flex items-center gap-3 mb-5">
-          <span class="material-symbols-outlined text-primary" style="font-size:22px;font-variation-settings:'FILL' 1">receipt_long</span>
-          <h2 class="text-xl font-bold text-on-surface" data-i18n="price.history.title">Lịch sử thanh toán</h2>
-        </div>
-
-        <!-- Loading -->
-        <div id="paymentHistoryLoading" class="flex items-center gap-3 py-8 text-on-surface-variant text-sm">
-          <div style="width:20px;height:20px;border:2.5px solid rgba(208,188,255,0.15);border-top-color:#d0bcff;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0"></div>
-          <span data-i18n="price.history.loading">Đang tải lịch sử thanh toán...</span>
-        </div>
-
-        <!-- Empty -->
-        <div id="paymentHistoryEmpty" style="display:none" class="py-10 text-center text-on-surface-variant text-sm">
-          <span class="material-symbols-outlined" style="font-size:40px;opacity:0.3">receipt_long</span>
-          <p class="mt-2" data-i18n="price.history.empty">Chưa có giao dịch nào.</p>
-        </div>
-
-        <!-- Table -->
-        <div id="paymentHistoryTable" style="display:none" class="w-full bg-surface/40 backdrop-blur-xl border border-outline-variant/30 rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)]">
-          <div class="overflow-x-auto w-full">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-surface-container/80 border-b border-outline-variant/50">
-                <tr>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.id">Mã GD</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden sm:table-cell" data-i18n="price.history.col.plan">Gói</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.amount">Số tiền</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant hidden md:table-cell" data-i18n="price.history.col.date">Ngày thanh toán</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant" data-i18n="price.history.col.status">Trạng thái</th>
-                  <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant text-right" data-i18n="price.history.col.invoice">Hóa đơn</th>
-                </tr>
-              </thead>
-              <tbody id="paymentHistoryBody" class="divide-y divide-outline-variant/20"></tbody>
-            </table>
+          <div id="paymentHistoryEmpty" style="display:none" class="pr-loading">
+            <span class="material-symbols-outlined" style="font-size:40px;opacity:0.3">receipt_long</span>
+            <span data-i18n="price.history.empty">Chưa có giao dịch nào.</span>
           </div>
-          <div id="paymentHistoryPaginationWrap" style="display:none" class="px-4 py-3.5 border-t border-outline-variant/30 bg-surface-container/30 flex items-center justify-between gap-4 flex-wrap">
-            <span id="paymentHistoryPaginationInfo" class="text-xs text-on-surface-variant"></span>
-            <div id="paymentHistoryPagination" class="flex items-center gap-1.5"></div>
+
+          <div id="paymentHistoryTable" style="display:none" class="pr-history-table-wrap">
+            <div class="overflow-x-auto w-full">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="price.history.col.id">Mã GD</th>
+                    <th class="hidden sm:table-cell" data-i18n="price.history.col.plan">Gói</th>
+                    <th data-i18n="price.history.col.amount">Số tiền</th>
+                    <th class="hidden md:table-cell" data-i18n="price.history.col.date">Ngày thanh toán</th>
+                    <th data-i18n="price.history.col.status">Trạng thái</th>
+                    <th class="text-right" data-i18n="price.history.col.invoice">Hóa đơn</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentHistoryBody"></tbody>
+              </table>
+            </div>
+            <div id="paymentHistoryPaginationWrap" style="display:none" class="pr-history-pagination">
+              <span id="paymentHistoryPaginationInfo" class="text-xs text-on-surface-variant"></span>
+              <div id="paymentHistoryPagination" class="flex items-center gap-1.5"></div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+      </div>
+</div>

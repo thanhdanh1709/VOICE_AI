@@ -227,12 +227,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const count = textInput.value.length;
             charCount.textContent = count.toLocaleString();
             updateVietnameseInputWarning(textInput.value);
-            const filePreview = document.getElementById('fileTextPreview');
-            const fileCharCount = document.getElementById('fileCharCount');
-            if (filePreview && filePreview.value !== textInput.value) {
-                filePreview.value = textInput.value;
-                if (fileCharCount) fileCharCount.textContent = count.toLocaleString();
-            }
         });
     }
     
@@ -251,6 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const convertBtn = document.getElementById('convertBtn');
     const convertEmotionalBtn = document.getElementById('convertEmotionalBtn');
+    const convertOmnivoiceBtn = document.getElementById('convertOmnivoiceBtn');
 
     // Convert button handlers
     if (convertBtn) {
@@ -261,6 +256,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Check emotional TTS status on page load
         checkEmotionalTTSStatus();
+    }
+    if (convertOmnivoiceBtn) {
+        convertOmnivoiceBtn.addEventListener('click', handleOmnivoiceConvert);
+        checkOmnivoiceStatus();
+    }
+
+    setupOmnivoiceModeToggle();
+    enhanceOvSelects();
+
+    const omnivoiceTextInput = document.getElementById('omnivoiceTextInput');
+    const omnivoiceCharCount = document.getElementById('omnivoiceCharCount');
+    if (omnivoiceTextInput && omnivoiceCharCount) {
+        omnivoiceTextInput.addEventListener('input', () => {
+            const len = omnivoiceTextInput.value.length;
+            omnivoiceCharCount.textContent = len.toLocaleString();
+            updateOmnivoiceChunkHint(len);
+        });
     }
 });
 
@@ -320,6 +332,7 @@ async function loadVoices() {
 
         // Populate emotional voice selector (viXTTS Clone voices only)
         loadEmotionalVoiceSelector(customVoices);
+        loadOmnivoiceVoiceSelector(customVoices);
 
     } catch (error) {
         console.error('Error loading voices:', error);
@@ -344,7 +357,295 @@ function loadEmotionalVoiceSelector(customVoices) {
         html += '</optgroup>';
     }
     emotionalSelect.innerHTML = html;
+    refreshOvSelectMenu(emotionalSelect);
     console.log(`[EMOTIONAL TTS] Loaded ${vixttsVoices.length} viXTTS Clone voice(s) into selector`);
+}
+
+/**
+ * Populate OmniVoice voice selector with omnivoice_clone voices
+ */
+function loadOmnivoiceVoiceSelector(customVoices) {
+    const ovSelect = document.getElementById('omnivoiceVoiceSelect');
+    const ovEmoSelect = document.getElementById('omnivoiceEmotionalVoiceSelect');
+    if (!ovSelect && !ovEmoSelect) return;
+
+    const ovVoices = (customVoices || []).filter(v => v.voice_type === 'omnivoice_clone');
+
+    let html = '<option value="">— Chọn giọng clone —</option>';
+    if (ovVoices.length > 0) {
+        html += '<optgroup label="🌍 Giọng OmniVoice Clone của tôi">';
+        html += ovVoices.map(v =>
+            `<option value="${v.id}">🎙️ ${v.name} (⭐${v.quality_score.toFixed(1)})</option>`
+        ).join('');
+        html += '</optgroup>';
+    }
+    if (ovSelect) ovSelect.innerHTML = html;
+
+    let emoHtml = '<option value="">— Auto voice + cảm xúc —</option>';
+    if (ovVoices.length > 0) {
+        emoHtml += '<optgroup label="🌍 Giọng OmniVoice Clone của tôi">';
+        emoHtml += ovVoices.map(v =>
+            `<option value="${v.id}">🎙️ ${v.name} (⭐${v.quality_score.toFixed(1)})</option>`
+        ).join('');
+        emoHtml += '</optgroup>';
+    }
+    if (ovEmoSelect) ovEmoSelect.innerHTML = emoHtml;
+
+    if (ovSelect) refreshOvSelectMenu(ovSelect);
+    if (ovEmoSelect) refreshOvSelectMenu(ovEmoSelect);
+
+    console.log(`[OMNIVOICE] Loaded ${ovVoices.length} OmniVoice Clone voice(s)`);
+}
+
+let omnivoiceGpuMaxChars = 200;
+
+const OMNIVOICE_PLACEHOLDERS = {
+    auto: 'Nhập văn bản bất kỳ ngôn ngữ...\n\nVD: Xin chào! Hello! 你好!',
+    clone: 'Nhập văn bản để đọc bằng giọng clone đã chọn...',
+    design: 'Nhập văn bản...\n\nGiọng được tạo theo mô tả instruct bên trên.',
+    emotional: 'Mỗi dòng có tag cảm xúc:\n(vui vẻ) Sài Gòn thật sôi động.\n(excited) What a great day!\n(平静) 今天天气很好。',
+};
+
+const OMNIVOICE_HELP = {
+    auto: 'Tự chọn giọng phù hợp theo ngôn ngữ. Hỗ trợ 600+ ngôn ngữ.',
+    clone: 'Chọn giọng OmniVoice Clone. Tạo mới tại <strong>Thêm giọng mới</strong> → OmniVoice Clone.',
+    design: 'Mô tả giọng bằng tiếng Anh: gender, age, pitch, accent, whisper...',
+    emotional: 'Dùng tag trong ngoặc: <code>(vui vẻ)</code> <code>(excited)</code> <code>(平静)</code>. Mỗi dòng một cảm xúc.',
+};
+
+function closeAllOvSelectMenus() {
+    document.querySelectorAll('.ov-select-wrap.is-open').forEach((wrap) => {
+        wrap.classList.remove('is-open');
+        wrap.querySelector('.ov-select-menu')?.classList.add('hidden');
+        wrap.querySelector('.ov-select-trigger')?.setAttribute('aria-expanded', 'false');
+    });
+}
+
+function parseOvSelectItems(select) {
+    const items = [];
+    Array.from(select.children).forEach((child) => {
+        if (child.tagName === 'OPTGROUP') {
+            items.push({ kind: 'group', label: child.label });
+            Array.from(child.children).forEach((opt) => {
+                items.push({ kind: 'option', value: opt.value, label: opt.textContent.trim() });
+            });
+        } else if (child.tagName === 'OPTION') {
+            items.push({ kind: 'option', value: child.value, label: child.textContent.trim() });
+        }
+    });
+    return items;
+}
+
+function refreshOvSelectMenu(select) {
+    const wrap = select?.closest('.ov-select-wrap');
+    if (!wrap || !wrap.classList.contains('is-enhanced')) return;
+    const menu = wrap.querySelector('.ov-select-menu');
+    const trigger = wrap.querySelector('.ov-select-trigger');
+    if (!menu || !trigger) return;
+
+    menu.innerHTML = '';
+    parseOvSelectItems(select).forEach((item) => {
+        if (item.kind === 'group') {
+            const group = document.createElement('div');
+            group.className = 'ov-select-menu__group';
+            group.textContent = item.label;
+            menu.appendChild(group);
+            return;
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ov-select-menu__item';
+        btn.dataset.value = item.value;
+        btn.textContent = item.label;
+        btn.setAttribute('role', 'option');
+        if (select.value === item.value) btn.classList.add('is-selected');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            select.value = item.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncOvSelectTrigger(select);
+            closeAllOvSelectMenus();
+        });
+        menu.appendChild(btn);
+    });
+    syncOvSelectTrigger(select);
+}
+
+function syncOvSelectTrigger(select) {
+    const wrap = select?.closest('.ov-select-wrap');
+    const trigger = wrap?.querySelector('.ov-select-trigger');
+    if (!trigger) return;
+    const opt = select.options[select.selectedIndex];
+    trigger.textContent = opt ? opt.textContent.trim() : '';
+    wrap.querySelectorAll('.ov-select-menu__item').forEach((el) => {
+        el.classList.toggle('is-selected', el.dataset.value === select.value);
+    });
+}
+
+function enhanceOvSelects() {
+    document.querySelectorAll('.ov-select-wrap').forEach((wrap) => {
+        const select = wrap.querySelector('select');
+        if (!select || wrap.classList.contains('is-enhanced')) return;
+
+        wrap.classList.add('is-enhanced');
+        select.classList.add('ov-select--native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'ov-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        const menu = document.createElement('div');
+        menu.className = 'ov-select-menu hidden';
+        menu.setAttribute('role', 'listbox');
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = wrap.classList.contains('is-open');
+            closeAllOvSelectMenus();
+            closeOmnivoicePopovers();
+            if (!isOpen) {
+                wrap.classList.add('is-open');
+                menu.classList.remove('hidden');
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        });
+
+        select.addEventListener('change', () => syncOvSelectTrigger(select));
+
+        wrap.appendChild(trigger);
+        wrap.appendChild(menu);
+        refreshOvSelectMenu(select);
+
+        new MutationObserver(() => refreshOvSelectMenu(select)).observe(select, { childList: true, subtree: true });
+    });
+}
+
+function updateOmnivoiceChunkHint(textLen) {
+    const hint = document.getElementById('omnivoiceChunkHint');
+    if (!hint) return;
+    if (!textLen) {
+        hint.classList.add('hidden');
+        return;
+    }
+    const max = omnivoiceGpuMaxChars || 200;
+    const chunks = Math.max(1, Math.ceil(textLen / max));
+    hint.textContent = chunks > 1
+        ? `≈ ${chunks} lần infer (≤${max} ký tự/đoạn trên GPU)`
+        : '1 lần infer — tốc độ tối ưu';
+    hint.classList.remove('hidden');
+}
+
+function getOmnivoiceMode() {
+    return document.getElementById('omnivoiceModeSelect')?.value || 'auto';
+}
+
+function closeOmnivoicePopovers() {
+    ['omnivoiceHelpPopover', 'omnivoiceTagPopover'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+}
+
+function positionOmnivoicePopover(popover, anchor) {
+    if (!popover || !anchor) return;
+    const studio = document.getElementById('omnivoiceTab');
+    const a = anchor.getBoundingClientRect();
+    const s = studio.getBoundingClientRect();
+    popover.style.top = `${a.bottom - s.top + 8}px`;
+    popover.style.right = `${s.right - a.right}px`;
+    popover.style.left = 'auto';
+}
+
+function insertOmnivoiceTag(tag) {
+    const ta = document.getElementById('omnivoiceTextInput');
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const val = ta.value;
+    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+    const before = val.slice(0, lineStart);
+    const after = val.slice(lineStart);
+    const insert = `${tag} `;
+    ta.value = before + insert + after;
+    const pos = lineStart + insert.length;
+    ta.setSelectionRange(pos, pos);
+    ta.focus();
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    closeOmnivoicePopovers();
+}
+
+/**
+ * OmniVoice tab — mode toolbar, placeholders, help & tag popovers
+ */
+function setupOmnivoiceModeToggle() {
+    const modeSelect = document.getElementById('omnivoiceModeSelect');
+    const cloneField = document.getElementById('omnivoiceCloneField');
+    const emotionalCloneField = document.getElementById('omnivoiceEmotionalCloneField');
+    const designField = document.getElementById('omnivoiceDesignField');
+    const tagBtn = document.getElementById('omnivoiceInsertTagBtn');
+    const helpBtn = document.getElementById('omnivoiceHelpBtn');
+    const helpPopover = document.getElementById('omnivoiceHelpPopover');
+    const helpContent = document.getElementById('omnivoiceHelpContent');
+    const tagPopover = document.getElementById('omnivoiceTagPopover');
+    const textInput = document.getElementById('omnivoiceTextInput');
+
+    function update() {
+        const mode = getOmnivoiceMode();
+        if (cloneField) cloneField.classList.toggle('hidden', mode !== 'clone');
+        if (emotionalCloneField) emotionalCloneField.classList.toggle('hidden', mode !== 'emotional');
+        if (designField) designField.classList.toggle('hidden', mode !== 'design');
+        if (tagBtn) tagBtn.classList.toggle('hidden', mode !== 'emotional');
+        if (textInput && OMNIVOICE_PLACEHOLDERS[mode]) {
+            textInput.placeholder = OMNIVOICE_PLACEHOLDERS[mode];
+        }
+        if (helpContent && OMNIVOICE_HELP[mode]) {
+            helpContent.innerHTML = OMNIVOICE_HELP[mode];
+        }
+        closeOmnivoicePopovers();
+    }
+
+    if (modeSelect) {
+        modeSelect.addEventListener('change', update);
+        update();
+    }
+
+    if (helpBtn && helpPopover) {
+        helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasHidden = helpPopover.classList.contains('hidden');
+            closeOmnivoicePopovers();
+            if (wasHidden) {
+                helpPopover.classList.remove('hidden');
+                positionOmnivoicePopover(helpPopover, helpBtn);
+            }
+        });
+    }
+
+    if (tagBtn && tagPopover) {
+        tagBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wasHidden = tagPopover.classList.contains('hidden');
+            closeOmnivoicePopovers();
+            if (wasHidden) {
+                tagPopover.classList.remove('hidden');
+                positionOmnivoicePopover(tagPopover, tagBtn);
+            }
+        });
+    }
+
+    document.querySelectorAll('.ov-tag-chip').forEach((chip) => {
+        chip.addEventListener('click', () => insertOmnivoiceTag(chip.dataset.tag || ''));
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.ov-select-wrap')) {
+            closeAllOvSelectMenus();
+        }
+        if (!e.target.closest('.ov-popover') && !e.target.closest('#omnivoiceHelpBtn') && !e.target.closest('#omnivoiceInsertTagBtn')) {
+            closeOmnivoicePopovers();
+        }
+    });
 }
 
 // Load statistics
@@ -841,22 +1142,26 @@ async function checkEmotionalTTSStatus() {
         const data = await response.json();
         
         if (data.success && data.ready) {
-            // Model sẵn sàng
             convertEmotionalBtn.disabled = false;
             console.log('[EMOTIONAL TTS] ✅ Model ready!');
-        } else {
-            // Model chưa sẵn sàng
-            convertEmotionalBtn.disabled = true;
-            convertEmotionalBtn.innerHTML = '<span>⏳</span><span>Đang load model...</span>';
-            console.log('[EMOTIONAL TTS] ⏳ Loading model...:', data.message);
-            
-            // Retry sau 5 giây
-            setTimeout(checkEmotionalTTSStatus, 5000);
+            return;
         }
+
+        // Không cài viXTTS — dừng poll, không spam console
+        const msg = (data.message || '').toLowerCase();
+        const permanentlyUnavailable = msg.includes('không được cài đặt') || msg.includes('import failed');
+        if (permanentlyUnavailable) {
+            convertEmotionalBtn.disabled = true;
+            convertEmotionalBtn.title = data.message || 'Emotional TTS không khả dụng';
+            return;
+        }
+
+        convertEmotionalBtn.disabled = true;
+        convertEmotionalBtn.innerHTML = '<span>⏳</span><span>Đang load model...</span>';
+        setTimeout(checkEmotionalTTSStatus, 5000);
     } catch (error) {
         console.error('[EMOTIONAL TTS] Error checking status:', error);
-        // Retry sau 5 giây
-        setTimeout(checkEmotionalTTSStatus, 5000);
+        setTimeout(checkEmotionalTTSStatus, 10000);
     }
 }
 
@@ -979,6 +1284,158 @@ async function handleEmotionalConvert() {
         if (convertBtn) {
             convertBtn.disabled = false;
             convertBtn.innerHTML = '<span class="btn-icon">🎭</span><span class="btn-text">Chuyển đổi với cảm xúc</span>';
+        }
+    }
+}
+
+/**
+ * Check if OmniVoice TTS is ready
+ */
+async function checkOmnivoiceStatus() {
+    const btn = document.getElementById('convertOmnivoiceBtn');
+    if (!btn) return;
+
+    try {
+        const response = await fetch('/api/omnivoice/status');
+        const data = await response.json();
+
+        if (data.success && data.ready) {
+            if (data.gpu_max_chars) omnivoiceGpuMaxChars = data.gpu_max_chars;
+            const ovInput = document.getElementById('omnivoiceTextInput');
+            if (ovInput) updateOmnivoiceChunkHint(ovInput.value.length);
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px">language</span><span>Chuyển đổi OmniVoice</span>';
+            console.log('[OMNIVOICE] ✅ Model ready!');
+            return;
+        }
+
+        const msg = (data.message || '').toLowerCase();
+        const permanentlyUnavailable = msg.includes('chưa được cài đặt') || msg.includes('pip install');
+        if (permanentlyUnavailable) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px">error</span><span>OmniVoice chưa cài đặt</span>';
+            btn.title = data.message;
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px">hourglass_top</span><span>Đang load OmniVoice...</span>';
+        setTimeout(checkOmnivoiceStatus, 5000);
+    } catch (error) {
+        console.error('[OMNIVOICE] Error checking status:', error);
+        setTimeout(checkOmnivoiceStatus, 10000);
+    }
+}
+
+/**
+ * Handle OmniVoice TTS conversion
+ */
+async function handleOmnivoiceConvert() {
+    const textInput = document.getElementById('omnivoiceTextInput');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const errorMessage = document.getElementById('errorMessage');
+    const emptyState = document.getElementById('emptyState');
+    const convertBtn = document.getElementById('convertOmnivoiceBtn');
+
+    const text = (textInput?.value || '').trim();
+    const mode = getOmnivoiceMode();
+    const customVoiceId = document.getElementById('omnivoiceVoiceSelect')?.value || null;
+    const emotionalVoiceId = document.getElementById('omnivoiceEmotionalVoiceSelect')?.value || null;
+    const instruct = document.getElementById('omnivoiceInstruct')?.value?.trim() || '';
+
+    if (!text) {
+        alert('Vui lòng nhập văn bản');
+        return;
+    }
+
+    if (mode === 'clone' && !customVoiceId) {
+        alert('Chế độ Voice Clone cần chọn giọng OmniVoice Clone. Tạo giọng tại Voices → Thêm giọng mới.');
+        return;
+    }
+
+    if (mode === 'design' && !instruct) {
+        alert('Chế độ Voice Design cần mô tả giọng (instruct).');
+        return;
+    }
+
+    if (mode === 'emotional' && !/\([^)]+\)/.test(text)) {
+        const ok = confirm(
+            'Văn bản chưa có tag cảm xúc trong ngoặc, ví dụ (vui vẻ) hoặc (excited).\n\n' +
+            'Tiếp tục với giọng neutral?'
+        );
+        if (!ok) return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+    showLoadingIndicator(loadingIndicator);
+    if (audioPlayer) audioPlayer.style.display = 'none';
+    if (errorMessage) errorMessage.style.display = 'none';
+
+    if (convertBtn) {
+        convertBtn.disabled = true;
+        convertBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;animation:spin .8s linear infinite">autorenew</span><span>Đang xử lý OmniVoice...</span>';
+    }
+
+    try {
+        const payload = { text, mode };
+        if (mode === 'clone' && customVoiceId) payload.custom_voice_id = customVoiceId;
+        if (mode === 'design') payload.instruct = instruct;
+        if (mode === 'emotional' && emotionalVoiceId) payload.custom_voice_id = emotionalVoiceId;
+
+        if (convertBtn && mode === 'emotional') {
+            convertBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px;animation:spin .8s linear infinite">autorenew</span><span>Đang xử lý Emotional OmniVoice...</span>';
+        }
+
+        const response = await fetch('/api/convert-omnivoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(errorData.message || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (data.emotions_used && data.emotions_used.length) {
+                console.log('[OMNIVOICE EMOTIONAL] Emotions used:', data.emotions_used.join(', '));
+            }
+            hideLoadingWithProgress(loadingIndicator, async () => {
+                const audioElement = document.getElementById('audioElement');
+                if (audioElement) {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    audioElement.src = data.audio_url;
+                    setCurrentAudio(data.audio_filename || `omnivoice_${Date.now()}.wav`);
+                    audioElement.load();
+                    if (audioPlayer) audioPlayer.style.display = 'block';
+                    if (typeof window.wsSetConversionId === 'function') {
+                        window.wsSetConversionId(data.conversion_id || null);
+                    }
+                }
+                await loadStatistics();
+            });
+        } else {
+            hideLoadingImmediate(loadingIndicator);
+            if (errorMessage) {
+                errorMessage.textContent = _msg(data.message) || 'Chuyển đổi thất bại';
+                errorMessage.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        hideLoadingImmediate(loadingIndicator);
+        if (errorMessage) {
+            errorMessage.textContent = error.message || 'Lỗi kết nối';
+            errorMessage.style.display = 'block';
+        }
+    } finally {
+        if (convertBtn) {
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:22px">language</span><span>Chuyển đổi OmniVoice</span>';
         }
     }
 }

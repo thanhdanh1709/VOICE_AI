@@ -16,6 +16,7 @@
 <!-- Tailwind -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 {% include 'partials/vv_tailwind_config.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/audio-library.css') }}">
 
 <style>
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -74,9 +75,7 @@
   .audio-table-modern th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #958ea0; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .audio-table-modern td { padding: 12px 16px; font-size: 13px; color: #cbc3d7; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
   .audio-table-modern tbody tr:hover td { background: rgba(208,188,255,0.04); }
-  .audio-table-modern .mini-player { width: 140px; height: 32px; }
   .audio-table-modern .text-col { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #d4e4fa; }
-  .audio-table-modern .actions-col { display: flex; align-items: center; gap: 8px; }
 
   [color-scheme="dark"] input[type="date"] { color-scheme: dark; }
   input[type="date"] { color-scheme: dark; }
@@ -89,6 +88,8 @@
 <body class="min-h-screen flex flex-col">
 
 {% set mob_nav_active = 'audio_library' %}
+{% set mobile_header_title = 'Thư viện Audio' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT: Sidebar + Main ═══ -->
@@ -98,7 +99,7 @@
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-    <main id="content" data-spa-page="audio_library" class="flex-1 min-w-0 p-4 md:p-8 min-h-0 pb-[76px] md:pb-8 overflow-hidden">
+    <main id="content" data-spa-page="audio_library" class="vv-has-mobile-header flex-1 min-w-0 px-4 md:p-8 min-h-0 pb-[76px] md:pb-8 overflow-hidden md:pt-8">
     {% include 'partials/content/audio_library.html' %}
   </main>
 </div>
@@ -213,7 +214,9 @@ async function loadCharsRemaining() {
       const n = d.characters_remaining;
       const fmt = n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
       const el = document.getElementById('charsNavCount');
+      const mobileEl = document.getElementById('mobileCharsCount');
       if (el) el.textContent = fmt + ' ký tự';
+      if (mobileEl) mobileEl.textContent = fmt;
     }
   } catch(e) {}
 }

@@ -13,14 +13,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 {% include 'partials/vv_tailwind_config.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile-studio.css') }}?v=20260626c">
 
 <style>
+  html { scroll-behavior: smooth; color-scheme: dark; }
   html, body { overflow-x: hidden; max-width: 100%; }
   body { font-family: 'Manrope', sans-serif; background: #051424; color: #d4e4fa; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 20px; line-height: 1; display: inline-flex; align-items: center; }
-  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0d1c2d; } ::-webkit-scrollbar-thumb { background: #494454; border-radius: 3px; }
-
-  .card { background: rgba(18,33,49,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(73,68,84,0.4); border-radius: 16px; padding: 28px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+  ::-webkit-scrollbar-thumb { background: rgba(208,188,255,0.28); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(208,188,255,0.42); }
 
   .form-input {
     width: 100% !important;
@@ -88,12 +91,6 @@
   .btn-secondary:hover { background: rgba(28,43,60,0.9); border-color: rgba(208,188,255,0.35); }
   .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .prof-toggle-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    padding: 12px 14px; border-radius: 12px;
-    background: rgba(18,33,49,0.5); border: 1px solid rgba(73,68,84,0.35);
-    cursor: pointer;
-  }
   .prof-toggle-input {
     width: 18px; height: 18px; accent-color: #a078ff; cursor: pointer;
   }
@@ -268,9 +265,11 @@
 </style>
 </head>
 
-<body class="min-h-screen flex flex-col bg-background text-on-background">
+<body class="min-h-screen flex flex-col bg-background text-on-background pf-page">
 
 {% set mob_nav_active = 'profile' %}
+{% set mobile_header_title = 'Hồ sơ' %}
+{% include 'partials/_workspace_mobile_header.html' %}
 {% include 'partials/mobile_nav_drawer.html' %}
 
 <!-- ═══ LAYOUT ═══ -->
@@ -280,7 +279,7 @@
   {% include 'partials/_workspace_sidebar.html' %}
 
   <!-- ═══ MAIN CONTENT ═══ -->
-    <main id="content" data-spa-page="profile" class="flex-1 min-w-0 py-8 px-4 md:px-8 pb-[76px] md:pb-10 w-full">
+    <main id="content" data-spa-page="profile" class="vv-has-mobile-header flex-1 min-w-0 px-3 md:px-5 pb-[76px] md:pb-8 w-full md:py-5">
     {% include 'partials/content/profile.html' %}
   </main>
 </div>
@@ -369,6 +368,7 @@ function togglePw(id) {
 
 // ── Avatar upload ──
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const MAX_COVER_BYTES = 3 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 function setAvatarPreview(url) {
@@ -437,6 +437,79 @@ document.getElementById('avatarInput')?.addEventListener('change', function () {
   if (this.files && this.files[0]) uploadAvatar(this.files[0]);
 });
 
+function setCoverPreview(url) {
+  const banner = document.getElementById('profileCoverBanner');
+  const removeBtn = document.getElementById('btnRemoveCover');
+  if (!banner) return;
+  const bust = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+  banner.style.backgroundImage = `url('${bust}')`;
+  banner.classList.add('has-cover');
+  if (removeBtn) removeBtn.style.display = '';
+}
+
+async function uploadCover(file) {
+  if (!file) return;
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    showToast(_profT('prof.cover.err_type', 'Chỉ chấp nhận JPG, PNG hoặc WEBP'), 'error');
+    return;
+  }
+  if (file.size > MAX_COVER_BYTES) {
+    showToast(_profT('prof.cover.err_size', 'Ảnh bìa tối đa 3MB'), 'error');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('cover', file);
+  const label = document.querySelector('label[for="coverInput"]');
+  if (label) label.style.pointerEvents = 'none';
+
+  try {
+    showToast(_profT('prof.cover.uploading', 'Đang tải ảnh bìa...'), 'success');
+    const res = await fetch('/api/user/upload-cover', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success && data.cover_url) {
+      setCoverPreview(data.cover_url);
+      showToast(data.message || _profT('prof.cover.success', 'Cập nhật ảnh bìa thành công'), 'success');
+    } else {
+      showToast(data.message || _profT('common.error', 'Lỗi tải ảnh'), 'error');
+    }
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (label) label.style.pointerEvents = '';
+    const input = document.getElementById('coverInput');
+    if (input) input.value = '';
+  }
+}
+
+async function removeCover() {
+  const removeBtn = document.getElementById('btnRemoveCover');
+  if (removeBtn) removeBtn.disabled = true;
+  try {
+    const res = await fetch('/api/user/remove-cover', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      const banner = document.getElementById('profileCoverBanner');
+      if (banner) {
+        banner.style.backgroundImage = '';
+        banner.classList.remove('has-cover');
+      }
+      if (removeBtn) removeBtn.style.display = 'none';
+      showToast(data.message || _profT('prof.cover.removed', 'Đã xóa ảnh bìa'), 'success');
+    } else {
+      showToast(data.message || _profT('common.error', 'Lỗi'), 'error');
+    }
+  } catch (e) {
+    showToast(_profT('err.network', 'Lỗi kết nối'), 'error');
+  } finally {
+    if (removeBtn) removeBtn.disabled = false;
+  }
+}
+
+document.getElementById('coverInput')?.addEventListener('change', function () {
+  if (this.files && this.files[0]) uploadCover(this.files[0]);
+});
+
 // ── Update profile ──
 async function updateProfile() {
   const btn  = document.getElementById('btnUpdateProfile');
@@ -500,20 +573,20 @@ const TX_PER_PAGE = 8;
 function renderTxRow(p) {
   const isCompleted = p.payment_status === 'completed';
   const statusBadge = isCompleted
-    ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(0,159,180,0.15);border:1px solid rgba(47,217,244,0.3);font-size:11px;font-weight:600;color:#2fd9f4">Đã TT</span>`
+    ? `<span class="pf-badge pf-badge--paid">Đã TT</span>`
     : p.payment_status === 'pending'
-      ? `<span style="padding:2px 10px;border-radius:9999px;background:rgba(160,120,255,0.15);border:1px solid rgba(208,188,255,0.3);font-size:11px;font-weight:600;color:#d0bcff">Chờ</span>`
-      : `<span style="padding:2px 10px;border-radius:9999px;background:rgba(147,0,10,0.2);border:1px solid rgba(255,180,171,0.3);font-size:11px;font-weight:600;color:#ffb4ab">${p.payment_status}</span>`;
+      ? `<span class="pf-badge pf-badge--pending">Chờ</span>`
+      : `<span class="pf-badge pf-badge--fail">${p.payment_status}</span>`;
   const invoiceBtn = isCompleted
-    ? `<a href="/invoice/${p.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline" style="background:rgba(47,217,244,0.12);border:1px solid rgba(47,217,244,0.3);color:#2fd9f4"><span class="material-symbols-outlined" style="font-size:13px">download</span>PDF</a>`
+    ? `<a href="/invoice/${p.id}" class="pf-invoice-btn"><span class="material-symbols-outlined" style="font-size:13px">download</span>PDF</a>`
     : `<span class="text-xs text-outline">—</span>`;
-  return `<tr class="hover:bg-surface-container/30 transition-colors">
-    <td class="py-3 pr-4 text-on-surface font-medium">${p.package_name}</td>
-    <td class="py-3 pr-4 font-mono text-xs text-on-surface-variant hidden sm:table-cell">${p.transaction_id || ('#'+p.id)}</td>
-    <td class="py-3 pr-4 font-semibold text-primary">${p.amount_vnd.toLocaleString('vi-VN')}đ</td>
-    <td class="py-3 pr-4 text-xs text-on-surface-variant hidden md:table-cell">${p.completed_at || p.created_at}</td>
-    <td class="py-3 pr-4">${statusBadge}</td>
-    <td class="py-3 text-right">${invoiceBtn}</td>
+  return `<tr>
+    <td class="font-medium text-on-surface">${p.package_name}</td>
+    <td class="font-mono text-xs text-on-surface-variant hidden sm:table-cell">${p.transaction_id || ('#'+p.id)}</td>
+    <td class="font-semibold" style="color:#d0bcff">${p.amount_vnd.toLocaleString('vi-VN')}đ</td>
+    <td class="text-xs text-on-surface-variant hidden md:table-cell">${p.completed_at || p.created_at}</td>
+    <td>${statusBadge}</td>
+    <td class="text-right">${invoiceBtn}</td>
   </tr>`;
 }
 
@@ -812,7 +885,9 @@ async function loadPlanUsage() {
       const elDays = document.getElementById('planDaysLeft');
       const elRemain = document.getElementById('planRemaining');
       const elUsed = document.getElementById('planUsedLabel');
+      const elPct = document.getElementById('planUsedPct');
       const elBar = document.getElementById('planProgressBar');
+      const elHint = document.getElementById('planProgressHint');
 
       if (elName) elName.textContent = planName;
       if (elExpiry) elExpiry.textContent = s.end_date || '—';
@@ -821,7 +896,23 @@ async function loadPlanUsage() {
         : '';
       if (elRemain) elRemain.textContent = fmtNum(remaining) + ' ký tự';
       if (elUsed) elUsed.textContent = fmtNum(used) + ' / ' + fmtNum(limit);
-      if (elBar) elBar.style.width = pct + '%';
+      if (elPct) elPct.textContent = pct + '%';
+      if (elBar) {
+        elBar.style.width = pct + '%';
+        elBar.classList.toggle('is-active', pct > 0);
+        const barWrap = elBar.closest('[role="progressbar"]');
+        if (barWrap) {
+          barWrap.setAttribute('aria-valuenow', String(pct));
+          barWrap.classList.toggle('has-usage', pct > 0);
+        }
+      }
+      if (elHint) {
+        if (pct > 0) {
+          elHint.textContent = fmtNum(used) + ' ký tự · ' + pct + '%';
+        } else {
+          elHint.textContent = _profT('prof.plan.empty_hint', 'Chưa sử dụng ký tự');
+        }
+      }
     }
 
     if (chartData.success && chartData.chart) {
