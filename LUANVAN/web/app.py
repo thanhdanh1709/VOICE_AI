@@ -62,6 +62,7 @@ def resolve_audio_path(path: str) -> str:
     return str(candidate1)
 
 from config import DB_CONFIG, UPLOAD_DIR, AUDIO_OUTPUT_DIR, BANK_NAME, BANK_ACCOUNT_NUMBER, BANK_ACCOUNT_NAME, BANK_BRANCH
+from config import mysql_connect_kwargs
 from config import SEPAY_API_URL, SEPAY_TOKEN, SEPAY_ACCOUNT_NUMBER, SEPAY_BANK_ID, SEPAY_TIMEOUT, SEPAY_QR_API
 from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
 from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM, APP_BASE_URL, DEBUG, SMTP_USE_SSL, ADMIN_EMAIL
@@ -1219,15 +1220,12 @@ def get_db_connection():
     """Kết nối database MySQL"""
     try:
         connection = pymysql.connect(
-            host=DB_CONFIG['host'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            database=DB_CONFIG['database'],
-            charset=DB_CONFIG['charset'],
-            cursorclass=pymysql.cursors.DictCursor,
-            connect_timeout=5,
-            read_timeout=10,
-            write_timeout=10
+            **mysql_connect_kwargs(
+                cursorclass=pymysql.cursors.DictCursor,
+                connect_timeout=5,
+                read_timeout=10,
+                write_timeout=10,
+            )
         )
         return connection
     except Exception as e:

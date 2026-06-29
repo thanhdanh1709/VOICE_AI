@@ -14,7 +14,10 @@ def _load_env_file(path):
                 _line = _line.strip()
                 if _line and not _line.startswith('#') and '=' in _line:
                     _k, _v = _line.split('=', 1)
-                    os.environ.setdefault(_k.strip(), _v.strip())
+                    _v = _v.strip()
+                    if ' #' in _v:
+                        _v = _v.split(' #', 1)[0].strip()
+                    os.environ.setdefault(_k.strip(), _v)
     except Exception:
         pass
 
@@ -37,6 +40,38 @@ DB_CONFIG = {
     'database': os.environ.get('DB_NAME', 'tts_system'),
     'charset':  'utf8mb4'
 }
+
+
+def mysql_connect_kwargs(**extra):
+    """Tham so pymysql.connect — tu dong bat SSL cho Azure MySQL."""
+    import ssl
+
+    kwargs = {
+        'host': DB_CONFIG['host'],
+        'port': DB_CONFIG['port'],
+        'user': DB_CONFIG['user'],
+        'password': DB_CONFIG['password'],
+        'database': DB_CONFIG['database'],
+        'charset': DB_CONFIG['charset'],
+    }
+    kwargs.update(extra)
+
+    host = kwargs.get('host') or ''
+    use_ssl = os.environ.get('DB_SSL', 'auto').strip().lower()
+    needs_ssl = (
+        use_ssl in ('1', 'true', 'yes', 'required')
+        or (use_ssl == 'auto' and 'database.azure.com' in host)
+    )
+    if needs_ssl:
+        ctx = ssl.create_default_context()
+        ca_path = os.environ.get('DB_SSL_CA', '').strip()
+        if ca_path and Path(ca_path).is_file():
+            ctx.load_verify_locations(ca_path)
+        else:
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+        kwargs['ssl'] = ctx
+    return kwargs
 
 # Flask configuration
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')

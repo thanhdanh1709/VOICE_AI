@@ -301,12 +301,9 @@ class BackgroundTrainingWorker:
     
     def _get_db_connection(self):
         """Get database connection"""
+        from config import mysql_connect_kwargs
         return pymysql.connect(
-            host=DB_CONFIG['host'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            database=DB_CONFIG['database'],
-            cursorclass=pymysql.cursors.DictCursor
+            **mysql_connect_kwargs(cursorclass=pymysql.cursors.DictCursor)
         )
     
     def get_queue_stats(self):
