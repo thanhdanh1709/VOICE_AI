@@ -6,10 +6,10 @@
 class AppConfig {
   // ── BASE URLs ──────────────────────────────────────────────
   /// URL backend Flask TTS (IP mạng nội bộ - cùng WiFi)
-  static const String apiBaseUrl = 'https://temperate-marcelle-unloaning.ngrok-free.dev';
+  static const String apiBaseUrl = 'https://vietvoice-ai.online';
 
   /// URL frontend web (không có dấu / ở cuối)
-  static const String webBaseUrl = 'https://temperate-marcelle-unloaning.ngrok-free.dev';
+  static const String webBaseUrl = 'https://vietvoice-ai.online';
 
   // ── OAUTH DEEP LINK ────────────────────────────────────────
   /// Scheme cho Deep Link callback sau Google OAuth (phải khớp AndroidManifest & Google Cloud)

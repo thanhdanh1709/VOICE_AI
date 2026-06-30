@@ -23,7 +23,7 @@ if sys.platform == 'win32':
     sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort, Response
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file, abort, Response, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pymysql
@@ -1241,6 +1241,30 @@ def is_admin():
     """Kiểm tra người dùng có phải admin không"""
     return session.get('user_role') == 'admin'
 
+
+def _apply_no_cache_headers(response):
+    """Ngăn trình duyệt cache redirect/HTML sau logout."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
+def _logout_response(redirect_endpoint='landing'):
+    """Xóa session + cookie phiên, redirect không bị cache."""
+    session.clear()
+    resp = redirect(url_for(redirect_endpoint))
+    cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
+    cookie_path = app.config.get('SESSION_COOKIE_PATH', '/')
+    cookie_domain = app.config.get('SESSION_COOKIE_DOMAIN')
+    resp.delete_cookie(
+        cookie_name,
+        path=cookie_path,
+        domain=cookie_domain,
+    )
+    return _apply_no_cache_headers(resp)
+
+
 # Login required decorator
 def login_required(f):
     """Decorator to require login for routes"""
@@ -1354,16 +1378,17 @@ def update_characters_used(user_id, text_length):
 def index():
     """Trang chủ"""
     if not is_logged_in():
-        return redirect(url_for('landing'))
+        return _apply_no_cache_headers(redirect(url_for('landing')))
     return render_template('index.html')
 
 @app.route('/landing')
 def landing():
     """Landing page - trang giới thiệu dành cho người chưa đăng nhập"""
     if is_logged_in():
-        return redirect(url_for('index'))
+        return _apply_no_cache_headers(redirect(url_for('index')))
     content = load_landing_content()
-    return render_template('landing.html', lp=content)
+    resp = make_response(render_template('landing.html', lp=content))
+    return _apply_no_cache_headers(resp)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1628,9 +1653,8 @@ def register():
 
 @app.route('/logout')
 def logout():
-    """Đăng xuất"""
-    session.clear()
-    return redirect(url_for('login'))
+    """Đăng xuất — xóa session/cookie, về landing (tránh vào lại workspace khi bấm logo)."""
+    return _logout_response('landing')
 
 # ══════════════════════════════════════════════════════════
 # GOOGLE OAUTH
