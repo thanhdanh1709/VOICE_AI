@@ -25,6 +25,16 @@
     if (mobileMenuOverlay) {
       mobileMenuOverlay.addEventListener('click', closeMobileMenu);
     }
+
+    document.querySelectorAll('.js-landing-home').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        var href = link.getAttribute('href');
+        if (!href || href.indexOf('#') === 0) return;
+        e.preventDefault();
+        var sep = href.indexOf('?') >= 0 ? '&' : '?';
+        window.location.assign(href + sep + '_=' + Date.now());
+      });
+    });
   }
 
   if (document.readyState === 'loading') {

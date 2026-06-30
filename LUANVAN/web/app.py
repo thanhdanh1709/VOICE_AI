@@ -1242,26 +1242,48 @@ def is_admin():
     return session.get('user_role') == 'admin'
 
 
+def _session_cookie_kwargs():
+    """Thuộc tính cookie phiên — phải khớp khi set/xóa (HTTPS qua Cloudflare tunnel)."""
+    secure = app.config.get('SESSION_COOKIE_SECURE')
+    if secure is None:
+        secure = request.is_secure
+    return {
+        'path': app.config.get('SESSION_COOKIE_PATH', '/'),
+        'domain': app.config.get('SESSION_COOKIE_DOMAIN'),
+        'secure': bool(secure),
+        'httponly': app.config.get('SESSION_COOKIE_HTTPONLY', True),
+        'samesite': app.config.get('SESSION_COOKIE_SAMESITE', 'Lax'),
+    }
+
+
 def _apply_no_cache_headers(response):
-    """Ngăn trình duyệt cache redirect/HTML sau logout."""
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    """Ngăn trình duyệt / CDN cache redirect/HTML sau logout."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    response.headers['CDN-Cache-Control'] = 'no-store'
+    response.headers['Vary'] = 'Cookie'
     return response
+
+
+def _clear_session_fully():
+    """Xóa toàn bộ dữ liệu phiên Flask."""
+    for key in list(session.keys()):
+        session.pop(key, None)
+    session.clear()
+    session.permanent = False
+    session.modified = True
 
 
 def _logout_response(redirect_endpoint='landing'):
     """Xóa session + cookie phiên, redirect không bị cache."""
-    session.clear()
+    _clear_session_fully()
     resp = redirect(url_for(redirect_endpoint))
     cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
-    cookie_path = app.config.get('SESSION_COOKIE_PATH', '/')
-    cookie_domain = app.config.get('SESSION_COOKIE_DOMAIN')
-    resp.delete_cookie(
-        cookie_name,
-        path=cookie_path,
-        domain=cookie_domain,
-    )
+    kw = _session_cookie_kwargs()
+    resp.delete_cookie(cookie_name, **kw)
+    # Ghi đè cookie rỗng hết hạn (delete_cookie thiếu Secure thường không xóa được qua HTTPS)
+    resp.set_cookie(cookie_name, '', expires=0, max_age=0, **kw)
     return _apply_no_cache_headers(resp)
 
 
