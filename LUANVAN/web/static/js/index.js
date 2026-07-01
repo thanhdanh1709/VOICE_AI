@@ -7,6 +7,7 @@ let voices = [];
 let customVoices = [];
 let currentAudioFilename = null;
 let ffmpegAvailable = true;
+let enableTextNormalization = true;
 
 let _audioProgressTimer = null;
 let _audioProgressValue = 0;
@@ -169,6 +170,11 @@ async function applyUserTtsDefaults() {
         const d = await r.json();
         if (!d.success || !d.settings) return;
         const s = d.settings;
+        const tnCheckbox = document.getElementById('enableTextNormalization');
+        if (tnCheckbox && s.enable_text_normalization != null) {
+            enableTextNormalization = !!s.enable_text_normalization;
+            tnCheckbox.checked = enableTextNormalization;
+        }
         const select = document.getElementById('voiceSelect');
         if (s.default_voice_id && select) {
             const opt = select.querySelector(`option[value="${CSS.escape(s.default_voice_id)}"]`);
@@ -199,6 +205,108 @@ async function applyUserTtsDefaults() {
     }
 }
 
+function getActiveWorkspaceTextInput() {
+    const emotionalTab = document.getElementById('emotionalTab');
+    const omnivoiceTab = document.getElementById('omnivoiceTab');
+    if (emotionalTab && !emotionalTab.classList.contains('hidden')) {
+        return document.getElementById('emotionalTextInput');
+    }
+    if (omnivoiceTab && !omnivoiceTab.classList.contains('hidden')) {
+        return document.getElementById('omnivoiceTextInput');
+    }
+    return document.getElementById('textInput');
+}
+
+function tnRequestPayload() {
+    return { enable_text_normalization: enableTextNormalization };
+}
+
+async function persistTextNormalizationPreference(enabled) {
+    enableTextNormalization = !!enabled;
+    try {
+        const r = await fetch('/api/user/settings');
+        const d = await r.json();
+        if (!d.success || !d.settings) return;
+        await fetch('/api/user/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...d.settings,
+                enable_text_normalization: enableTextNormalization,
+            }),
+        });
+    } catch (e) {
+        console.warn('[TN] Could not save preference:', e);
+    }
+}
+
+function closeTnPreviewModal() {
+    const modal = document.getElementById('tnPreviewModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function openTnPreviewModal() {
+    const input = getActiveWorkspaceTextInput();
+    const text = (input?.value || '').trim();
+    if (!text) {
+        alert('Vui lòng nhập văn bản trước khi xem preview');
+        return;
+    }
+
+    const modal = document.getElementById('tnPreviewModal');
+    const originalEl = document.getElementById('tnPreviewOriginal');
+    const normalizedEl = document.getElementById('tnPreviewNormalized');
+    const statusEl = document.getElementById('tnPreviewStatus');
+    if (!modal || !originalEl || !normalizedEl) return;
+
+    originalEl.textContent = text;
+    normalizedEl.value = 'Đang chuẩn hóa...';
+    if (statusEl) statusEl.textContent = '';
+    modal.classList.remove('hidden');
+
+    try {
+        const response = await fetch('/api/text/normalize-preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text,
+                ...tnRequestPayload(),
+                preserve_emotion_tags: !!document.getElementById('emotionalTab')
+                    && !document.getElementById('emotionalTab').classList.contains('hidden'),
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Preview failed');
+        }
+        normalizedEl.value = data.normalized || text;
+        if (statusEl) {
+            statusEl.textContent = data.changed
+                ? 'Văn bản đã được chuẩn hóa — bản gốc vẫn giữ trong ô nhập.'
+                : 'Không có thay đổi (TN tắt hoặc văn bản đã phù hợp TTS).';
+        }
+    } catch (error) {
+        normalizedEl.value = '';
+        if (statusEl) statusEl.textContent = 'Lỗi: ' + error.message;
+    }
+}
+
+function initTextNormalizationControls() {
+    const tnCheckbox = document.getElementById('enableTextNormalization');
+    const previewBtn = document.getElementById('tnPreviewBtn');
+    const closeBtn = document.getElementById('tnPreviewClose');
+    const backdrop = document.getElementById('tnPreviewBackdrop');
+
+    if (tnCheckbox) {
+        tnCheckbox.addEventListener('change', () => {
+            persistTextNormalizationPreference(tnCheckbox.checked);
+        });
+    }
+    if (previewBtn) previewBtn.addEventListener('click', openTnPreviewModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeTnPreviewModal);
+    if (backdrop) backdrop.addEventListener('click', closeTnPreviewModal);
+}
+
 async function initExportControls() {
     try {
         const r = await fetch('/api/audio/formats');
@@ -218,6 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await applyUserTtsDefaults();
     await loadStatistics();
     await initExportControls();
+    initTextNormalizationControls();
     
     // Character counter
     const textInput = document.getElementById('textInput');
@@ -708,7 +817,7 @@ async function handleConvert() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text, voice_id: voiceId })
+            body: JSON.stringify({ text, voice_id: voiceId, ...tnRequestPayload() })
         });
         
         console.log('[TTS] Response status:', response.status);
@@ -1212,7 +1321,7 @@ async function handleEmotionalConvert() {
             ? emotionalVoiceSelect.value
             : null;
         
-        const payload = { text };
+        const payload = { text, ...tnRequestPayload() };
         if (emotionalCustomVoiceId) payload.custom_voice_id = emotionalCustomVoiceId;
         
         console.log('[EMOTIONAL TTS] Calling API with voice:', emotionalCustomVoiceId || 'default');
@@ -1378,7 +1487,7 @@ async function handleOmnivoiceConvert() {
     }
 
     try {
-        const payload = { text, mode };
+        const payload = { text, mode, ...tnRequestPayload() };
         if (mode === 'clone' && customVoiceId) payload.custom_voice_id = customVoiceId;
         if (mode === 'design') payload.instruct = instruct;
         if (mode === 'emotional' && emotionalVoiceId) payload.custom_voice_id = emotionalVoiceId;

@@ -62,6 +62,7 @@ class VietnameseTTSNormalizer:
         
         self.currencies = {
             'đ': 'đồng',
+            'vnđ': 'đồng',
             'vnd': 'đồng',
             'dong': 'đồng',
             '$': 'đô la',
@@ -383,6 +384,21 @@ class VietnameseTTSNormalizer:
         text = re.sub(r'(\d{1,2})h\b', validate_and_convert_time, text)
         
         return text
+
+    def _read_year_2000s(self, year: int) -> str:
+        """Đọc năm 2000–2099 đầy đủ: 2026 → hai nghìn không trăm hai mươi sáu."""
+        if year == 2000:
+            return 'hai nghìn'
+        tail = year % 100
+        if tail < 10:
+            return f'hai nghìn không trăm lẻ {self.digits[tail]}'
+        return f'hai nghìn không trăm {self._read_two_digits(tail)}'
+
+    def _read_year_in_date(self, year: int) -> str:
+        """Đọc năm trong ngữ cảnh ngày — cùng cách đọc đầy đủ như năm đứng riêng."""
+        if 2000 <= year <= 2099:
+            return self._read_year_2000s(year)
+        return self._convert_number_to_words(year)
     
     def _normalize_date(self, text):
         """Convert date notation to words with validation."""
@@ -401,20 +417,29 @@ class VietnameseTTSNormalizer:
         def date_to_text(match):
             day, month, year = match.groups()
             if is_valid_date(day, month, year):
-                return f"ngày {day} tháng {month} năm {year}"
+                d = self._convert_number_to_words(int(day))
+                m = self._convert_number_to_words(int(month))
+                y = self._read_year_in_date(int(year))
+                return f"ngày {d}, tháng {m}, năm {y}"
             return match.group(0)
         
         def date_iso_to_text(match):
             year, month, day = match.groups()
             if is_valid_date(day, month, year):
-                return f"ngày {day} tháng {month} năm {year}"
+                d = self._convert_number_to_words(int(day))
+                m = self._convert_number_to_words(int(month))
+                y = self._read_year_in_date(int(year))
+                return f"ngày {d}, tháng {m}, năm {y}"
             return match.group(0)
         
         def date_short_year(match):
             day, month, year = match.groups()
             full_year = f"20{year}" if int(year) < 50 else f"19{year}"
             if is_valid_date(day, month, full_year):
-                return f"ngày {day} tháng {month} năm {full_year}"
+                d = self._convert_number_to_words(int(day))
+                m = self._convert_number_to_words(int(month))
+                y = self._read_year_in_date(int(full_year))
+                return f"ngày {d}, tháng {m}, năm {y}"
             return match.group(0)
         
         text = re.sub(r'\bngày\s+(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})\b', 
@@ -449,10 +474,12 @@ class VietnameseTTSNormalizer:
     def _normalize_versions(self, text):
         """Convert version numbers like 1.0.4 to words."""
         def version_to_text(match):
-            parts = match.group(0).split('.')
-            # Convert each part to words if it's a number, or keep if not
-            # But for versions, usually we just want the digits or numbers
-            # The user requested "1 chấm 0 chấm 4"
+            raw = match.group(0)
+            parts = raw.split('.')
+            # Giữ số kiểu phân cách hàng nghìn VN: 1.250.000, 12.345.678
+            if len(parts) >= 2 and parts[0].isdigit() and len(parts[0]) <= 3:
+                if all(len(p) == 3 and p.isdigit() for p in parts[1:]):
+                    return raw
             return ' chấm '.join(parts)
         
         # Match sequences of numbers separated by dots (at least 2 dots to be sure it's a version)
@@ -539,6 +566,9 @@ class VietnameseTTSNormalizer:
             if remainder > 0:
                 result += f" {self._convert_number_to_words(remainder)}"
             return result
+
+        elif 2000 <= num <= 2099:
+            return self._read_year_2000s(num)
         
         elif num >= 1000:
             thousand = num // 1000
@@ -599,7 +629,8 @@ class VietnameseTTSNormalizer:
         text = re.sub(r',\s*,+', ',', text)  # Remove duplicate commas
         
         text = re.sub(r'\.{2,}', ' ', text)
-        text = re.sub(r'\s+\.\s+', ' ', text)
+        # Giữ ranh giới câu bằng phẩy (TTS chunking + ngắt nhịp), không nuốt dấu chấm
+        text = re.sub(r'\s+\.\s+', ', ', text)
         text = re.sub(r'[^\w\sàáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ.,!?;:@%_]', ' ', text)
         return text
     

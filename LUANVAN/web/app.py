@@ -70,6 +70,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from audio_export import export_audio, ffmpeg_available, SUPPORTED_FORMATS, ALLOWED_BITRATES
+from text_normalization import (
+    normalize_preview,
+    resolve_tts_text,
+    load_tn_rule_groups,
+    invalidate_tn_settings_cache,
+)
 
 # Deep link scheme cho Flutter mobile OAuth callback (phải khớp AndroidManifest & config.dart)
 MOBILE_CALLBACK_SCHEME = 'petai'
@@ -308,6 +314,7 @@ DEFAULT_USER_SETTINGS = {
     'default_export_format': 'wav',
     'default_export_bitrate': 192,
     'default_language': 'vi',
+    'enable_text_normalization': True,
     'notify_chars_low': True,
     'notify_payment': True,
     'notify_plan_expiry': True,
@@ -351,6 +358,19 @@ def ensure_user_settings_table():
                     conn.commit()
             except Exception as mig_e:
                 print(f"[WARN] user_settings migration: {mig_e}")
+            try:
+                cursor.execute(
+                    "SHOW COLUMNS FROM user_settings LIKE 'enable_text_normalization'"
+                )
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "ALTER TABLE user_settings "
+                        "ADD COLUMN enable_text_normalization TINYINT(1) NOT NULL DEFAULT 1 "
+                        "AFTER default_language"
+                    )
+                    conn.commit()
+            except Exception as mig_e:
+                print(f"[WARN] user_settings enable_text_normalization migration: {mig_e}")
         return True
     except Exception as e:
         print(f"[ERROR] ensure_user_settings_table: {e}")
@@ -372,6 +392,7 @@ def _normalize_user_settings_row(row):
         'default_export_format': (row.get('default_export_format') or 'wav').lower(),
         'default_export_bitrate': int(row.get('default_export_bitrate') or 192),
         'default_language': (row.get('default_language') or 'vi').lower(),
+        'enable_text_normalization': bool(row.get('enable_text_normalization', 1)),
         'notify_chars_low': bool(row.get('notify_chars_low')),
         'notify_payment': bool(row.get('notify_payment')),
         'notify_plan_expiry': bool(row.get('notify_plan_expiry')),
@@ -429,8 +450,9 @@ def save_user_settings(user_id, data):
                 INSERT INTO user_settings (
                     user_id, default_voice_id, default_emotional_voice_id, default_pitch, default_speed,
                     default_export_format, default_export_bitrate, default_language,
+                    enable_text_normalization,
                     notify_chars_low, notify_payment, notify_plan_expiry, notify_marketing
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     default_voice_id = VALUES(default_voice_id),
                     default_emotional_voice_id = VALUES(default_emotional_voice_id),
@@ -439,6 +461,7 @@ def save_user_settings(user_id, data):
                     default_export_format = VALUES(default_export_format),
                     default_export_bitrate = VALUES(default_export_bitrate),
                     default_language = VALUES(default_language),
+                    enable_text_normalization = VALUES(enable_text_normalization),
                     notify_chars_low = VALUES(notify_chars_low),
                     notify_payment = VALUES(notify_payment),
                     notify_plan_expiry = VALUES(notify_plan_expiry),
@@ -446,6 +469,7 @@ def save_user_settings(user_id, data):
                 """,
                 (
                     user_id, voice_id, emotional_voice_id, pitch, speed, fmt, bitrate, lang,
+                    1 if settings.get('enable_text_normalization', True) else 0,
                     1 if settings['notify_chars_low'] else 0,
                     1 if settings['notify_payment'] else 0,
                     1 if settings['notify_plan_expiry'] else 0,
@@ -460,6 +484,17 @@ def save_user_settings(user_id, data):
         return False, str(e)
     finally:
         conn.close()
+
+def apply_tts_text_normalization(user_id, text, request_data=None, preserve_emotion_tags=False):
+    """Chuẩn hóa văn bản trước TTS. Trả về (text_for_tts, enabled, changed)."""
+    tts_text, enabled, changed = resolve_tts_text(
+        user_id,
+        text,
+        get_user_settings,
+        request_data,
+        preserve_emotion_tags=preserve_emotion_tags,
+    )
+    return tts_text, enabled, changed
 
 def _should_send_user_notification(user_id, kind):
     """kind: chars_low | payment | plan_expiry | marketing"""
@@ -2124,13 +2159,21 @@ def convert_text_to_speech():
         if not text:
             return jsonify({'success': False, 'message': 'Vui lòng nhập văn bản'}), 400
         
-        # Kiểm tra giới hạn ký tự
+        # Kiểm tra giới hạn ký tự (tính trên văn bản gốc)
         text_length = len(text)
         can_convert, error_message = check_characters_limit(session['user_id'], text_length)
         if not can_convert:
             return jsonify({'success': False, 'message': error_message}), 403
+
+        original_text = text
+        tts_text, tn_enabled, tn_changed = apply_tts_text_normalization(
+            session['user_id'], text, data
+        )
+        if tn_enabled and tn_changed:
+            print(f"[CONVERT TN] Normalized ({text_length} -> {len(tts_text)} chars)")
+        text = tts_text
         
-        print(f"[CONVERT] Converting text: {text[:50]}... (length: {text_length})")
+        print(f"[CONVERT] Converting text: {original_text[:50]}... (length: {text_length})")
         print(f"[CONVERT] Voice ID: {voice_id}")
         
         # Generate unique filename
@@ -2146,7 +2189,7 @@ def convert_text_to_speech():
                 cursor.execute(
                     """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
                        VALUES (%s, %s, %s, %s, 'processing')""",
-                    (session['user_id'], text, len(text), voice_id)
+                    (session['user_id'], original_text, text_length, voice_id)
                 )
                 conn.commit()
                 conversion_id = cursor.lastrowid
@@ -2195,7 +2238,10 @@ def convert_text_to_speech():
                 print(f"[CONVERT viXTTS-Clone] Using voice ref: {ref_audio_path}")
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with _tts_lock:
-                    VIXTTS_INSTANCE.synthesize_with_voice(text, ref_audio_path, str(output_path))
+                    VIXTTS_INSTANCE.synthesize_with_voice(
+                        text, ref_audio_path, str(output_path),
+                        skip_text_normalize=tn_enabled,
+                    )
                 import librosa as _librosa
                 _y, _sr = _librosa.load(str(output_path), sr=None)
                 duration_seconds = len(_y) / _sr
@@ -2707,11 +2753,20 @@ def convert_text_to_speech_emotional():
                     'message': f'Lỗi tải thông tin giọng clone: {str(cv_err)}'
                 }), 500
         
-        # Kiểm tra giới hạn ký tự
+        # Kiểm tra giới hạn ký tự (văn bản gốc)
         text_length = len(text)
         can_convert, error_message = check_characters_limit(session['user_id'], text_length)
         if not can_convert:
             return jsonify({'success': False, 'message': error_message}), 403
+
+        original_text = text
+        tts_text, tn_enabled, tn_changed = apply_tts_text_normalization(
+            session['user_id'], text, data, preserve_emotion_tags=True
+        )
+        skip_vixtts_normalize = tn_enabled
+        if tn_enabled and tn_changed:
+            print(f"[CONVERT EMOTIONAL TN] Normalized ({text_length} -> {len(tts_text)} chars)")
+        text = tts_text
         
         print(f"[CONVERT EMOTIONAL] Text length: {text_length} chars")
         print(f"[CONVERT EMOTIONAL] Text preview: {text[:100]}...")
@@ -2730,7 +2785,7 @@ def convert_text_to_speech_emotional():
                 cursor.execute(
                     """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
                        VALUES (%s, %s, %s, %s, 'processing')""",
-                    (session['user_id'], text, len(text), voice_id)
+                    (session['user_id'], original_text, text_length, voice_id)
                 )
                 conn.commit()
                 conversion_id = cursor.lastrowid
@@ -2751,9 +2806,12 @@ def convert_text_to_speech_emotional():
         try:
             if ref_audio_for_emotional:
                 print(f"[CONVERT EMOTIONAL] Using custom voice ref for emotional synthesis")
-                emotional_tts.synthesize_emotional_with_voice(text, ref_audio_for_emotional, str(output_path))
+                emotional_tts.synthesize_emotional_with_voice(
+                    text, ref_audio_for_emotional, str(output_path),
+                    skip_text_normalize=skip_vixtts_normalize,
+                )
             else:
-                emotional_tts.synthesize(text, str(output_path))
+                emotional_tts.synthesize(text, str(output_path), skip_text_normalize=skip_vixtts_normalize)
             
             if not output_path.exists():
                 raise Exception("File audio không được tạo thành công")
@@ -2995,6 +3053,19 @@ def convert_text_to_speech_omnivoice():
         if mode not in ('clone', 'design', 'auto', 'emotional'):
             mode = 'auto'
 
+        text_length = len(text)
+        can_convert, error_message = check_characters_limit(session['user_id'], text_length)
+        if not can_convert:
+            return jsonify({'success': False, 'message': error_message}), 403
+
+        original_text = text
+        tts_text, tn_enabled, tn_changed = apply_tts_text_normalization(
+            session['user_id'], text, data
+        )
+        if tn_enabled and tn_changed:
+            print(f"[CONVERT OMNIVOICE TN] Normalized ({text_length} -> {len(tts_text)} chars)")
+        text = tts_text
+
         ref_audio_path = None
         ref_text = None
         voice_id = 'OmniVoice-Auto'
@@ -3063,11 +3134,6 @@ def convert_text_to_speech_omnivoice():
                 }), 400
             voice_id = f"OmniVoice-Design ({instruct[:40]})"
 
-        text_length = len(text)
-        can_convert, error_message = check_characters_limit(session['user_id'], text_length)
-        if not can_convert:
-            return jsonify({'success': False, 'message': error_message}), 403
-
         filename = f"{uuid.uuid4()}_omnivoice.wav"
         output_path = AUDIO_OUTPUT_DIR / filename
 
@@ -3079,7 +3145,7 @@ def convert_text_to_speech_omnivoice():
                 cursor.execute(
                     """INSERT INTO conversions (user_id, text_input, text_length, voice_id, status)
                        VALUES (%s, %s, %s, %s, 'processing')""",
-                    (session['user_id'], text, len(text), voice_id)
+                    (session['user_id'], original_text, text_length, voice_id)
                 )
                 conn.commit()
                 conversion_id = cursor.lastrowid
@@ -4628,6 +4694,12 @@ DEFAULT_SITE_SETTINGS = {
     'smtp_from_display': '',
     'company_name': '',
     'company_phone': '',
+    'tn_rules': {
+        'core': True,
+        'email': True,
+        'url': True,
+        'math': True,
+    },
 }
 
 def load_site_settings():
@@ -4635,7 +4707,12 @@ def load_site_settings():
     try:
         with open(SITE_SETTINGS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            return {**DEFAULT_SITE_SETTINGS, **data}
+            merged = {**DEFAULT_SITE_SETTINGS, **data}
+            tn = merged.get('tn_rules') or {}
+            merged['tn_rules'] = {**DEFAULT_SITE_SETTINGS['tn_rules'], **{
+                k: bool(v) for k, v in tn.items() if k in DEFAULT_SITE_SETTINGS['tn_rules']
+            }}
+            return merged
     except Exception:
         return dict(DEFAULT_SITE_SETTINGS)
 
@@ -4643,10 +4720,19 @@ def save_site_settings(data):
     """Lưu cấu hình site vào JSON"""
     current = load_site_settings()
     for key in DEFAULT_SITE_SETTINGS:
+        if key == 'tn_rules':
+            if isinstance(data.get('tn_rules'), dict):
+                merged_tn = dict(DEFAULT_SITE_SETTINGS['tn_rules'])
+                for rk in DEFAULT_SITE_SETTINGS['tn_rules']:
+                    if rk in data['tn_rules']:
+                        merged_tn[rk] = bool(data['tn_rules'][rk])
+                current['tn_rules'] = merged_tn
+            continue
         if key in data and data[key] is not None:
             current[key] = str(data[key]).strip()
     with open(SITE_SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(current, f, ensure_ascii=False, indent=2)
+    invalidate_tn_settings_cache()
 
 def get_support_email():
     """Email hỗ trợ (ưu tiên site_settings, fallback env/default)"""
@@ -6353,6 +6439,91 @@ def update_user_settings_api():
     if not ok:
         return jsonify({'success': False, 'message': result}), 500
     return jsonify({'success': True, 'message': 'Cập nhật cài đặt thành công', 'settings': result})
+
+
+@app.route('/api/text/normalize-preview', methods=['POST'])
+@login_required
+def api_text_normalize_preview():
+    """Xem trước văn bản sau chuẩn hóa (không tạo audio)."""
+    data = request.get_json() or {}
+    text = data.get('text', '')
+    settings = get_user_settings(session['user_id'])
+    enabled = bool(settings.get('enable_text_normalization', True))
+    if 'enable_text_normalization' in data:
+        enabled = bool(data.get('enable_text_normalization'))
+    if not str(text).strip():
+        return jsonify({'success': False, 'message': 'Vui lòng nhập văn bản'}), 400
+    preserve_tags = bool(data.get('preserve_emotion_tags')) or bool(re.search(r'\([^)]+\)', text or ''))
+    preview = normalize_preview(text, enabled=enabled, preserve_emotion_tags=preserve_tags)
+    return jsonify({'success': True, **preview})
+
+
+@app.route('/api/admin/text-normalization', methods=['GET'])
+def api_admin_get_text_normalization():
+    """Admin: lấy cấu hình nhóm rule TN."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    settings = load_site_settings()
+    return jsonify({
+        'success': True,
+        'tn_rules': settings.get('tn_rules', load_tn_rule_groups()),
+        'rule_labels': {
+            'core': 'Số, tiền tệ, SĐT, ngày giờ, đơn vị',
+            'email': 'Địa chỉ email',
+            'url': 'Liên kết URL / www',
+            'math': 'Ký hiệu toán học',
+        },
+    })
+
+
+@app.route('/api/admin/text-normalization', methods=['POST'])
+def api_admin_save_text_normalization():
+    """Admin: lưu bật/tắt nhóm rule TN."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    data = request.get_json() or {}
+    tn_rules = data.get('tn_rules')
+    if not isinstance(tn_rules, dict):
+        return jsonify({'success': False, 'message': 'tn_rules không hợp lệ'}), 400
+    save_site_settings({'tn_rules': tn_rules})
+    return jsonify({'success': True, 'message': 'Đã lưu cấu hình chuẩn hóa văn bản', 'tn_rules': load_tn_rule_groups()})
+
+
+@app.route('/api/admin/text-normalization/test', methods=['POST'])
+def api_admin_text_normalization_test():
+    """Admin: chạy bộ test TN (phục vụ luận ván)."""
+    if not is_logged_in() or not is_admin():
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    fixtures_path = os.path.join(os.path.dirname(__file__), 'tests', 'fixtures', 'tn_test_cases.json')
+    try:
+        with open(fixtures_path, 'r', encoding='utf-8') as f:
+            cases = json.load(f)
+    except OSError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    results = []
+    passed = 0
+    for case in cases:
+        if case.get('preserve_tags'):
+            continue
+        output = normalize_preview(case['input'], enabled=True)['normalized']
+        ok = all(fragment.lower() in output.lower() for fragment in case.get('expect_contains', []))
+        if ok:
+            passed += 1
+        results.append({
+            'id': case['id'],
+            'category': case.get('category'),
+            'input': case['input'],
+            'output': output,
+            'passed': ok,
+        })
+    total = len(results)
+    return jsonify({
+        'success': True,
+        'passed': passed,
+        'total': total,
+        'results': results,
+    })
 
 
 @app.route('/api/user/usage-chart', methods=['GET'])

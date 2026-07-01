@@ -59,7 +59,7 @@
     }
 
     function switchMainTab(tab) {
-        const id = tab === 'email' || tab === 'packages' ? tab : 'brand';
+        const id = tab === 'email' || tab === 'packages' || tab === 'tn' ? tab : 'brand';
         _activeTab = id;
 
         document.querySelectorAll('.ass-top-tab').forEach((btn) => {
@@ -75,6 +75,7 @@
         });
 
         if (id === 'packages') loadPackages();
+        if (id === 'tn') loadTnSettings();
     }
 
     function collectSettingsPayload() {
@@ -411,11 +412,93 @@
         }
     }
 
+    async function loadTnSettings() {
+        try {
+            const res = await fetch('/api/admin/text-normalization');
+            const data = await res.json();
+            if (!data.success || !data.tn_rules) return;
+            const r = data.tn_rules;
+            const map = {
+                assTnCore: r.core,
+                assTnEmail: r.email,
+                assTnUrl: r.url,
+                assTnMath: r.math,
+            };
+            Object.keys(map).forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.checked = !!map[id];
+            });
+        } catch (e) {
+            console.warn('[tn-settings] load failed', e);
+        }
+    }
+
+    async function saveTnSettings() {
+        const btn = document.getElementById('assTnSaveBtn');
+        const orig = btn ? btn.textContent : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Đang lưu...';
+        }
+        try {
+            const payload = {
+                tn_rules: {
+                    core: !!document.getElementById('assTnCore')?.checked,
+                    email: !!document.getElementById('assTnEmail')?.checked,
+                    url: !!document.getElementById('assTnUrl')?.checked,
+                    math: !!document.getElementById('assTnMath')?.checked,
+                },
+            };
+            const res = await fetch('/api/admin/text-normalization', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            showToast(data.message || (data.success ? 'Đã lưu' : 'Lỗi'), data.success ? 'success' : 'error');
+        } catch (e) {
+            showToast('Lỗi kết nối', 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = orig || 'Lưu rule TN';
+            }
+        }
+    }
+
+    async function runTnTests() {
+        const body = document.getElementById('assTnTestBody');
+        const summary = document.getElementById('assTnTestSummary');
+        if (body) body.innerHTML = '<tr><td colspan="4" class="ass-pkg-loading">Đang chạy test...</td></tr>';
+        try {
+            const res = await fetch('/api/admin/text-normalization/test', { method: 'POST' });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Test failed');
+            if (summary) {
+                summary.classList.remove('hidden');
+                summary.textContent = `Kết quả: ${data.passed}/${data.total} passed`;
+            }
+            if (!body) return;
+            body.innerHTML = (data.results || []).map((row) => `
+                <tr>
+                  <td>${row.id}</td>
+                  <td>${esc(row.input)}</td>
+                  <td>${esc(row.output)}</td>
+                  <td>${row.passed ? '✅' : '❌'}</td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            if (body) body.innerHTML = `<tr><td colspan="4">${esc(e.message)}</td></tr>`;
+        }
+    }
+
     function bindActions() {
         if (bindActions._bound) return;
         bindActions._bound = true;
 
         document.getElementById('assSaveBtn')?.addEventListener('click', saveSettings);
+        document.getElementById('assTnSaveBtn')?.addEventListener('click', saveTnSettings);
+        document.getElementById('assTnTestBtn')?.addEventListener('click', runTnTests);
         document.getElementById('assPkgSubmitBtn')?.addEventListener('click', savePackage);
         document.getElementById('assPkgCancelEditBtn')?.addEventListener('click', resetPkgForm);
 

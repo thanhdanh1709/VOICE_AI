@@ -75,6 +75,10 @@
         <span class="material-symbols-outlined">payments</span>
         <span data-i18n="admin.settings.tab.packages">Gói cước</span>
       </button>
+      <button type="button" class="ass-top-tab" data-ass-tab="tn" role="tab" aria-selected="false">
+        <span class="material-symbols-outlined">spellcheck</span>
+        <span>Chuẩn hóa văn bản</span>
+      </button>
     </div>
 
     <div class="ass-tab-panel is-active" id="assTabBrand" role="tabpanel">
@@ -215,6 +219,43 @@
               </thead>
               <tbody id="assPkgTableBody">
                 <tr><td colspan="6" class="ass-pkg-loading" data-i18n="admin.loading">Đang tải...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ass-tab-panel" id="assTabTn" role="tabpanel" hidden>
+      <div class="ass-form-panel glass-panel">
+        <div class="als-form-scroll">
+          <div class="als-panel-head">
+            <h2>Chuẩn hóa văn bản (Text Normalization)</h2>
+            <p>Bật/tắt từng nhóm rule trước TTS. Dùng bảng test để đối chiếu luận ván.</p>
+          </div>
+          <div class="ass-tn-rules grid grid-cols-1 md:grid-cols-2 gap-3 mb-4" id="assTnRules">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="assTnCore" checked> Số, tiền tệ, SĐT, ngày giờ</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="assTnEmail" checked> Email</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="assTnUrl" checked> URL</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="assTnMath" checked> Ký hiệu toán học</label>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button type="button" id="assTnSaveBtn" class="als-btn als-btn--primary">Lưu rule TN</button>
+            <button type="button" id="assTnTestBtn" class="als-btn als-btn--ghost">Chạy bộ test (40 câu)</button>
+          </div>
+          <div id="assTnTestSummary" class="text-sm text-on-surface-variant mb-2 hidden"></div>
+          <div class="ass-pkg-table-wrap max-h-[420px] overflow-auto">
+            <table class="ass-pkg-table" id="assTnTestTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Input</th>
+                  <th>Output</th>
+                  <th>OK</th>
+                </tr>
+              </thead>
+              <tbody id="assTnTestBody">
+                <tr><td colspan="4" class="ass-pkg-loading">Bấm "Chạy bộ test" để xem kết quả</td></tr>
               </tbody>
             </table>
           </div>

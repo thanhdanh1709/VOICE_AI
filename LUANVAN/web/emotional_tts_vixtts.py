@@ -12,6 +12,9 @@ from pathlib import Path
 from pydub import AudioSegment
 import traceback
 
+# Khoảng lặng giữa các chunk audio (ms) — giảm để nghe liền hơn
+VIXTTS_CHUNK_PAUSE_MS = int(os.environ.get('VIXTTS_CHUNK_PAUSE_MS', '100'))
+
 # Fix encoding for Windows console (only if not already set)
 if sys.platform == 'win32' and hasattr(sys.stdout, 'buffer'):
     try:
@@ -247,17 +250,52 @@ class ViXTTSEmotionalTTS:
 
         return 'neutral'
 
-    def clean_text(self, text):
-        """Xóa emotion tags và normalize text"""
+    @staticmethod
+    def _split_long_text(text, max_chars=200):
+        """Chia văn bản dài thành các đoạn nhỏ cho viXTTS."""
+        text = (text or '').strip()
+        if not text:
+            return []
+        if len(text) <= max_chars:
+            return [text]
+
+        words = text.split()
+        parts = []
+        current = ''
+        for word in words:
+            if len(current) + len(word) + 1 > max_chars and current:
+                parts.append(current.strip())
+                current = word
+            else:
+                current = (current + ' ' + word).strip()
+        if current.strip():
+            parts.append(current.strip())
+        return parts if parts else [text]
+
+    @staticmethod
+    def _expand_emotional_chunks(chunks, max_chars=200):
+        """Tách thêm theo độ dài, giữ nguyên emotion từng đoạn."""
+        expanded = []
+        for chunk in chunks:
+            emotion = chunk.get('emotion') or 'neutral'
+            for piece in ViXTTSEmotionalTTS._split_long_text(chunk.get('text') or '', max_chars):
+                if piece.strip():
+                    expanded.append({'text': piece, 'emotion': emotion})
+        return expanded
+
+    def clean_text(self, text, skip_normalize=False):
+        """Xóa emotion tags; chuẩn hóa qua service chung trừ khi route đã normalize."""
         text = re.sub(r'\([^)]*\)', '', text)
         text = re.sub(r'\s+', ' ', text).strip()
+        if skip_normalize:
+            return text
         try:
             text = self.text_normalizer.normalize(text)
         except (UnicodeEncodeError, Exception) as e:
             print(f"[viXTTS] Warning: Text normalization skipped due to: {e}")
         return text
 
-    def split_by_emotion(self, text):
+    def split_by_emotion(self, text, skip_normalize=False):
         """Chia text thành chunks theo emotion"""
         chunks = []
         lines = text.split('\n')
@@ -272,7 +310,7 @@ class ViXTTSEmotionalTTS:
             if '(' in line:
                 if current_text.strip():
                     chunks.append({
-                        'text': self.clean_text(current_text),
+                        'text': self.clean_text(current_text, skip_normalize=skip_normalize),
                         'emotion': current_emotion
                     })
 
@@ -283,13 +321,13 @@ class ViXTTSEmotionalTTS:
 
         if current_text.strip():
             chunks.append({
-                'text': self.clean_text(current_text),
+                'text': self.clean_text(current_text, skip_normalize=skip_normalize),
                 'emotion': current_emotion
             })
 
         return chunks
 
-    def synthesize_with_voice(self, text, voice_audio_path, output_file="output.wav"):
+    def synthesize_with_voice(self, text, voice_audio_path, output_file="output.wav", skip_text_normalize=False):
         """
         Generate speech using a custom voice reference (viXTTS clone)
         
@@ -307,12 +345,13 @@ class ViXTTSEmotionalTTS:
             
             print(f"[viXTTS-Clone] Processing ({len(text)} chars) with voice: {voice_audio_path}...")
             
-            # Normalize text
+            # Normalize text (unless route already applied shared TN service)
             clean = text
-            try:
-                clean = self.text_normalizer.normalize(text)
-            except Exception:
-                pass
+            if not skip_text_normalize:
+                try:
+                    clean = self.text_normalizer.normalize(text)
+                except Exception:
+                    pass
             
             if not clean.strip():
                 raise Exception("No text to process after normalization")
@@ -375,7 +414,7 @@ class ViXTTSEmotionalTTS:
                 combined = AudioSegment.empty()
                 for f in temp_files:
                     combined += AudioSegment.from_wav(f)
-                    combined += AudioSegment.silent(duration=300)
+                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)
                 combined.export(output_file, format="wav")
             else:
                 import shutil
@@ -396,7 +435,7 @@ class ViXTTSEmotionalTTS:
             traceback.print_exc()
             raise
 
-    def synthesize_emotional_with_voice(self, text, voice_audio_path, output_file="output.wav"):
+    def synthesize_emotional_with_voice(self, text, voice_audio_path, output_file="output.wav", skip_text_normalize=False):
         """
         Emotion-aware synthesis using a CUSTOM voice reference.
         Combines emotion detection/text-chunking from synthesize()
@@ -414,7 +453,8 @@ class ViXTTSEmotionalTTS:
             print(f"[viXTTS-Emotional-Clone] Processing ({len(text)} chars) with voice: {voice_audio_path}...")
 
             # Split text into emotional chunks (same as synthesize())
-            chunks = self.split_by_emotion(text)
+            chunks = self.split_by_emotion(text, skip_normalize=skip_text_normalize)
+            chunks = self._expand_emotional_chunks(chunks)
             print(f"[viXTTS-Emotional-Clone] {len(chunks)} emotional chunk(s)")
 
             if not chunks:
@@ -460,7 +500,7 @@ class ViXTTSEmotionalTTS:
                 combined = AudioSegment.empty()
                 for f in temp_files:
                     combined += AudioSegment.from_wav(f)
-                    combined += AudioSegment.silent(duration=300)
+                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)
                 combined.export(output_file, format="wav")
             else:
                 import shutil
@@ -481,7 +521,7 @@ class ViXTTSEmotionalTTS:
             traceback.print_exc()
             raise
 
-    def synthesize(self, text, output_file="output.wav"):
+    def synthesize(self, text, output_file="output.wav", skip_text_normalize=False):
         """
         Generate speech với emotion control
         
@@ -500,7 +540,8 @@ class ViXTTSEmotionalTTS:
             print(f"[viXTTS] Processing ({len(text)} chars)...")
             
             # Chia text thành chunks theo emotion
-            chunks = self.split_by_emotion(text)
+            chunks = self.split_by_emotion(text, skip_normalize=skip_text_normalize)
+            chunks = self._expand_emotional_chunks(chunks)
             print(f"[viXTTS] {len(chunks)} emotional chunks detected")
             
             if not chunks:
@@ -553,7 +594,7 @@ class ViXTTSEmotionalTTS:
                 for f in temp_files:
                     chunk_audio = AudioSegment.from_wav(f)
                     combined += chunk_audio
-                    combined += AudioSegment.silent(duration=300)  # 300ms pause
+                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)  # 300ms pause
                 
                 combined.export(output_file, format="wav")
             else:

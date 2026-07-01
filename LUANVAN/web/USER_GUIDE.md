@@ -25,6 +25,7 @@
 16. [Ứng dụng Android](#16-ứng-dụng-android)
 17. [Mẹo nâng cao](#17-mẹo-nâng cao)
 18. [Xử lý lỗi thường gặp](#18-xử-lý-lỗi-thường-gặp)
+19. [Chuẩn hóa văn bản (Text Normalization)](#19-chuẩn-hóa-văn-bản-text-normalization)
 
 ---
 
@@ -203,9 +204,29 @@ Admin có thể tạo sample: `POST /api/admin/generate-voice-samples`.
 
 ### 4.5 Hạn mức ký tự khi convert
 
-- Mỗi lần convert trừ `len(text)` khỏi `user_subscriptions.characters_remaining`
+- Mỗi lần convert trừ `len(text)` khỏi `user_subscriptions.characters_remaining` (**tính trên văn bản gốc**, không phải bản đã chuẩn hóa)
 - **Không có** giới hạn cứng mỗi request — chỉ giới hạn theo gói
 - Free mặc định: **100.000** ký tự / 30 ngày
+
+### 4.6 Chuẩn hóa văn bản trước TTS (TN)
+
+Ngay trên Studio TTS có:
+
+- **Toggle “Chuẩn hóa văn bản (TN)”** — mặc định **bật**; preference lưu trong `user_settings.enable_text_normalization`
+- **“Xem text sau chuẩn hóa”** — gọi `POST /api/text/normalize-preview` (chỉ xem, không tạo audio lần 2)
+
+TN áp dụng cho cả 3 engine: Basic Vieneu, Emotional viXTTS, OmniVoice.
+
+**Ví dụ chuyển đổi:**
+
+| Trước | Sau (rút gọn) |
+|---|---|
+| `support@vietvoice.app` | `support a còng vietvoice chấm app` |
+| `https://vietvoice-ai.online` | `h t t p s … vietvoice gạch ngang ai chấm online` |
+| `Giá $100` | `giá 100 đô la` |
+| `5 × 8 m²` | `5 nhân 8 mét vuông` |
+
+Chi tiết pipeline và gap analysis: `web/docs/TEXT_NORMALIZATION_GAPS.md`.
 - Hết quota → lỗi *"Bạn đã hết giới hạn ký tự..."*
 
 ### 4.6 Kết quả sau convert
@@ -683,6 +704,26 @@ File `app_web_view/lib/config.dart`:
 | Hướng dẫn kỹ thuật | `/installation-guide` |
 
 Email hiển thị trên website do admin cấu hình (**Cấu hình Site → Email**).
+
+---
+
+## 19. Chuẩn hóa văn bản (Text Normalization)
+
+### Pipeline
+
+```
+Văn bản gốc → URL → Email → Toán học → Core (số, tiền, SĐT, ngày giờ, đơn vị) → TTS
+```
+
+### Admin
+
+Tại **Cấu hình Site → Chuẩn hóa văn bản** có thể bật/tắt từng nhóm rule và chạy bộ test 40 câu (phục vụ đánh giá luận ván).
+
+### So sánh có / không TN (luận ván)
+
+1. Ghi **cùng văn bản**, **cùng giọng**, một lần TN bật và một lần tắt
+2. Ghi nhận WER hoặc điểm cảm nhận ( MOS / 1–5 )
+3. Bảng ví dụ lưu trong `web/docs/TEXT_NORMALIZATION_GAPS.md`
 
 ---
 

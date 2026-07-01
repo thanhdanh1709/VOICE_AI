@@ -31,6 +31,7 @@ DEFAULT_MODEL = os.environ.get("OMNIVOICE_MODEL", "k2-fsa/OmniVoice")
 DAEMON_STARTUP_TIMEOUT = int(os.environ.get("OMNIVOICE_DAEMON_TIMEOUT", "600"))
 DEFAULT_MAX_CHARS = int(os.environ.get("OMNIVOICE_MAX_CHARS", "1000"))
 DEFAULT_GPU_MAX_CHARS = int(os.environ.get("OMNIVOICE_GPU_MAX_CHARS", "150"))
+DEFAULT_CPU_MAX_CHARS = int(os.environ.get("OMNIVOICE_CPU_MAX_CHARS", "350"))
 INFERENCE_TIMEOUT = int(os.environ.get("OMNIVOICE_INFERENCE_TIMEOUT", "900"))
 
 _CUDA_MEMORY_ERROR_MARKERS = (
@@ -119,8 +120,11 @@ def split_text_for_omnivoice(text, max_chars=None):
     if max_chars is None:
         max_chars = DEFAULT_MAX_CHARS
     text = (text or "").strip()
+    if not text:
+        return []
     if len(text) <= max_chars:
         return [text]
+
     chunks = []
     sentences = re.split(r"(?<=[.!?;])\s+|(?<=\n)", text)
     current = ""
@@ -136,10 +140,21 @@ def split_text_for_omnivoice(text, max_chars=None):
             if len(sent) <= max_chars:
                 current = sent
             else:
-                while len(sent) > max_chars:
-                    chunks.append(sent[:max_chars])
-                    sent = sent[max_chars:]
-                current = sent
+                parts = re.split(r",\s*", sent)
+                current = ""
+                for part in parts:
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if len(current) + len(part) + 2 <= max_chars:
+                        current = (current + ", " + part).strip(", ") if current else part
+                    else:
+                        if current:
+                            chunks.append(current)
+                        while len(part) > max_chars:
+                            chunks.append(part[:max_chars])
+                            part = part[max_chars:].strip()
+                        current = part
     if current:
         chunks.append(current)
     return [c for c in chunks if c.strip()]
@@ -439,7 +454,7 @@ class OmniVoiceTTS:
             return max_chars
         if self._is_cuda_daemon():
             return DEFAULT_GPU_MAX_CHARS
-        return DEFAULT_MAX_CHARS
+        return DEFAULT_CPU_MAX_CHARS
 
     def _reload_daemon_on_cpu(self):
         print("[OmniVoice] GPU OOM khi inference — restart daemon tren CPU...", flush=True)
