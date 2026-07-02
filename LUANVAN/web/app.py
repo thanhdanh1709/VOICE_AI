@@ -1239,8 +1239,16 @@ def get_tts_instance():
     if _tts_instance is None:
         try:
             from vieneu import Vieneu
-            print("[TTS] Initializing TTS engine...")
-            _tts_instance = Vieneu()
+            backbone_device = os.environ.get('VIENEU_BACKBONE_DEVICE', 'cpu').strip().lower() or 'cpu'
+            codec_device = os.environ.get('VIENEU_CODEC_DEVICE', 'cpu').strip().lower() or 'cpu'
+            print(
+                f"[TTS] Initializing TTS engine "
+                f"(backbone_device={backbone_device}, codec_device={codec_device})..."
+            )
+            _tts_instance = Vieneu(
+                backbone_device=backbone_device,
+                codec_device=codec_device,
+            )
             print("[TTS] TTS engine initialized successfully")
         except ImportError as e:
             print(f"[ERROR] Error importing Vieneu: {e}")

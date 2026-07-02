@@ -66,20 +66,21 @@ EMOTION_KEYWORDS = {
     },
 }
 
+# Instruct nhấn mạnh CẢM XÚC trước, rồi mới tới cao độ/nhịp — để nghe rõ vui/buồn.
 EMOTION_TO_INSTRUCT_EN = {
-    "cheerful": "young adult, moderate pitch",
-    "excited": "young adult, very high pitch",
-    "calm": "middle-aged, low pitch",
-    "sad": "elderly, very low pitch",
+    "cheerful": "speaking in a happy and cheerful tone, bright and warm, moderate-high pitch",
+    "excited": "speaking in an excited and enthusiastic tone, energetic and fast, high pitch",
+    "calm": "speaking in a calm and gentle tone, soft and relaxed, slow, low pitch",
+    "sad": "speaking in a sad and sorrowful tone, slow and heavy, low pitch",
     "neutral": None,
 }
 
 # OmniVoice voice-design tags (ZH) — dùng dấu phẩy full-width
 EMOTION_TO_INSTRUCT_ZH = {
-    "cheerful": "青年，中音调",
-    "excited": "青年，极高音调",
-    "calm": "中年，低音调",
-    "sad": "老年，极低音调",
+    "cheerful": "用开心愉快的语气说话，明亮温暖，中高音调",
+    "excited": "用兴奋激动的语气说话，充满活力，语速快，高音调",
+    "calm": "用平静温柔的语气说话，轻柔放松，语速慢，低音调",
+    "sad": "用悲伤难过的语气说话，缓慢低沉，低音调",
     "neutral": None,
 }
 
