@@ -67,9 +67,10 @@ def create_test_payment(username, package_id=2):
             transaction_id = f"TEST_{uuid.uuid4().hex[:16].upper()}"
             
             cursor.execute("""
-                INSERT INTO payments (user_id, package_id, amount_vnd, payment_method, payment_status, transaction_id)
-                VALUES (%s, %s, %s, 'bank_qr', 'pending', %s)
-            """, (user_id, package_id, package['price_vnd'], transaction_id))
+                INSERT INTO payments (user_id, package_id, amount, amount_vnd, payment_method, payment_status, transaction_id)
+                VALUES (%s, %s, %s, %s, 'bank_qr', 'pending', %s)
+            """, (user_id, package_id, float(package.get('price') or package['price_vnd']),
+                  int(package['price_vnd'] or 0), transaction_id))
             
             payment_id = cursor.lastrowid
             conn.commit()

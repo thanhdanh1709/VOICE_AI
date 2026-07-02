@@ -7930,7 +7930,7 @@ def create_payment():
             
             # Lấy thông tin package
             cursor.execute("""
-                SELECT id, package_name, characters_limit, price_vnd, duration_days
+                SELECT id, package_name, characters_limit, price, price_vnd, duration_days
                 FROM subscription_packages
                 WHERE id = %s AND is_active = 1
             """, (package_id,))
@@ -7941,12 +7941,15 @@ def create_payment():
             
             print(f"[DEBUG] Package: {package['package_name']} - {package['characters_limit']:,} chars - {package['price_vnd']:,}đ")
             
+            amount_vnd = int(package['price_vnd'] or 0)
+            amount = float(package.get('price') if package.get('price') is not None else amount_vnd)
+            
             # Tạo payment record  
             transaction_id = f"TTS{uuid.uuid4().hex[:16].upper()}"
             cursor.execute("""
-                INSERT INTO payments (user_id, package_id, amount_vnd, payment_method, payment_status, transaction_id)
-                VALUES (%s, %s, %s, %s, 'pending', %s)
-            """, (current_user_id, package_id, package['price_vnd'], payment_method, transaction_id))
+                INSERT INTO payments (user_id, package_id, amount, amount_vnd, payment_method, payment_status, transaction_id)
+                VALUES (%s, %s, %s, %s, %s, 'pending', %s)
+            """, (current_user_id, package_id, amount, amount_vnd, payment_method, transaction_id))
             payment_id = cursor.lastrowid
             conn.commit()
             
