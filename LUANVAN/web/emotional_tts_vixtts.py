@@ -38,6 +38,7 @@ import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'VieNeu-TTS-main'))
 from vieneu_utils.normalize_text import VietnameseTTSNormalizer
+from emotion_parser import detect_emotion as parse_emotion_from_text
 
 # Monkey-patch torchaudio.load to use soundfile (avoid torchcodec issues on Windows)
 import torchaudio
@@ -236,19 +237,8 @@ class ViXTTSEmotionalTTS:
         print("[viXTTS] ✅ Model ready!")
     
     def detect_emotion(self, text):
-        """Phát hiện emotion từ Vietnamese tags"""
-        text_lower = text.lower()
-
-        if any(kw in text_lower for kw in ['tươi sáng', 'vui', 'nụ cười', 'haha', 'vui vẻ', 'cười']):
-            return 'cheerful'
-        if any(kw in text_lower for kw in ['hào hứng', 'phấn khích', 'wow', 'tuyệt vời']):
-            return 'excited'
-        if any(kw in text_lower for kw in ['chậm', 'ấm', 'dịu', 'nhẹ nhàng', 'bình tĩnh', 'trầm']):
-            return 'calm'
-        if any(kw in text_lower for kw in ['buồn', 'tiếc', 'đau', 'thương']):
-            return 'sad'
-
-        return 'neutral'
+        """Phát hiện emotion từ tag (buồn), (vui vẻ) — dùng bảng alias chung."""
+        return parse_emotion_from_text(text)
 
     @staticmethod
     def _split_long_text(text, max_chars=200):

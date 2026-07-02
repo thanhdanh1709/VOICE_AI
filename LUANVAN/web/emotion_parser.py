@@ -108,22 +108,19 @@ def detect_emotion_from_tag(tag: str) -> Optional[str]:
 
 
 def detect_emotion(text: str) -> str:
-    """Detect emotion from tag content or keywords (Vi/En/Zh)."""
+    """
+    Nhận diện cảm xúc chỉ từ tag trong ngoặc: (buồn), (vui vẻ), ...
+    Map qua EMOTION_TAG_ALIASES — không quét từ khóa lẫn trong nội dung câu.
+  """
     text = (text or "").strip()
     if not text:
         return "neutral"
 
-    m = re.match(r"^\(([^)]+)\)", text)
-    if m:
-        from_tag = detect_emotion_from_tag(m.group(1))
+    for tag in re.findall(r"\(([^)]+)\)", text):
+        from_tag = detect_emotion_from_tag(tag)
         if from_tag:
             return from_tag
 
-    text_lower = text.lower()
-    for emotion in ("cheerful", "excited", "calm", "sad"):
-        for _lang, keywords in EMOTION_KEYWORDS[emotion].items():
-            if any(kw in text_lower for kw in keywords):
-                return emotion
     return "neutral"
 
 

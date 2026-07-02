@@ -1,0 +1,13 @@
+# VieNeu TTS — cài SAU requirements.txt và requirements_vixtts.txt
+# QUAN TRỌNG: giữ numpy<2 và transformers==4.44 (trùng viXTTS/Coqui TTS)
+# Không chạy pip install -r ../VieNeu-TTS-main/requirements.txt trong venv chung.
+
+neucodec==0.0.4
+numpy>=1.24.0,<2.0.0
+librosa>=0.10.0
+soundfile>=0.12.0
+phonemizer>=3.3.0
+huggingface-hub>=0.20.0,<1.0.0
+accelerate>=0.25.0
+einops>=0.7.0
+vector-quantize-pytorch>=1.14.0
