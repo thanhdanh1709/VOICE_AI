@@ -48,6 +48,7 @@ import soundfile as sf
 sys.path.insert(0, str(Path(__file__).parent.parent / 'VieNeu-TTS-main'))
 from vieneu_utils.normalize_text import VietnameseTTSNormalizer
 from emotion_parser import detect_emotion as parse_emotion_from_text
+from emotion_parser import split_by_emotion as parse_split_by_emotion
 
 # Monkey-patch torchaudio.load to use soundfile (avoid torchcodec issues on Windows)
 import torchaudio
@@ -391,36 +392,9 @@ class ViXTTSEmotionalTTS:
         return text
 
     def split_by_emotion(self, text, skip_normalize=False):
-        """Chia text thành chunks theo emotion"""
-        chunks = []
-        lines = text.split('\n')
-        current_text = ""
-        current_emotion = 'neutral'
-
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-
-            if '(' in line:
-                if current_text.strip():
-                    chunks.append({
-                        'text': self.clean_text(current_text, skip_normalize=skip_normalize),
-                        'emotion': current_emotion
-                    })
-
-                current_emotion = self.detect_emotion(line)
-                current_text = line
-            else:
-                current_text += " " + line
-
-        if current_text.strip():
-            chunks.append({
-                'text': self.clean_text(current_text, skip_normalize=skip_normalize),
-                'emotion': current_emotion
-            })
-
-        return chunks
+        """Chia text theo tag (vui)/(bình tĩnh)/(buồn) — dùng parser chung."""
+        normalizer = None if skip_normalize else self.text_normalizer.normalize
+        return parse_split_by_emotion(text, normalizer=normalizer)
 
     def synthesize_with_voice(self, text, voice_audio_path, output_file="output.wav", skip_text_normalize=False):
         """

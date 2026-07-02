@@ -26,6 +26,7 @@ EMOTION_TAG_ALIASES = {
     "gentle": "calm",
     "soft": "calm",
     "bình tĩnh": "calm",
+    "bình yên": "calm",
     "nhẹ nhàng": "calm",
     "trầm": "calm",
     "平静": "calm",
@@ -136,37 +137,43 @@ def clean_text(text: str, normalizer: Optional[Callable[[str], str]] = None) -> 
     return text
 
 
+_EMOTION_TAG_PATTERN = re.compile(r"\(([^)]+)\)")
+
+
 def split_by_emotion(
     text: str,
     normalizer: Optional[Callable[[str], str]] = None,
 ) -> List[Dict[str, str]]:
-    """Split text into segments with detected emotion (same format as viXTTS)."""
-    chunks: List[Dict[str, str]] = []
-    lines = (text or "").split("\n")
-    current_text = ""
-    current_emotion = "neutral"
+    """
+    Chia text theo từng tag (vui), (bình tĩnh), (buồn) — kể cả khi TN gộp thành một dòng.
+    """
+    text = text or ""
+    matches = list(_EMOTION_TAG_PATTERN.finditer(text))
 
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        if "(" in line:
-            if current_text.strip():
-                cleaned = clean_text(current_text, normalizer)
-                if cleaned:
-                    chunks.append({"text": cleaned, "emotion": current_emotion})
-            current_emotion = detect_emotion(line)
-            current_text = line
-        else:
-            current_text = (current_text + " " + line).strip() if current_text else line
-
-    if current_text.strip():
-        cleaned = clean_text(current_text, normalizer)
+    if not matches:
+        cleaned = clean_text(text, normalizer)
         if cleaned:
-            chunks.append({"text": cleaned, "emotion": current_emotion})
+            return [{"text": cleaned, "emotion": "neutral"}]
+        return []
 
-    if not chunks and (text or "").strip():
+    chunks: List[Dict[str, str]] = []
+
+    pre = text[: matches[0].start()].strip()
+    if pre:
+        cleaned = clean_text(pre, normalizer)
+        if cleaned:
+            chunks.append({"text": cleaned, "emotion": "neutral"})
+
+    for i, match in enumerate(matches):
+        emotion = detect_emotion_from_tag(match.group(1)) or "neutral"
+        start = match.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        segment = text[start:end].strip()
+        cleaned = clean_text(segment, normalizer)
+        if cleaned:
+            chunks.append({"text": cleaned, "emotion": emotion})
+
+    if not chunks and text.strip():
         cleaned = clean_text(text, normalizer)
         if cleaned:
             chunks.append({"text": cleaned, "emotion": detect_emotion(text)})

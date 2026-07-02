@@ -329,9 +329,11 @@ def _smooth_tts_prosody(text: str) -> str:
     )
     text = re.sub(r',\s*,+', ', ', text)
     text = re.sub(r'\s+,', ',', text)
-    # Không chèn pause giữa từng chữ trong cụm viết tắt ngắn (vê tê → vê tê giữ nguyên)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    # Chỉ gộp khoảng trắng ngang — giữ xuống dòng (quan trọng cho tag cảm xúc / đoạn văn)
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r' *\n *', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 
 def normalize_for_tts(
