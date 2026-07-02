@@ -109,9 +109,13 @@ def _ensure_ref_voice_session(model, job, text):
     ref_path = job.get("ref_audio")
     if not ref_path:
         return
-    ref_txt = (job.get("ref_text") or text or "").strip()
+    ref_txt = (job.get("ref_text") or "").strip()
     try:
-        prompt = model.create_voice_clone_prompt(ref_path, ref_text=ref_txt)
+        # ref_text phải là transcript file mẫu — không dùng text cần đọc (có thể chứa tag cảm xúc)
+        if ref_txt:
+            prompt = model.create_voice_clone_prompt(ref_path, ref_text=ref_txt)
+        else:
+            prompt = model.create_voice_clone_prompt(ref_path)
         _voice_sessions[sid] = prompt
         print(f"[OmniVoice Daemon] Ref voice session saved: {sid}", file=sys.stderr, flush=True)
     except Exception as e:

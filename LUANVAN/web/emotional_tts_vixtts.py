@@ -8,6 +8,8 @@ import os
 import re
 import torch
 import warnings
+import threading
+import unicodedata
 from pathlib import Path
 from pydub import AudioSegment
 import traceback
@@ -71,6 +73,7 @@ class ViXTTSEmotionalTTS:
     - Giọng cố định từ base_voice / clone (latents tính một lần)
     - Cảm xúc chỉnh qua tham số inference (tốc độ, nhiệt độ) — không clone giọng từ ref cảm xúc
     """
+    _inference_lock = threading.Lock()
     
     def __init__(self, base_dir=None):
         """Initialize viXTTS"""
@@ -84,6 +87,7 @@ class ViXTTSEmotionalTTS:
         self.base_dir = base_dir
         self.model_dir = base_dir / "vixtts_model"
         self.model = None
+        self._text_token_limit = 7544
         
         # Emotion references mapping
         # User có: base_voice.wav, cheerful_ref.wav, calm_ref.wav, excited_ref.wav
@@ -234,22 +238,91 @@ class ViXTTSEmotionalTTS:
         wav = self._apply_emotion_speed(wav, speed)
         return wav
 
-    def _infer_chunk(self, text, gpt_cond_latent, speaker_embedding, emotion="neutral"):
-        params = self._emotion_inference_params(emotion)
-        out = self.model.inference(
-            text=text,
-            language="vi",
-            gpt_cond_latent=gpt_cond_latent,
-            speaker_embedding=speaker_embedding,
-            temperature=params["temperature"],
-            length_penalty=params["length_penalty"],
-            repetition_penalty=VIXTTS_REPETITION_PENALTY,
-            top_k=VIXTTS_TOP_K,
-            top_p=0.85,
-            enable_text_splitting=False,
+    @staticmethod
+    def _is_cuda_error(exc):
+        msg = str(exc).lower()
+        return any(
+            k in msg
+            for k in (
+                "cuda error",
+                "device-side assert",
+                "acceleratorerror",
+                "cublas",
+                "out of memory",
+            )
         )
+
+    @staticmethod
+    def _recover_cuda(reason=""):
+        import gc
+        gc.collect()
+        if not torch.cuda.is_available():
+            return
+        try:
+            torch.cuda.synchronize()
+        except Exception as ex:
+            print(f"[viXTTS] CUDA sync after error ({reason}): {ex}")
+        try:
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _sanitize_chunk_text(text):
+        text = unicodedata.normalize("NFC", text or "")
+        text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\u200b-\u200d\ufeff]", "", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def _clamp_token_ids(self, token_ids):
+        limit = self._text_token_limit or 7544
+        safe = []
+        for tid in token_ids:
+            try:
+                val = int(tid)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= val < limit:
+                safe.append(val)
+        return safe if safe else list(token_ids)
+
+    def _infer_chunk_once(self, text, gpt_cond_latent, speaker_embedding, emotion="neutral"):
+        params = self._emotion_inference_params(emotion)
+        with torch.inference_mode():
+            out = self.model.inference(
+                text=text,
+                language="vi",
+                gpt_cond_latent=gpt_cond_latent,
+                speaker_embedding=speaker_embedding,
+                temperature=params["temperature"],
+                length_penalty=params["length_penalty"],
+                repetition_penalty=VIXTTS_REPETITION_PENALTY,
+                top_k=VIXTTS_TOP_K,
+                top_p=0.85,
+                enable_text_splitting=False,
+            )
         out["wav"] = self._postprocess_chunk_wav(out["wav"], text, params["speed"])
         return out
+
+    def _infer_chunk(self, text, gpt_cond_latent, speaker_embedding, emotion="neutral"):
+        text = self._sanitize_chunk_text(text)
+        if not text:
+            raise ValueError("Empty chunk text after sanitize")
+
+        last_err = None
+        for attempt in range(2):
+            try:
+                return self._infer_chunk_once(
+                    text, gpt_cond_latent, speaker_embedding, emotion
+                )
+            except Exception as e:
+                last_err = e
+                if self._is_cuda_error(e) and attempt == 0:
+                    print(f"[viXTTS] CUDA error on chunk — reset GPU and retry once: {e}")
+                    self._recover_cuda(str(e))
+                    continue
+                raise
+        raise last_err
 
     def load_model(self):
         """Load viXTTS model from HuggingFace"""
@@ -285,6 +358,9 @@ class ViXTTSEmotionalTTS:
         
         # Init model
         self.model = Xtts.init_from_config(config)
+        self._text_token_limit = int(
+            getattr(getattr(config, "model_args", None), "gpt_number_text_tokens", 7544)
+        )
         self.model.load_checkpoint(
             config, 
             checkpoint_dir=str(self.model_dir), 
@@ -301,12 +377,24 @@ class ViXTTSEmotionalTTS:
         
         # CRITICAL FIX: Monkey-patch tokenizer to support 'vi'
         original_preprocess = self.model.tokenizer.preprocess_text
+        original_encode = self.model.tokenizer.encode
+        token_limit = self._text_token_limit
+
         def patched_preprocess(txt, lang):
             if lang == 'vi':
                 # Bypass language check for Vietnamese
                 return txt
             return original_preprocess(txt, lang)
+
+        def patched_encode(txt, lang):
+            try:
+                ids = original_encode(txt, lang)
+            except Exception:
+                ids = original_encode(patched_preprocess(txt, lang), 'en')
+            return self._clamp_token_ids(ids)
+
         self.model.tokenizer.preprocess_text = patched_preprocess
+        self.model.tokenizer.encode = patched_encode
         if not getattr(self.model.tokenizer, 'char_limits', None):
             self.model.tokenizer.char_limits = {}
         if 'vi' not in self.model.tokenizer.char_limits:
@@ -408,6 +496,12 @@ class ViXTTSEmotionalTTS:
         Returns:
             Path to generated audio file
         """
+        with self._inference_lock:
+            return self._synthesize_with_voice_impl(
+                text, voice_audio_path, output_file, skip_text_normalize
+            )
+
+    def _synthesize_with_voice_impl(self, text, voice_audio_path, output_file="output.wav", skip_text_normalize=False):
         try:
             if self.model is None:
                 self.load_model()
@@ -449,6 +543,7 @@ class ViXTTSEmotionalTTS:
                 except Exception as e:
                     print(f"[viXTTS-Clone] ❌ Error on chunk {i}: {e}")
                     traceback.print_exc()
+                    self._recover_cuda(str(e))
             
             if not temp_files:
                 raise Exception("No audio chunks generated")
@@ -485,6 +580,12 @@ class ViXTTSEmotionalTTS:
             voice_audio_path: Path to user's reference audio (voice identity)
             output_file: Output file path
         """
+        with self._inference_lock:
+            return self._synthesize_emotional_with_voice_impl(
+                text, voice_audio_path, output_file, skip_text_normalize
+            )
+
+    def _synthesize_emotional_with_voice_impl(self, text, voice_audio_path, output_file="output.wav", skip_text_normalize=False):
         try:
             if self.model is None:
                 self.load_model()
@@ -530,6 +631,7 @@ class ViXTTSEmotionalTTS:
                 except Exception as e:
                     print(f"[viXTTS-Emotional-Clone] ❌ Error on chunk {i}: {e}")
                     traceback.print_exc()
+                    self._recover_cuda(str(e))
 
             if not temp_files:
                 raise Exception("No audio chunks generated")
@@ -566,6 +668,10 @@ class ViXTTSEmotionalTTS:
         Returns:
             Path to generated audio file
         """
+        with self._inference_lock:
+            return self._synthesize_impl(text, output_file, skip_text_normalize)
+
+    def _synthesize_impl(self, text, output_file="output.wav", skip_text_normalize=False):
         try:
             # Load model if not loaded
             if self.model is None:
@@ -617,6 +723,7 @@ class ViXTTSEmotionalTTS:
                 except Exception as e:
                     print(f"[viXTTS] ❌ Error generating chunk {i}: {e}")
                     traceback.print_exc()
+                    self._recover_cuda(str(e))
             
             if not temp_files:
                 raise Exception("No audio chunks generated")

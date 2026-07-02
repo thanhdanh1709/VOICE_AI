@@ -3060,7 +3060,7 @@ def convert_text_to_speech_omnivoice():
 
         original_text = text
         tts_text, tn_enabled, tn_changed = apply_tts_text_normalization(
-            session['user_id'], text, data
+            session['user_id'], text, data, preserve_emotion_tags=(mode == 'emotional')
         )
         if tn_enabled and tn_changed:
             print(f"[CONVERT OMNIVOICE TN] Normalized ({text_length} -> {len(tts_text)} chars)")

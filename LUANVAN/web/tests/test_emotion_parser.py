@@ -1,4 +1,4 @@
-from emotion_parser import detect_emotion, split_by_emotion
+from emotion_parser import detect_emotion, split_by_emotion, plan_emotional_chunks
 
 
 def test_tag_buon_maps_to_sad_even_with_smile_words_in_body():
@@ -42,3 +42,15 @@ def test_split_by_emotion_long_sample_like_user():
     assert [c["emotion"] for c in chunks] == [
         "cheerful", "cheerful", "calm", "cheerful", "sad"
     ]
+
+
+def test_plan_emotional_chunks_strips_tags_from_tts_text():
+    text = "(vui) xin chào. (bình tĩnh) ban ngày. (buồn) kết thúc."
+    jobs = plan_emotional_chunks(text)
+    assert len(jobs) == 3
+    for job in jobs:
+        assert "(" not in job["text"]
+        assert ")" not in job["text"]
+    assert jobs[0]["text"].startswith("xin chào")
+    assert jobs[1]["text"].startswith("ban ngày")
+    assert jobs[2]["text"].startswith("kết thúc")

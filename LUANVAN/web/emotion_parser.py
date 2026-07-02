@@ -34,6 +34,7 @@ EMOTION_TAG_ALIASES = {
     "sad": "sad",
     "melancholic": "sad",
     "buồn": "sad",
+    "buồn nhẹ": "sad",
     "tiếc": "sad",
     "悲伤": "sad",
     "难过": "sad",
@@ -242,9 +243,12 @@ def plan_emotional_chunks(
     jobs: List[Dict[str, str]] = []
     for seg in emotion_segments:
         for sub in split_text_by_max_chars(seg["text"], max_chars):
-            instruct = emotion_to_instruct(seg["emotion"], sub)
+            tts_text = clean_text(sub)
+            if not tts_text:
+                continue
+            instruct = emotion_to_instruct(seg["emotion"], tts_text)
             job = {
-                "text": sub,
+                "text": tts_text,
                 "emotion": seg["emotion"],
             }
             if instruct:
