@@ -245,7 +245,7 @@ class ViXTTSEmotionalTTS:
             repetition_penalty=VIXTTS_REPETITION_PENALTY,
             top_k=VIXTTS_TOP_K,
             top_p=0.85,
-            enable_text_splitting=True,
+            enable_text_splitting=False,
         )
         out["wav"] = self._postprocess_chunk_wav(out["wav"], text, params["speed"])
         return out
@@ -306,6 +306,10 @@ class ViXTTSEmotionalTTS:
                 return txt
             return original_preprocess(txt, lang)
         self.model.tokenizer.preprocess_text = patched_preprocess
+        if not getattr(self.model.tokenizer, 'char_limits', None):
+            self.model.tokenizer.char_limits = {}
+        if 'vi' not in self.model.tokenizer.char_limits:
+            self.model.tokenizer.char_limits['vi'] = VIXTTS_MAX_CHUNK_CHARS
         print("[viXTTS] ✅ Vietnamese tokenizer patched!")
         
         print("[viXTTS] ✅ Model ready!")
