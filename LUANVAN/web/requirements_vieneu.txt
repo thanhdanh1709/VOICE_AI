@@ -2,6 +2,7 @@
 # QUAN TRỌNG: giữ numpy<2 và transformers==4.44 (trùng viXTTS/Coqui TTS)
 # Không chạy pip install -r ../VieNeu-TTS-main/requirements.txt trong venv chung.
 
+llama-cpp-python>=0.3.16
 neucodec==0.0.4
 numpy>=1.24.0,<2.0.0
 librosa>=0.10.0
