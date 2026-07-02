@@ -13,7 +13,16 @@ from pydub import AudioSegment
 import traceback
 
 # Khoảng lặng giữa các chunk audio (ms) — giảm để nghe liền hơn
-VIXTTS_CHUNK_PAUSE_MS = int(os.environ.get('VIXTTS_CHUNK_PAUSE_MS', '100'))
+VIXTTS_CHUNK_PAUSE_MS = int(os.environ.get('VIXTTS_CHUNK_PAUSE_MS', '50'))
+# time_stretch (librosa) tạo tiếng “vang/ướt” — mặc định tắt; bật bằng VIXTTS_EMOTION_SPEED=1
+VIXTTS_EMOTION_SPEED_ENABLED = os.environ.get('VIXTTS_EMOTION_SPEED', '0').strip().lower() in (
+    '1', 'true', 'yes',
+)
+# Tham số inference — khớp viXTTS demo (temp thấp = ít vang/artifact)
+VIXTTS_BASE_TEMPERATURE = float(os.environ.get('VIXTTS_BASE_TEMPERATURE', '0.3'))
+VIXTTS_REPETITION_PENALTY = float(os.environ.get('VIXTTS_REPETITION_PENALTY', '10.0'))
+VIXTTS_TOP_K = int(os.environ.get('VIXTTS_TOP_K', '30'))
+VIXTTS_MAX_CHUNK_CHARS = int(os.environ.get('VIXTTS_MAX_CHUNK_CHARS', '250'))
 
 # Fix encoding for Windows console (only if not already set)
 if sys.platform == 'win32' and hasattr(sys.stdout, 'buffer'):
@@ -115,14 +124,24 @@ class ViXTTSEmotionalTTS:
             ref = self.emotion_refs["neutral"]
         return ref
 
-    # Cảm xúc chỉnh qua tham số inference — KHÔNG đổi file ref/latent giữa các chunk
+    # Cảm xúc: lệch nhẹ quanh base temp 0.3 (demo viXTTS) — temp cao gây tiếng vang
     EMOTION_INFERENCE_PARAMS = {
-        "cheerful": {"temperature": 0.75, "length_penalty": 0.92, "speed": 1.05},
-        "excited": {"temperature": 0.85, "length_penalty": 0.88, "speed": 1.10},
-        "calm": {"temperature": 0.55, "length_penalty": 1.12, "speed": 0.92},
-        "sad": {"temperature": 0.58, "length_penalty": 1.08, "speed": 0.95},
-        "neutral": {"temperature": 0.70, "length_penalty": 1.00, "speed": 1.00},
+        "cheerful": {"temperature": 0.35, "length_penalty": 0.98, "speed": 1.00},
+        "excited": {"temperature": 0.40, "length_penalty": 0.95, "speed": 1.00},
+        "calm": {"temperature": 0.25, "length_penalty": 1.05, "speed": 1.00},
+        "sad": {"temperature": 0.28, "length_penalty": 1.03, "speed": 1.00},
+        "neutral": {"temperature": VIXTTS_BASE_TEMPERATURE, "length_penalty": 1.00, "speed": 1.00},
     }
+
+    def _cond_latent_kwargs(self):
+        """Dùng gpt_cond_len / max_ref_len từ config model (12s/10s), không hard-code 30/120."""
+        cfg = self.model.config
+        return {
+            "gpt_cond_len": int(getattr(cfg, "gpt_cond_len", 12)),
+            "gpt_cond_chunk_len": int(getattr(cfg, "gpt_cond_chunk_len", 4)),
+            "max_ref_length": int(getattr(cfg, "max_ref_len", 10)),
+            "sound_norm_refs": bool(getattr(cfg, "sound_norm_refs", False)),
+        }
 
     def _get_identity_latents(self, identity_path=None, cache=None):
         """
@@ -138,9 +157,7 @@ class ViXTTSEmotionalTTS:
 
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
             audio_path=[id_key],
-            gpt_cond_len=30,
-            gpt_cond_chunk_len=4,
-            max_ref_length=120,
+            **self._cond_latent_kwargs(),
         )
         cache[id_key] = (gpt_cond_latent, speaker_embedding)
         return gpt_cond_latent, speaker_embedding
@@ -151,7 +168,7 @@ class ViXTTSEmotionalTTS:
         )
 
     def _apply_emotion_speed(self, wav, speed):
-        if abs(speed - 1.0) < 0.01:
+        if not VIXTTS_EMOTION_SPEED_ENABLED or abs(speed - 1.0) < 0.01:
             return wav
         try:
             import librosa
@@ -159,6 +176,62 @@ class ViXTTSEmotionalTTS:
         except Exception as e:
             print(f"[viXTTS] Warning: emotion speed adjust skipped: {e}")
             return wav
+
+    @staticmethod
+    def _trim_wav_edges(wav, top_db=28):
+        """Cắt im lặng đầu/cuối chunk — giảm cảm giác vang khi ghép nhiều đoạn."""
+        try:
+            import librosa
+            import numpy as np
+            arr = np.asarray(wav, dtype=np.float32).squeeze()
+            if arr.size == 0:
+                return wav
+            trimmed, _ = librosa.effects.trim(arr, top_db=top_db)
+            return trimmed if trimmed.size > 0 else arr
+        except Exception as e:
+            print(f"[viXTTS] Warning: trim skipped: {e}")
+            return wav
+
+    @staticmethod
+    def _concat_wav_chunks(temp_files, output_file, pause_ms=VIXTTS_CHUNK_PAUSE_MS):
+        """Ghép chunk WAV; không chèn pause sau chunk cuối."""
+        if len(temp_files) == 1:
+            import shutil
+            shutil.move(temp_files[0], output_file)
+            return
+        print(f"[viXTTS] Concatenating {len(temp_files)} chunks...")
+        combined = AudioSegment.empty()
+        for i, f in enumerate(temp_files):
+            combined += AudioSegment.from_wav(f)
+            if i < len(temp_files) - 1 and pause_ms > 0:
+                combined += AudioSegment.silent(duration=pause_ms)
+        combined.export(output_file, format="wav")
+
+    @staticmethod
+    def _truncate_reverb_tail(wav, text):
+        """
+        Cắt đuôi audio XTTS hay sinh thêm (nghe như vang) — logic từ viXTTS demo.
+        """
+        import numpy as np
+        text = text or ""
+        word_count = len(text.split())
+        num_punct = sum(text.count(c) for c in ".!?,")
+        if word_count < 5:
+            keep_len = 15000 * word_count + 2000 * num_punct
+        elif word_count < 10:
+            keep_len = 13000 * word_count + 2000 * num_punct
+        else:
+            return wav
+        arr = np.asarray(wav, dtype=np.float32).squeeze()
+        if keep_len > 0 and arr.size > keep_len:
+            return arr[:keep_len]
+        return arr
+
+    def _postprocess_chunk_wav(self, wav, text, speed=1.0):
+        wav = self._truncate_reverb_tail(wav, text)
+        wav = self._trim_wav_edges(wav)
+        wav = self._apply_emotion_speed(wav, speed)
+        return wav
 
     def _infer_chunk(self, text, gpt_cond_latent, speaker_embedding, emotion="neutral"):
         params = self._emotion_inference_params(emotion)
@@ -169,11 +242,12 @@ class ViXTTSEmotionalTTS:
             speaker_embedding=speaker_embedding,
             temperature=params["temperature"],
             length_penalty=params["length_penalty"],
-            repetition_penalty=5.0,
-            top_k=50,
+            repetition_penalty=VIXTTS_REPETITION_PENALTY,
+            top_k=VIXTTS_TOP_K,
             top_p=0.85,
+            enable_text_splitting=True,
         )
-        out["wav"] = self._apply_emotion_speed(out["wav"], params["speed"])
+        out["wav"] = self._postprocess_chunk_wav(out["wav"], text, params["speed"])
         return out
 
     def load_model(self):
@@ -241,8 +315,33 @@ class ViXTTSEmotionalTTS:
         return parse_emotion_from_text(text)
 
     @staticmethod
-    def _split_long_text(text, max_chars=200):
+    def _split_text_chunks(text, max_chars=None):
+        """Tách theo câu trước, rồi theo độ dài — giảm cắt giữa câu gây artifact."""
+        if max_chars is None:
+            max_chars = VIXTTS_MAX_CHUNK_CHARS
+        text = (text or '').strip()
+        if not text:
+            return []
+        if len(text) <= max_chars:
+            return [text]
+
+        sentences = re.split(r'(?<=[.!?…])\s+', text)
+        parts = []
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            if len(sentence) <= max_chars:
+                parts.append(sentence)
+            else:
+                parts.extend(ViXTTSEmotionalTTS._split_long_text(sentence, max_chars))
+        return parts if parts else ViXTTSEmotionalTTS._split_long_text(text, max_chars)
+
+    @staticmethod
+    def _split_long_text(text, max_chars=None):
         """Chia văn bản dài thành các đoạn nhỏ cho viXTTS."""
+        if max_chars is None:
+            max_chars = VIXTTS_MAX_CHUNK_CHARS
         text = (text or '').strip()
         if not text:
             return []
@@ -263,12 +362,14 @@ class ViXTTSEmotionalTTS:
         return parts if parts else [text]
 
     @staticmethod
-    def _expand_emotional_chunks(chunks, max_chars=200):
-        """Tách thêm theo độ dài, giữ nguyên emotion từng đoạn."""
+    def _expand_emotional_chunks(chunks, max_chars=None):
+        """Tách thêm theo câu/độ dài, giữ nguyên emotion từng đoạn."""
+        if max_chars is None:
+            max_chars = VIXTTS_MAX_CHUNK_CHARS
         expanded = []
         for chunk in chunks:
             emotion = chunk.get('emotion') or 'neutral'
-            for piece in ViXTTSEmotionalTTS._split_long_text(chunk.get('text') or '', max_chars):
+            for piece in ViXTTSEmotionalTTS._split_text_chunks(chunk.get('text') or '', max_chars):
                 if piece.strip():
                     expanded.append({'text': piece, 'emotion': emotion})
         return expanded
@@ -345,30 +446,13 @@ class ViXTTSEmotionalTTS:
             
             if not clean.strip():
                 raise Exception("No text to process after normalization")
-            
-            # Split into chunks (max ~200 chars each to avoid context overflow)
-            MAX_CHUNK = 200
-            words = clean.split()
-            chunks_text = []
-            current = ""
-            for word in words:
-                if len(current) + len(word) + 1 > MAX_CHUNK and current:
-                    chunks_text.append(current.strip())
-                    current = word
-                else:
-                    current = (current + " " + word).strip()
-            if current:
-                chunks_text.append(current)
-            
+
+            chunks_text = self._split_text_chunks(clean)
             print(f"[viXTTS-Clone] {len(chunks_text)} text chunk(s)")
-            
-            # Compute speaker latents from the provided voice reference
-            # gpt_cond_len capped at actual audio length to handle short clips (6-60s)
-            gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(
-                audio_path=[str(voice_audio_path)],
-                gpt_cond_len=30,
-                gpt_cond_chunk_len=4,
-                max_ref_length=120
+
+            latent_cache = {}
+            gpt_cond_latent, speaker_embedding = self._get_identity_latents(
+                voice_audio_path, cache=latent_cache
             )
             
             temp_files = []
@@ -376,16 +460,8 @@ class ViXTTSEmotionalTTS:
                 print(f"[viXTTS-Clone] Chunk {i+1}/{len(chunks_text)}: {chunk_text[:50]}...")
                 try:
                     temp_file = f"temp_vixtts_clone_{i}_{os.getpid()}.wav"
-                    out = self.model.inference(
-                        text=chunk_text,
-                        language="vi",
-                        gpt_cond_latent=gpt_cond_latent,
-                        speaker_embedding=speaker_embedding,
-                        temperature=0.7,
-                        length_penalty=1.0,
-                        repetition_penalty=5.0,
-                        top_k=50,
-                        top_p=0.85,
+                    out = self._infer_chunk(
+                        chunk_text, gpt_cond_latent, speaker_embedding, "neutral"
                     )
                     import soundfile as sf
                     sf.write(temp_file, out["wav"], 24000)
@@ -400,12 +476,7 @@ class ViXTTSEmotionalTTS:
                 raise Exception("No audio chunks generated")
             
             if len(temp_files) > 1:
-                print(f"[viXTTS-Clone] Concatenating {len(temp_files)} chunks...")
-                combined = AudioSegment.empty()
-                for f in temp_files:
-                    combined += AudioSegment.from_wav(f)
-                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)
-                combined.export(output_file, format="wav")
+                self._concat_wav_chunks(temp_files, output_file)
             else:
                 import shutil
                 shutil.move(temp_files[0], output_file)
@@ -486,12 +557,7 @@ class ViXTTSEmotionalTTS:
                 raise Exception("No audio chunks generated")
 
             if len(temp_files) > 1:
-                print(f"[viXTTS-Emotional-Clone] Concatenating {len(temp_files)} chunks...")
-                combined = AudioSegment.empty()
-                for f in temp_files:
-                    combined += AudioSegment.from_wav(f)
-                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)
-                combined.export(output_file, format="wav")
+                self._concat_wav_chunks(temp_files, output_file)
             else:
                 import shutil
                 shutil.move(temp_files[0], output_file)
@@ -579,14 +645,7 @@ class ViXTTSEmotionalTTS:
             
             # Concatenate tất cả chunks
             if len(temp_files) > 1:
-                print(f"[viXTTS] Concatenating {len(temp_files)} chunks...")
-                combined = AudioSegment.empty()
-                for f in temp_files:
-                    chunk_audio = AudioSegment.from_wav(f)
-                    combined += chunk_audio
-                    combined += AudioSegment.silent(duration=VIXTTS_CHUNK_PAUSE_MS)  # 300ms pause
-                
-                combined.export(output_file, format="wav")
+                self._concat_wav_chunks(temp_files, output_file)
             else:
                 # Chỉ 1 chunk
                 import shutil
